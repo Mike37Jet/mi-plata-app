@@ -8,37 +8,41 @@ Estado: **el proyecto compila**. Verificado el 2026-09-13 con
 | Pieza | Versión | Nota |
 |---|---|---|
 | Android Studio | 2026.1+ | Trae el SDK y el emulador |
-| JDK | **21** | `brew install openjdk@21` |
+| JDK | **21** | Android Studio lo descarga solo al abrir el proyecto |
 | Android SDK Platform | 36 | AGP lo descarga solo |
 | Build Tools | 35.0.0 | AGP las descarga solas |
 | Gradle | 8.14.3 | Vía el wrapper del repo, no hace falta instalarlo |
 
-### Por qué JDK 21 y no el JBR de Android Studio
+### Por qué JDK 21
 
-Android Studio 2026.1 incluye **JBR 25**, y en la máquina también hay un
-OpenJDK 26 de Homebrew. **Ninguno de los dos sirve** para AGP 8.x. Por eso se
-instala un JDK 21 aparte:
+Android Studio 2026.1 se ejecuta sobre **JBR 25**, y la máquina puede tener
+además un OpenJDK 26. **Ninguno de los dos sirve** para compilar con AGP 8.x,
+que necesita 17 o 21.
+
+**No hay que hacer nada:** al abrir el proyecto, Android Studio detecta el
+toolchain que declara el build y se descarga un **JBR 21** aparte, que deja en
+`~/Library/Java/JavaVirtualMachines/jbr-21.x/`. Luego apunta Gradle ahí mediante
+`.gradle/config.properties` (fuera de git, porque es específico de cada máquina).
+
+Para compilar desde la terminal hay que darle un JDK 21 explícito. Cualquiera de
+los dos sirve — ambos verificados en verde:
 
 ```bash
+# el que ya descargó Android Studio
+export JAVA_HOME=~/Library/Java/JavaVirtualMachines/jbr-21.0.11/Contents/Home
+
+# o uno propio, si prefieres no depender de Studio
 brew install openjdk@21
-```
-
-Se usa la fórmula `openjdk@21`, no el cask `temurin@21`: la fórmula no necesita
-permisos de administrador.
-
-Para la terminal:
-
-```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
 ```
 
-En Android Studio: **Settings → Build, Execution, Deployment → Build Tools →
-Gradle → Gradle JDK** → seleccionar el 21.
+Se usa la fórmula `openjdk@21` y no el cask `temurin@21` porque la fórmula no
+pide permisos de administrador.
 
-> El build declara su toolchain en `libs.versions.toml` (`javaToolchain = "21"`)
-> y `settings.gradle.kts` aplica el *foojay resolver*, así que en una máquina sin
-> JDK 21 Gradle lo descarga solo. El `JAVA_HOME` de arriba es solo para arrancar
-> Gradle, no para compilar.
+> El toolchain se declara en `libs.versions.toml` (`javaToolchain = "21"`) y
+> `settings.gradle.kts` aplica el *foojay resolver*, así que en una máquina sin
+> JDK 21 Gradle lo descarga solo. El `JAVA_HOME` de arriba solo sirve para
+> **arrancar** Gradle, no para compilar: eso lo decide el toolchain.
 
 ### No instales Gradle globalmente
 
@@ -59,6 +63,9 @@ Documentadas para no volver a tropezar:
    El proyecto usa `compileSdk = 36`. Subir a 37 exige AGP 9.
 2. **El `rm` de la shell es interactivo** (`rm -i`): en scripts, usar `/bin/rm -f`
    o se queda esperando confirmación.
+3. **`.idea/` y `local.properties` están ignorados** y así deben quedarse: son
+   específicos de cada máquina. Android Studio los regenera al abrir el proyecto,
+   igual que `.gradle/config.properties`.
 
 ## Comandos
 
