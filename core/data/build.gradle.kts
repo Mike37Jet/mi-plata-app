@@ -18,4 +18,11 @@ dependencies {
     implementation(libs.sqlcipher)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.datetime)
+
+    // Room se prueba en la JVM con Robolectric, sin emulador: los tests de DAO
+    // corren en CI como cualquier otro test unitario. Un test de persistencia
+    // que necesite un emulador acaba sin ejecutarse nunca.
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.room.testing)
 }
