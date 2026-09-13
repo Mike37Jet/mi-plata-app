@@ -1,0 +1,9 @@
+#!/bin/sh
+# Corre los tests del dominio antes de empujar.
+#
+# Solo :core:domain: es Kotlin/JVM puro, no necesita emulador y tarda segundos.
+# El resto de la verificacion es trabajo de CI.
+set -e
+
+echo "[pre-push] tests del dominio..."
+./gradlew :core:domain:test --quiet

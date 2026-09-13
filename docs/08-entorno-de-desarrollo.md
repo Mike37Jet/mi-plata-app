@@ -57,13 +57,17 @@ Si quieres liberar el espacio: `brew uninstall gradle`.
 
 Documentadas para no volver a tropezar:
 
-1. **`compileSdk = 37` no funciona con AGP 8.12.** El SDK instala la plataforma
+1. **`compileSdk = 37` no funciona con AGP 8.x.** El SDK instala la plataforma
    como `android-37.0` (el nuevo esquema con versión menor) pero AGP 8.x busca
    `android-37` literal y falla con *"Failed to find target with hash string"*.
    El proyecto usa `compileSdk = 36`. Subir a 37 exige AGP 9.
 2. **El `rm` de la shell es interactivo** (`rm -i`): en scripts, usar `/bin/rm -f`
    o se queda esperando confirmación.
-3. **`.idea/` y `local.properties` están ignorados** y así deben quedarse: son
+3. **Android Studio edita `libs.versions.toml` por su cuenta.** Su asistente de
+   actualización sube versiones (subió AGP de 8.12.0 a 8.13.2 en el primer
+   sync). No es malo, pero **revisa el diff antes de commitear**: `git add -A`
+   sin mirar mete cambios que no son tuyos en un commit que dice otra cosa.
+4. **`.idea/` y `local.properties` están ignorados** y así deben quedarse: son
    específicos de cada máquina. Android Studio los regenera al abrir el proyecto,
    igual que `.gradle/config.properties`.
 
@@ -75,6 +79,31 @@ Documentadas para no volver a tropezar:
 ./gradlew spotlessCheck detekt      # puertas de calidad
 ./gradlew :core:domain:test         # tests del dominio, sin emulador
 ```
+
+Para reproducir en local exactamente lo que hará CI, incluidos los warnings
+como errores:
+
+```bash
+CI=true ./gradlew spotlessCheck detekt lintDebug testDebugUnitTest assembleDebug
+```
+
+## Hooks de git
+
+Los hooks viven en `.githooks/` y están versionados, pero git **no los activa
+solo** al clonar. Una vez por clon:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+| Hook | Qué hace |
+|---|---|
+| `pre-commit` | `spotlessApply` sobre los archivos staged |
+| `commit-msg` | valida Conventional Commits |
+| `pre-push` | tests de `:core:domain` |
+
+Son shell puro, sin Node ni dependencias: `commitlint` habría exigido meter npm
+en un proyecto que no tiene JavaScript por ninguna parte.
 
 ## La comprobación que no se debe perder
 
@@ -94,5 +123,8 @@ e: Unresolved reference 'android'.
 Verificado. Si algún día eso compila, `:core:domain` dejó de ser un módulo
 Kotlin/JVM puro y hay que revisar `docs/01-arquitectura.md`.
 
-> Esta comprobación se automatizará como test en la Etapa 0.2, junto con el resto
-> de CI.
+> **Ya automatizado.** Desde la Etapa 0.2 no hace falta comprobarlo a mano: si
+> alguien aplica un plugin de Android a `:core:domain`, el build falla durante la
+> configuración con un mensaje que explica la regla. Lo mismo con las
+> dependencias prohibidas entre `:feature:*`. Ver `ArchitectureRules.kt` en
+> `build-logic`.

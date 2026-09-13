@@ -1,0 +1,44 @@
+#!/bin/sh
+# Valida Conventional Commits sin depender de Node ni de commitlint.
+#
+# El formato no es cosmetica: de aqui salen el CHANGELOG y el versionado
+# semantico automaticos (docs/06).
+set -e
+
+MSG_FILE="$1"
+FIRST_LINE=$(head -n1 "$MSG_FILE")
+
+# Deja pasar los mensajes que genera git solo.
+case "$FIRST_LINE" in
+    "Merge "*|"Revert "*|"fixup!"*|"squash!"*) exit 0 ;;
+esac
+
+PATTERN='^(feat|fix|refactor|chore|docs|test|perf|build|ci)(\([a-z0-9-]+\))?!?: [a-z].{0,88}$'
+
+if ! printf '%s' "$FIRST_LINE" | grep -qE "$PATTERN"; then
+    cat >&2 <<MSG
+
+  Mensaje de commit invalido.
+
+    $FIRST_LINE
+
+  Formato esperado:
+
+    <tipo>(<ambito>): <descripcion en imperativo, minuscula, sin punto final>
+
+  Tipos:   feat fix refactor chore docs test perf build ci
+  Ambitos: plan transacciones resumen cuentas backup domain data ui build ci
+
+  Ejemplos:
+
+    feat(plan): materializar plan del mes desde el mes anterior
+    fix(money): usar HALF_EVEN al convertir decimales a centavos
+
+MSG
+    exit 1
+fi
+
+if printf '%s' "$FIRST_LINE" | grep -qE '\.$'; then
+    echo "  La descripcion no lleva punto final." >&2
+    exit 1
+fi

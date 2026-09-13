@@ -50,6 +50,29 @@ internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension<*, 
             // En CI cualquier warning de Lint rompe el build; en local solo avisa.
             warningsAsErrors = isCi
             abortOnError = true
+
+            // Excepcion: la actualidad de las dependencias NO rompe el build.
+            //
+            // Mantener las versiones al dia es trabajo de Renovate (docs/06),
+            // que abre PRs para eso. Si ademas fueran errores de lint, el build
+            // empezaria a fallar solo, sin que nadie toque el codigo, el dia que
+            // cualquier libreria publique una version nueva. Un CI que falla por
+            // algo que no es un defecto entrena a ignorar el CI.
+            disable +=
+                setOf(
+                    "GradleDependency",
+                    "NewerVersionAvailable",
+                    "AndroidGradlePluginVersion",
+                    // targetSdk 36 es deliberado: la plataforma 37 usa el esquema
+                    // android-37.0 que AGP 8 no resuelve (docs/08).
+                    "OldTargetApi",
+                    // Falso positivo verificado: lint pide fusionar
+                    // mipmap-anydpi-v26 en mipmap-anydpi porque minSdk ya es 26,
+                    // pero el merger de recursos ignora ese directorio y el
+                    // enlazado falla con "resource mipmap/ic_launcher not found".
+                    // El calificador -v26 es obligatorio para iconos adaptativos.
+                    "ObsoleteSdkInt",
+                )
             checkDependencies = true
             xmlReport = true
             htmlReport = true

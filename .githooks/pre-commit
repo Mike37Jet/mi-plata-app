@@ -1,0 +1,17 @@
+#!/bin/sh
+# Formatea el codigo que estas a punto de commitear.
+#
+# Rapido a proposito (~2s con el daemon caliente). Un hook lento se termina
+# saltando con --no-verify, y entonces no sirve de nada (docs/06).
+set -e
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(kt|kts)$' || true)
+[ -z "$STAGED" ] && exit 0
+
+echo "[pre-commit] formateando con spotless..."
+./gradlew spotlessApply --quiet
+
+# Re-anade solo los archivos que ya estaban staged y que spotless haya tocado.
+echo "$STAGED" | while IFS= read -r file; do
+    [ -f "$file" ] && git add "$file"
+done

@@ -8,7 +8,7 @@ construir tres capas durante dos semanas sin poder abrir la app.
 | # | Entregable | Rama |
 |---|---|---|
 | 0.1 | ✅ Proyecto Gradle, version catalog, convention plugins, `:app` vacío que arranca | `chore/project-scaffolding` |
-| 0.2 | Spotless + detekt + hooks + workflow `pr.yml` verde | `chore/quality-gates` |
+| 0.2 | ✅ Spotless + detekt + hooks + reglas de arquitectura + workflow `pr.yml` | `chore/quality-gates` |
 | 0.3 | Protección de `main`, plantillas de issue/PR, commitlint | `chore/repo-governance` |
 | 0.4 | `:core:designsystem` — tema M3, color, tipografía, dynamic color, modo oscuro | `feat/design-system` |
 
