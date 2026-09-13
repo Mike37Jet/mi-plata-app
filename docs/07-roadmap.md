@@ -9,7 +9,7 @@ construir tres capas durante dos semanas sin poder abrir la app.
 |---|---|---|
 | 0.1 | ✅ Proyecto Gradle, version catalog, convention plugins, `:app` vacío que arranca | `chore/project-scaffolding` |
 | 0.2 | ✅ Spotless + detekt + hooks + reglas de arquitectura + workflow `pr.yml` | `chore/quality-gates` |
-| 0.3 | 🟡 Plantillas de issue/PR ✅, validación de commits ✅, Renovate ✅ · protección de `main` pendiente del remoto | `chore/repo-governance` |
+| 0.3 | ✅ Repositorio publicado, `main` protegido, plantillas de issue/PR, validación de commits, Renovate configurado | `chore/repo-governance` |
 | 0.4 | `:core:designsystem` — tema M3, color, tipografía, dynamic color, modo oscuro | `feat/design-system` |
 
 **Criterio de salida:** un PR que rompe el formato o los tests es **bloqueado
