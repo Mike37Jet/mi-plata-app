@@ -1,0 +1,49 @@
+name: Funcionalidad
+description: Algo nuevo que la app deberia hacer
+labels: ["feature"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Que problema resuelve
+      description: >
+        El problema, no la solucion. "No se cuanto me queda hasta fin de mes"
+        es un problema; "anadir una barra de progreso" ya es una solucion.
+    validations:
+      required: true
+
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptacion
+      description: Como sabremos que esta hecho. Uno por linea, verificables.
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: etapa
+    attributes:
+      label: Etapa del roadmap
+      description: Ver docs/07-roadmap.md
+      options:
+        - "0 - Fundaciones"
+        - "1 - Dominio"
+        - "2 - Persistencia"
+        - "3 - MVP usable"
+        - "4 - Backup"
+        - "5 - v0.2 Control"
+        - "6 - v0.3 Analisis"
+        - "7 - Pulido"
+        - "Sin asignar"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: alcance
+    attributes:
+      label: Alcance
+      options:
+        - label: Se puede entregar en 3 dias o menos (si no, hay que partirlo)

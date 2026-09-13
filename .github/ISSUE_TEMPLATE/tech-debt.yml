@@ -1,0 +1,34 @@
+name: Deuda tecnica
+description: Algo que funciona pero nos va a costar caro mantener
+labels: ["tech-debt"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Que hay hoy
+      description: Incluye rutas de archivo.
+    validations:
+      required: true
+
+  - type: textarea
+    id: coste
+    attributes:
+      label: Que nos cuesta
+      description: >
+        Concreto. "Es feo" no es un coste; "cada pantalla nueva obliga a tocar
+        tres archivos" si lo es.
+    validations:
+      required: true
+
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+    validations:
+      required: true
+
+  - type: input
+    id: adr
+    attributes:
+      label: ADR relacionado
+      description: Si esto cuestiona una decision ya tomada, cual. Ver docs/adr/
