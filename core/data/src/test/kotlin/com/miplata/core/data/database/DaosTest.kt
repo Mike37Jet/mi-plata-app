@@ -11,6 +11,7 @@ import com.miplata.core.data.database.entity.PlanEntity
 import com.miplata.core.data.database.entity.TransaccionEntity
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -61,12 +62,12 @@ private fun plan(
 
 private fun linea(
     id: String,
-    planId: String,
+    planMes: String,
     orden: Int,
     nombre: String = "Linea $id",
 ) = LineaDePlanEntity(
     id = id,
-    planId = planId,
+    planMes = planMes,
     nombre = nombre,
     tipo = "GASTO_FIJO",
     montoPlanificadoCentavos = 10_000,
@@ -167,7 +168,7 @@ class DaosTest {
     fun `no se puede guardar una linea de un plan que no existe`() =
         runTest {
             shouldThrow<SQLiteConstraintException> {
-                db.planDao().guardarLineas(listOf(linea("l1", planId = "fantasma", orden = 0)))
+                db.planDao().guardarLineas(listOf(linea("l1", planMes = "9999-99", orden = 0)))
             }
         }
 
@@ -233,7 +234,7 @@ class DaosTest {
         runTest {
             db.planDao().guardarPlanConLineas(
                 plan("p1", "2026-03"),
-                listOf(linea("l1", "p1", orden = 0), linea("l2", "p1", orden = 1)),
+                listOf(linea("l1", "2026-03", orden = 0), linea("l2", "2026-03", orden = 1)),
             )
 
             val guardado = db.planDao().obtenerPorMes("2026-03")
@@ -250,9 +251,9 @@ class DaosTest {
             db.planDao().guardarPlanConLineas(
                 plan("p1", "2026-03"),
                 listOf(
-                    linea("tercera", "p1", orden = 2, nombre = "Tercera"),
-                    linea("primera", "p1", orden = 0, nombre = "Primera"),
-                    linea("segunda", "p1", orden = 1, nombre = "Segunda"),
+                    linea("tercera", "2026-03", orden = 2, nombre = "Tercera"),
+                    linea("primera", "2026-03", orden = 0, nombre = "Primera"),
+                    linea("segunda", "2026-03", orden = 1, nombre = "Segunda"),
                 ),
             )
 
@@ -268,9 +269,9 @@ class DaosTest {
     @Test
     fun `volver a guardar un plan reemplaza sus lineas`() =
         runTest {
-            db.planDao().guardarPlanConLineas(plan("p1", "2026-03"), listOf(linea("l1", "p1", 0)))
+            db.planDao().guardarPlanConLineas(plan("p1", "2026-03"), listOf(linea("l1", "2026-03", orden = 0)))
 
-            db.planDao().guardarPlanConLineas(plan("p1", "2026-03"), listOf(linea("l2", "p1", 0)))
+            db.planDao().guardarPlanConLineas(plan("p1", "2026-03"), listOf(linea("l2", "2026-03", orden = 0)))
 
             val guardado = db.planDao().obtenerPorMes("2026-03")
             guardado?.lineas?.map { it.id } shouldBe listOf("l2")
@@ -312,6 +313,86 @@ class DaosTest {
 
     // --- Categorias ---
 
+    // El bug que destapo la revision: con el id como clave primaria y un indice
+    // unico sobre el mes, borrar el plan de marzo dejaba el mes bloqueado para
+    // siempre. Con el mes como clave, volver a crearlo lo restaura.
+    @Test
+    fun `tras borrar el plan de un mes se puede crear otro`() =
+        runTest {
+            db.planDao().guardarPlanConLineas(plan("p1", "2026-03"), emptyList())
+            db.planDao().marcarEliminado("2026-03", AHORA)
+            db.planDao().obtenerPorMes("2026-03").shouldBeNull()
+
+            db.planDao().guardarPlanConLineas(plan("p2", "2026-03"), emptyList())
+
+            db
+                .planDao()
+                .obtenerPorMes("2026-03")
+                ?.plan
+                ?.id shouldBe "p2"
+        }
+
+    @Test
+    fun `borrar el plan se lleva sus lineas por cascada`() =
+        runTest {
+            db.planDao().guardarPlanConLineas(
+                plan("p1", "2026-03"),
+                listOf(linea("l1", "2026-03", orden = 0)),
+            )
+
+            db.planDao().guardarPlanConLineas(plan("p2", "2026-03"), emptyList())
+
+            db.planDao().obtenerPorMes("2026-03")?.lineas shouldBe emptyList()
+        }
+
+    // --- Categorias ---
+
+    // Contaba tambien las eliminadas, asi que un usuario que las borrara todas
+    // se habria quedado sin ninguna y sin volver a sembrarlas.
+    @Test
+    fun `el recuento de categorias ignora las eliminadas`() =
+        runTest {
+            db.categoriaDao().guardar(
+                CategoriaEntity(id = "c1", nombre = "Comida", creadaEn = AHORA, actualizadaEn = AHORA),
+            )
+            db.categoriaDao().marcarEliminada("c1", AHORA)
+
+            db.categoriaDao().cuantasVigentesHay() shouldBe 0
+        }
+
+    @Test
+    fun `un movimiento no puede apuntar a una categoria inexistente`() =
+        runTest {
+            db.cuentaDao().guardar(cuenta("c1"))
+
+            shouldThrow<SQLiteConstraintException> {
+                db.transaccionDao().guardar(
+                    transaccion("t1", "2026-03-15").copy(categoriaId = "fantasma"),
+                )
+            }
+        }
+
+    // Un movimiento que ya ocurrio no puede desaparecer porque el usuario quite
+    // esa linea de su plan: se queda sin linea asociada y sigue contando.
+    @Test
+    fun `quitar una linea del plan deja el movimiento sin linea, no lo borra`() =
+        runTest {
+            db.cuentaDao().guardar(cuenta("c1"))
+            db.planDao().guardarPlanConLineas(
+                plan("p1", "2026-03"),
+                listOf(linea("l1", "2026-03", orden = 0)),
+            )
+            db.transaccionDao().guardar(
+                transaccion("t1", "2026-03-15").copy(lineaDePlanId = "l1"),
+            )
+
+            db.planDao().guardarPlanConLineas(plan("p1", "2026-03"), emptyList())
+
+            val movimiento = db.transaccionDao().obtener("t1")
+            movimiento.shouldNotBeNull()
+            movimiento.lineaDePlanId.shouldBeNull()
+        }
+
     @Test
     fun `guarda una jerarquia de dos niveles`() =
         runTest {
@@ -328,7 +409,7 @@ class DaosTest {
 
             db.categoriaDao().guardarTodas(listOf(madre, hija))
 
-            db.categoriaDao().cuantasHay() shouldBe 2
+            db.categoriaDao().cuantasVigentesHay() shouldBe 2
             db.categoriaDao().obtener("resto")?.padreId shouldBe "comida"
         }
 
