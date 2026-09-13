@@ -13,6 +13,7 @@ dependencies {
     api(projects.core.domain)
     implementation(projects.core.common)
 
+    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore)
     implementation(libs.androidx.sqlite.ktx)
     implementation(libs.sqlcipher)
@@ -25,4 +26,14 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.room.testing)
+
+    // El cifrado usa librerias nativas que la JVM no carga, asi que la unica
+    // forma de comprobar que el archivo queda cifrado de verdad es en un
+    // dispositivo. Estos tests no corren en CI (ver docs/02).
+    androidTestImplementation(libs.androidx.test.junit)
+    androidTestImplementation(libs.androidx.test.core)
+    // El runner que declara testInstrumentationRunner; sin el, el APK de test
+    // se instala pero no arranca.
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.kotest.assertions.core)
 }
