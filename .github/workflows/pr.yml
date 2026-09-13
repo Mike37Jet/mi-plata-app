@@ -22,16 +22,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Configurar JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
 
+      # Se queda en v5 a proposito. La v6 extrajo el cacheo a una libreria
+      # separada que ya no es open-source, y de paso elimino el soporte de
+      # configuration-cache. La v5 ya corre en node24, que es lo unico que
+      # hacia falta aqui.
       - name: Configurar Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           # Solo se escribe cache desde main; los PR lo leen. Evita que un PR
           # envenene el cache compartido.
@@ -61,7 +65,7 @@ jobs:
 
       - name: Subir reportes
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reportes-de-verificacion
           path: |
