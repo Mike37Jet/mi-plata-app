@@ -1,5 +1,6 @@
 import com.miplata.convention.configureDetekt
 import com.miplata.convention.configureKotlinJvm
+import com.miplata.convention.forbidAndroidPlugins
 import com.miplata.convention.library
 import com.miplata.convention.libs
 import org.gradle.api.Plugin
@@ -27,6 +28,7 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
 
             configureKotlinJvm()
             configureDetekt()
+            forbidAndroidPlugins()
 
             dependencies {
                 add("implementation", libs.library("kotlinx-coroutines-core"))

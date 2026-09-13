@@ -1,3 +1,4 @@
+import com.miplata.convention.enforceFeatureDependencyRules
 import com.miplata.convention.library
 import com.miplata.convention.libs
 import org.gradle.api.Plugin
@@ -34,5 +35,7 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
 
                 add("androidTestImplementation", libs.library("androidx-test-junit"))
             }
+
+            enforceFeatureDependencyRules()
         }
 }
