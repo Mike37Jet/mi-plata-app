@@ -34,10 +34,17 @@ pero el campo existe desde el día 1 — agregarlo después es una migración do
 
 ## 2. El plan mensual (el núcleo de tu caso de uso)
 
+El mes se representa con un tipo propio, `Mes`, y no con el `YearMonth` de una
+librería de fechas: es un concepto del negocio con operaciones propias
+(`siguiente()`, `anterior()`, `contiene(fecha)`), y tenerlo en el dominio evita
+atar el modelo a la API de una dependencia externa. Por dentro es un solo entero
+—los meses transcurridos—, de donde salen gratis el orden natural y la
+aritmética sin casos especiales en diciembre.
+
 ```kotlin
 data class PlanMensual(
     val id: PlanId,
-    val mes: YearMonth,
+    val mes: Mes,
     val lineas: List<LineaDePlan>,
 )
 
@@ -136,9 +143,26 @@ nunca como fuente de verdad.
 
 ## 5. Nunca borrar: `SoftDelete` + auditoría
 
-Todas las entidades llevan `creadoEn`, `actualizadoEn` y `eliminadoEn: Instant?`.
-Un `DELETE` real en una app de finanzas es pérdida de datos irreversible. El
-borrado lógico además habilita deshacer y hace el backup incremental trivial.
+Un `DELETE` real en una app de finanzas es pérdida de datos irreversible. Nada se
+borra de verdad: se marca como eliminado. Eso además habilita deshacer y hace el
+backup incremental trivial.
+
+**Dónde viven esos campos: en la capa de datos, no en los modelos de dominio.**
+
+La versión inicial de este documento los ponía en cada entidad del dominio
+(`creadoEn`, `actualizadoEn`, `eliminadoEn`). Al implementarlo quedó claro que es
+el sitio equivocado: son metadatos de *cómo se guarda* una entidad, no parte de
+las reglas de negocio. Ninguna regla financiera los consulta —el disponible de
+marzo no depende de cuándo se creó la fila— y en cambio ensucian cada
+constructor, cada test y cada `copy`.
+
+El repositorio los gestiona y filtra lo eliminado, así que el dominio solo ve lo
+vigente. Cuando una regla de negocio necesite de verdad una marca temporal (por
+ejemplo, "deshacer lo borrado en los últimos 30 días"), entra en el dominio en
+ese momento y con esa justificación.
+
+Lo que sí es del dominio es el estado de negocio que se le parece: `archivada` en
+`Cuenta` y `activa` en `LineaDePlan`. Esos sí los consultan las reglas.
 
 ## 6. Los cálculos (use cases de `domain`)
 
