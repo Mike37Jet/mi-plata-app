@@ -1,5 +1,6 @@
 plugins {
     `kotlin-dsl`
+    alias(libs.plugins.detekt)
 }
 
 group = "com.miplata.buildlogic"
@@ -27,6 +28,16 @@ dependencies {
     compileOnly(libs.ksp.gradlePlugin)
     compileOnly(libs.detekt.gradlePlugin)
     compileOnly(libs.room.gradlePlugin)
+}
+
+// build-logic es un build incluido: `./gradlew detekt` desde la raiz NO lo
+// alcanza. Sin esto, el codigo mas intrincado del repositorio (los convention
+// plugins) seria el unico sin analisis estatico. CI lo invoca con
+// `./gradlew -p build-logic detekt`.
+detekt {
+    buildUponDefaultConfig = true
+    config.setFrom(files("../../config/detekt/detekt.yml"))
+    parallel = true
 }
 
 gradlePlugin {

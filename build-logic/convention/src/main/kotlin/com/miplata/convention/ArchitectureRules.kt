@@ -51,8 +51,13 @@ internal fun Project.enforceFeatureDependencyRules() {
     afterEvaluate {
         val violations =
             configurations
-                .flatMap { configuration -> configuration.dependencies.map { configuration.name to it } }
-                .mapNotNull { (configurationName, dependency) ->
+                // Solo las configuraciones DECLARABLES (implementation, api...).
+                // Las resolubles (debugUnitTestCompileClasspath y compania)
+                // heredan las mismas dependencias, y recorrerlas reportaria la
+                // misma violacion cuatro veces.
+                .filter { it.isCanBeDeclared }
+                .flatMap { configuration -> configuration.dependencies }
+                .mapNotNull { dependency ->
                     val dependencyPath = (dependency as? ProjectDependency)?.path ?: return@mapNotNull null
                     val reason =
                         when {
@@ -64,7 +69,7 @@ internal fun Project.enforceFeatureDependencyRules() {
 
                             else -> return@mapNotNull null
                         }
-                    "  $path ($configurationName) -> $dependencyPath: $reason"
+                    "  $path -> $dependencyPath: $reason"
                 }.distinct()
 
         if (violations.isNotEmpty()) {

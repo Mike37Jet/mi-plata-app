@@ -46,6 +46,10 @@ jobs:
       - name: Analisis estatico (detekt)
         run: ./gradlew detekt
 
+      # build-logic es un build incluido y no lo alcanza el detekt de arriba.
+      - name: Analisis estatico (build-logic)
+        run: ./gradlew -p build-logic detekt
+
       - name: Android Lint
         run: ./gradlew lintDebug
 
