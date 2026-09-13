@@ -80,6 +80,23 @@ data class CategoriaEntity(
             childColumns = ["cuentaDestinoId"],
             onDelete = ForeignKey.RESTRICT,
         ),
+        ForeignKey(
+            entity = CategoriaEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["categoriaId"],
+            onDelete = ForeignKey.RESTRICT,
+        ),
+        ForeignKey(
+            entity = LineaDePlanEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["lineaDePlanId"],
+            // SET NULL y no RESTRICT: las lineas de un plan se reemplazan al
+            // editarlo, y un movimiento que ya ocurrio no puede desaparecer
+            // porque el usuario haya quitado esa linea de su plan. Se queda sin
+            // linea asociada, que es exactamente lo que significa un gasto que
+            // no pertenece a ninguna: sigue contando en los totales reales.
+            onDelete = ForeignKey.SET_NULL,
+        ),
     ],
     indices = [
         // La consulta mas frecuente con diferencia es "los movimientos de este
@@ -110,37 +127,74 @@ data class TransaccionEntity(
     val eliminadaEn: Long? = null,
 )
 
+/**
+ * El plan de un mes.
+ *
+ * **La clave primaria es el mes, no el `id`**, y es deliberado: un mes tiene
+ * exactamente un plan, porque el plan ES del mes (ADR 0003). Con el `id` como
+ * clave y un indice unico sobre `mes`, borrar el plan de marzo dejaba el mes
+ * bloqueado para siempre: la fila borrada seguia ocupando el indice unico y
+ * crear un plan nuevo para marzo fallaba con UNIQUE, aunque todas las consultas
+ * la ignorasen.
+ *
+ * Con el mes como clave, volver a crear el plan de un mes borrado es un upsert
+ * sobre la misma fila: lo restaura. El `id` sigue existiendo porque es la
+ * identidad que usa el dominio y la que viajara en el backup, pero no es la
+ * identidad de la fila.
+ */
 @Entity(
     tableName = "planes",
-    // Un mes no puede tener dos planes: el plan ES del mes (ADR 0003).
-    indices = [Index(value = ["mes"], unique = true)],
+    // El id sigue siendo unico: las lineas y los movimientos lo referencian.
+    indices = [Index(value = ["id"], unique = true)],
 )
 data class PlanEntity(
-    @PrimaryKey val id: String,
     /** Mes ISO `AAAA-MM`. Ordena bien como texto. */
-    val mes: String,
+    @PrimaryKey val mes: String,
+    val id: String,
     val creadoEn: Long,
     val actualizadoEn: Long,
     val eliminadoEn: Long? = null,
 )
 
+/**
+ * Una linea del plan de un mes.
+ *
+ * **Es la unica tabla sin borrado logico**, y la excepcion esta razonada: las
+ * lineas son el cuerpo del plan, no datos independientes. Al guardar un plan se
+ * reemplazan en bloque, asi que marcarlas como eliminadas dejaria una fila
+ * muerta por cada edicion -y editar el plan es lo que el usuario hace todo el
+ * rato-. La historia no se pierde por esto: cada mes tiene su propio snapshot,
+ * y los meses pasados conservan sus lineas intactas.
+ */
 @Entity(
     tableName = "lineas_de_plan",
     foreignKeys = [
         ForeignKey(
             entity = PlanEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["planId"],
+            parentColumns = ["mes"],
+            childColumns = ["planMes"],
             // Aqui si hay pertenencia de verdad: una linea sin su plan no
             // significa nada.
             onDelete = ForeignKey.CASCADE,
         ),
+        ForeignKey(
+            entity = CategoriaEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["categoriaId"],
+            onDelete = ForeignKey.RESTRICT,
+        ),
+        ForeignKey(
+            entity = CuentaEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["cuentaId"],
+            onDelete = ForeignKey.RESTRICT,
+        ),
     ],
-    indices = [Index("planId"), Index("categoriaId"), Index("cuentaId")],
+    indices = [Index("planMes"), Index("categoriaId"), Index("cuentaId")],
 )
 data class LineaDePlanEntity(
     @PrimaryKey val id: String,
-    val planId: String,
+    val planMes: String,
     val nombre: String,
     /** Nombre de la constante de `TipoDeLinea`. */
     val tipo: String,
@@ -160,5 +214,4 @@ data class LineaDePlanEntity(
     val orden: Int,
     val creadaEn: Long,
     val actualizadaEn: Long,
-    val eliminadaEn: Long? = null,
 )

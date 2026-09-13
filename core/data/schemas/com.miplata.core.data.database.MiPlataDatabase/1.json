@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "0783cde215926f4c59557deb6b8a6f9c",
+    "identityHash": "e399679a51cad39379f204eb28b04d25",
     "entities": [
       {
         "tableName": "cuentas",
@@ -159,7 +159,7 @@
       },
       {
         "tableName": "transacciones",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fecha` TEXT NOT NULL, `montoCentavos` INTEGER NOT NULL, `tipo` TEXT NOT NULL, `cuentaOrigenId` TEXT NOT NULL, `cuentaDestinoId` TEXT, `categoriaId` TEXT, `lineaDePlanId` TEXT, `nota` TEXT, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, `eliminadaEn` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`cuentaOrigenId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`cuentaDestinoId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fecha` TEXT NOT NULL, `montoCentavos` INTEGER NOT NULL, `tipo` TEXT NOT NULL, `cuentaOrigenId` TEXT NOT NULL, `cuentaDestinoId` TEXT, `categoriaId` TEXT, `lineaDePlanId` TEXT, `nota` TEXT, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, `eliminadaEn` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`cuentaOrigenId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`cuentaDestinoId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`categoriaId`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`lineaDePlanId`) REFERENCES `lineas_de_plan`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -304,22 +304,44 @@
             "referencedColumns": [
               "id"
             ]
+          },
+          {
+            "table": "categorias",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "lineas_de_plan",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "lineaDePlanId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
           }
         ]
       },
       {
         "tableName": "planes",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `mes` TEXT NOT NULL, `creadoEn` INTEGER NOT NULL, `actualizadoEn` INTEGER NOT NULL, `eliminadoEn` INTEGER, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mes` TEXT NOT NULL, `id` TEXT NOT NULL, `creadoEn` INTEGER NOT NULL, `actualizadoEn` INTEGER NOT NULL, `eliminadoEn` INTEGER, PRIMARY KEY(`mes`))",
         "fields": [
           {
-            "fieldPath": "id",
-            "columnName": "id",
+            "fieldPath": "mes",
+            "columnName": "mes",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "mes",
-            "columnName": "mes",
+            "fieldPath": "id",
+            "columnName": "id",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -344,24 +366,24 @@
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "id"
+            "mes"
           ]
         },
         "indices": [
           {
-            "name": "index_planes_mes",
+            "name": "index_planes_id",
             "unique": true,
             "columnNames": [
-              "mes"
+              "id"
             ],
             "orders": [],
-            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_planes_mes` ON `${TABLE_NAME}` (`mes`)"
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_planes_id` ON `${TABLE_NAME}` (`id`)"
           }
         ]
       },
       {
         "tableName": "lineas_de_plan",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `planId` TEXT NOT NULL, `nombre` TEXT NOT NULL, `tipo` TEXT NOT NULL, `montoPlanificadoCentavos` INTEGER NOT NULL, `categoriaId` TEXT, `cuentaId` TEXT, `diaDelMes` INTEGER, `activa` INTEGER NOT NULL, `orden` INTEGER NOT NULL, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, `eliminadaEn` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`planId`) REFERENCES `planes`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `planMes` TEXT NOT NULL, `nombre` TEXT NOT NULL, `tipo` TEXT NOT NULL, `montoPlanificadoCentavos` INTEGER NOT NULL, `categoriaId` TEXT, `cuentaId` TEXT, `diaDelMes` INTEGER, `activa` INTEGER NOT NULL, `orden` INTEGER NOT NULL, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`planMes`) REFERENCES `planes`(`mes`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`categoriaId`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`cuentaId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -370,8 +392,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "planId",
-            "columnName": "planId",
+            "fieldPath": "planMes",
+            "columnName": "planMes",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -431,11 +453,6 @@
             "columnName": "actualizadaEn",
             "affinity": "INTEGER",
             "notNull": true
-          },
-          {
-            "fieldPath": "eliminadaEn",
-            "columnName": "eliminadaEn",
-            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -446,13 +463,13 @@
         },
         "indices": [
           {
-            "name": "index_lineas_de_plan_planId",
+            "name": "index_lineas_de_plan_planMes",
             "unique": false,
             "columnNames": [
-              "planId"
+              "planMes"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_lineas_de_plan_planId` ON `${TABLE_NAME}` (`planId`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_lineas_de_plan_planMes` ON `${TABLE_NAME}` (`planMes`)"
           },
           {
             "name": "index_lineas_de_plan_categoriaId",
@@ -479,7 +496,29 @@
             "onDelete": "CASCADE",
             "onUpdate": "NO ACTION",
             "columns": [
-              "planId"
+              "planMes"
+            ],
+            "referencedColumns": [
+              "mes"
+            ]
+          },
+          {
+            "table": "categorias",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "cuentas",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cuentaId"
             ],
             "referencedColumns": [
               "id"
@@ -490,7 +529,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0783cde215926f4c59557deb6b8a6f9c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e399679a51cad39379f204eb28b04d25')"
     ]
   }
 }

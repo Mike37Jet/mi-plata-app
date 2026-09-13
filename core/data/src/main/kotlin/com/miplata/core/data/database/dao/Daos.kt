@@ -63,8 +63,15 @@ interface CategoriaDao {
         instante: Long,
     )
 
-    @Query("SELECT COUNT(*) FROM categorias")
-    suspend fun cuantasHay(): Int
+    /**
+     * Cuantas categorias vigentes hay.
+     *
+     * Filtra las eliminadas como el resto del DAO. Sirve para decidir si hay que
+     * sembrar las categorias por defecto (2.5): contando tambien las eliminadas,
+     * un usuario que las borrara todas se quedaria sin ninguna y sin sembrado.
+     */
+    @Query("SELECT COUNT(*) FROM categorias WHERE eliminadaEn IS NULL")
+    suspend fun cuantasVigentesHay(): Int
 }
 
 @Dao
@@ -120,7 +127,7 @@ interface TransaccionDao {
  */
 data class PlanConLineas(
     @Embedded val plan: PlanEntity,
-    @Relation(parentColumn = "id", entityColumn = "planId")
+    @Relation(parentColumn = "mes", entityColumn = "planMes")
     val lineas: List<LineaDePlanEntity>,
 ) {
     /**
@@ -131,6 +138,10 @@ data class PlanConLineas(
      * eso se aplica aqui, pegado al dato, y no en cada sitio que lea un plan.
      * Usar [lineas] directamente funcionaria hoy y se desordenaria el dia menos
      * pensado.
+     *
+     * No hace falta filtrar eliminadas: las lineas son las unicas filas sin
+     * borrado logico, porque son el cuerpo del plan y se reemplazan en bloque
+     * (ver `LineaDePlanEntity`).
      */
     val lineasOrdenadas: List<LineaDePlanEntity> get() = lineas.sortedBy { it.orden }
 }
@@ -169,8 +180,8 @@ interface PlanDao {
     @Upsert
     suspend fun guardarLineas(lineas: List<LineaDePlanEntity>)
 
-    @Query("DELETE FROM lineas_de_plan WHERE planId = :planId")
-    suspend fun borrarLineasDe(planId: String)
+    @Query("DELETE FROM lineas_de_plan WHERE planMes = :mes")
+    suspend fun borrarLineasDe(mes: String)
 
     /**
      * Guarda el plan y reemplaza sus lineas de una sola vez.
@@ -185,7 +196,7 @@ interface PlanDao {
         lineas: List<LineaDePlanEntity>,
     ) {
         guardarPlan(plan)
-        borrarLineasDe(plan.id)
+        borrarLineasDe(plan.mes)
         guardarLineas(lineas)
     }
 
