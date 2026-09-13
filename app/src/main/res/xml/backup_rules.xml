@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Backup automático de Android desactivado por completo.
+
+  Motivo (docs/05): la base de datos está cifrada con SQLCipher y su clave vive
+  en el Android Keystore, que NO es exportable. Si Google respaldara el archivo
+  cifrado sin la clave, la restauración produciría una base ilegible sin ningún
+  error visible. El backup de esta app es explícito o no es.
+-->
+<full-backup-content>
+    <exclude domain="root" path="." />
+    <exclude domain="database" path="." />
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="file" path="." />
+</full-backup-content>

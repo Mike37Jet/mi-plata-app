@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono provisional. Se reemplaza por el definitivo en la Etapa 7. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group android:scaleX="0.55"
+        android:scaleY="0.55"
+        android:translateX="24.3"
+        android:translateY="24.3">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,8 L54,100 M30,26 L78,26 M30,46 L78,46 M54,64 C40,64 32,56 32,44 C32,32 40,24 54,24 C68,24 76,32 76,44"
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="8"
+            android:strokeLineCap="round" />
+    </group>
+</vector>

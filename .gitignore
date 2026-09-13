@@ -31,3 +31,21 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# --- mi-plata-app ---
+# Baselines: se commitean a propósito cuando existen (son el contrato de
+# "esta deuda es conocida"), así que NO se ignoran.
+
+# Reportes de herramientas de calidad
+build-logic/build/
+**/reports/
+
+# Métricas del compilador de Compose (se generan a demanda)
+**/compose-metrics/
+**/compose-reports/
+
+# macOS
+.DS_Store
+
+# Propiedades de firma (nunca al repo; en CI van por GitHub Secrets)
+keystore.properties

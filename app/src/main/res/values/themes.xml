@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Tema XML mínimo, usado solo por la splash screen antes de que arranque
+      Compose. Todo el theming real (Material 3, dynamic color, modo oscuro) vive
+      en :core:designsystem como código de Compose — Etapa 0.4 del roadmap.
+    -->
+    <style name="Theme.MiPlata.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+        <item name="postSplashScreenTheme">@style/Theme.MiPlata</item>
+    </style>
+
+    <style name="Theme.MiPlata" parent="android:Theme.Material.Light.NoActionBar" />
+</resources>
