@@ -89,12 +89,19 @@ CI=true ./gradlew spotlessCheck detekt lintDebug testDebugUnitTest assembleDebug
 
 ## Hooks de git
 
-Los hooks viven en `.githooks/` y están versionados, pero git **no los activa
-solo** al clonar. Una vez por clon:
+Los hooks viven en `.githooks/` y están versionados. Git no los activa solo al
+clonar, así que **el propio build los instala** en su primera ejecución sobre un
+clon nuevo (ver `settings.gradle.kts`). No hay nada que hacer a mano.
+
+Si alguna vez necesitas activarlos o comprobarlos sin construir:
 
 ```bash
-git config core.hooksPath .githooks
+git config core.hooksPath .githooks   # activar
+git config --get core.hooksPath       # comprobar
 ```
+
+Se omite cuando la variable `CI` está definida: en CI la verificación la hace el
+workflow, no los hooks.
 
 | Hook | Qué hace |
 |---|---|
