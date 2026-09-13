@@ -40,12 +40,26 @@ class MonedaTest {
     }
 
     @Test
-    fun `rechaza codigos que no son ISO 4217`() {
+    fun `rechaza codigos con forma incorrecta`() {
         assertThrows<IllegalArgumentException> { Moneda("US") }
         assertThrows<IllegalArgumentException> { Moneda("USDD") }
         assertThrows<IllegalArgumentException> { Moneda("usd") }
         assertThrows<IllegalArgumentException> { Moneda("US1") }
         assertThrows<IllegalArgumentException> { Moneda("") }
+    }
+
+    // Tienen forma de codigo pero no existen. Un erratazo al escribir la moneda
+    // de una cuenta quedaria guardado para siempre si solo se validara la forma.
+    @Test
+    fun `rechaza codigos con forma valida pero inexistentes`() {
+        assertThrows<IllegalArgumentException> { Moneda("ZZZ") }
+        assertThrows<IllegalArgumentException> { Moneda("USE") }
+        assertThrows<IllegalArgumentException> { Moneda("AAA") }
+    }
+
+    @Test
+    fun `acepta monedas reales de varios paises`() {
+        listOf("USD", "EUR", "COP", "MXN", "JPY").forEach { Moneda(it).codigo shouldBe it }
     }
 }
 

@@ -1,5 +1,7 @@
 package com.miplata.core.domain.model
 
+import java.util.Currency
+
 /**
  * Codigo de moneda ISO 4217: `USD`, `EUR`, `COP`.
  *
@@ -16,11 +18,22 @@ value class Moneda(
         require(codigo.length == LONGITUD_ISO_4217 && codigo.all { it.isLetter() && it.isUpperCase() }) {
             "Un codigo ISO 4217 son tres letras mayusculas, no '$codigo'"
         }
+        // Comprobar solo la forma dejaba pasar 'ZZZ' o 'USE', que parecen
+        // codigos pero no existen. Un erratazo al escribir la moneda de una
+        // cuenta quedaria guardado para siempre sin que nada lo detectara.
+        require(codigo in CODIGOS_EXISTENTES) {
+            "'$codigo' tiene forma de codigo ISO 4217 pero no es ninguna moneda real"
+        }
     }
 
     override fun toString(): String = codigo
 
     companion object {
         private const val LONGITUD_ISO_4217 = 3
+
+        /** Monedas que el sistema reconoce. Se calcula una sola vez. */
+        private val CODIGOS_EXISTENTES: Set<String> by lazy {
+            Currency.getAvailableCurrencies().mapTo(HashSet()) { it.currencyCode }
+        }
     }
 }

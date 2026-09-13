@@ -18,6 +18,7 @@ import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 private val MARZO = PeriodoMensual(Mes.de(2026, 3))
 private val CUENTA = CuentaId("banco")
@@ -173,6 +174,35 @@ class CalcularResumenMensualUseCaseTest {
                 )
 
             resumen.gastosReales shouldBe Money.deUnidades(100)
+        }
+    }
+
+    @Nested
+    @DisplayName("coherencia entre plan y periodo")
+    inner class Coherencia {
+        // Un resumen etiquetado como marzo con las cifras de abril son numeros
+        // plausibles y silenciosamente equivocados: la peor clase de error en
+        // una app de finanzas.
+        @Test
+        fun `rechaza un plan que no es del mes del periodo`() {
+            val planDeAbril =
+                PlanMensual(
+                    id = PlanId("p"),
+                    mes = Mes.de(2026, 4),
+                    lineas = listOf(linea("i", TipoDeLinea.INGRESO, 1000)),
+                )
+
+            assertThrows<IllegalArgumentException> { calcular(MARZO, planDeAbril, emptyList()) }
+        }
+
+        @Test
+        fun `acepta el plan del mes correcto aunque el periodo este desplazado`() {
+            val periodoDesplazado = PeriodoMensual(Mes.de(2026, 3), primerDia = 25)
+
+            val resumen =
+                calcular(periodoDesplazado, plan(linea("i", TipoDeLinea.INGRESO, 1000)), emptyList())
+
+            resumen.ingresosPlanificados shouldBe Money.deUnidades(1000)
         }
     }
 

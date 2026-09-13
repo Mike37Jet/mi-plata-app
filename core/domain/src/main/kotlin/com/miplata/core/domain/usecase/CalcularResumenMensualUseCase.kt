@@ -28,6 +28,15 @@ class CalcularResumenMensualUseCase {
         plan: PlanMensual?,
         transacciones: List<Transaccion>,
     ): ResumenMensual {
+        // Pasar el plan de abril para un periodo de marzo produciria un resumen
+        // etiquetado como marzo con las cifras de abril: cifras plausibles y
+        // silenciosamente equivocadas, que es la peor clase de error en una app
+        // de finanzas. Es un fallo de programacion -el repositorio busca el plan
+        // por mes- asi que falla rapido y ruidoso (docs/01).
+        require(plan == null || plan.mes == periodo.mes) {
+            "El plan es de ${plan?.mes} pero el periodo es de ${periodo.mes}"
+        }
+
         // Dos filtros antes de sumar nada, y los dos importan:
         //
         // 1. Solo cuentan los movimientos del periodo. Un gasto de abril no
