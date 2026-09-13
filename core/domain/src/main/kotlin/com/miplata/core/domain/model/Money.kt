@@ -37,8 +37,6 @@ value class Money private constructor(
 
     operator fun times(factor: Int): Money = Money(Math.multiplyExact(centavos, factor.toLong()))
 
-    operator fun times(factor: Long): Money = Money(Math.multiplyExact(centavos, factor))
-
     operator fun unaryMinus(): Money = Money(Math.negateExact(centavos))
 
     fun valorAbsoluto(): Money = if (esNegativo) -this else this
