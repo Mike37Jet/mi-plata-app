@@ -168,29 +168,49 @@ Lo que sí es del dominio es el estado de negocio que se le parece: `archivada` 
 
 ```kotlin
 data class ResumenMensual(
-    val mes: YearMonth,
+    val periodo: PeriodoMensual,
     val ingresosPlanificados: Money,
     val ingresosReales: Money,
-    val gastosFijosPlanificados: Money,
-    val gastosVariablesPlanificados: Money,
+    val gastosPlanificados: Money,      // incluye el ahorro: también resta
     val gastosReales: Money,
-    val disponiblePlanificado: Money,   // ingresos plan − gastos plan
-    val disponibleReal: Money,          // ingresos reales − gastos reales
     val desviacionPorLinea: List<DesviacionLinea>,
-    val enSobregiro: Boolean,
-)
+) {
+    val disponiblePlanificado: Money    // ingresos plan − gastos plan
+    val disponibleReal: Money           // ingresos reales − gastos reales
+    val enSobregiro: Boolean
+    val sobregiroPorIngresosQueNoLlegaron: Boolean
+}
 ```
+
+Las cifras derivadas son propiedades calculadas, no campos: así no pueden
+quedarse desincronizadas de los valores de los que salen.
+
+`sobregiroPorIngresosQueNoLlegaron` distingue las dos causas de un mes en rojo,
+porque la reacción es distinta: si te pasaste gastando, recortas; si el ingreso
+no llegó, el problema es de cobro y recortar no lo arregla.
+
+### `PeriodoMensual`: el mes no siempre empieza el día 1
+
+El resumen no se calcula sobre un `Mes` sino sobre un `PeriodoMensual`, que es
+un mes más el día en que empieza. Para casi todo el mundo coincide con el mes
+natural, pero quien cobra el 25 tiene su mes económico del 25 al 24; obligarle a
+razonar en meses naturales le parte el sueldo en dos y hace que ningún resumen
+le cuadre. Si el día elegido no existe en un mes concreto —un 31 en febrero— se
+recorta al último disponible.
 
 Producido por `CalcularResumenMensualUseCase`. Función pura: recibe plan +
 transacciones, devuelve resumen. Sin I/O, sin Android, testeable exhaustivamente.
 
 ### Casos borde que los tests deben cubrir (lista viva)
 
-- Mes sin plan y sin transacciones → todo en cero, sin dividir por cero en %
-- Transacción sin línea de plan asociada
-- Línea de plan desactivada a mitad de mes
-- Transferencia entre cuentas propias → **no** es ingreso ni gasto, no afecta el disponible
-- Gasto con fecha fuera del mes del plan
-- Ingreso planificado que nunca llegó (sobregiro por ingreso faltante, no por gasto)
-- Mes con primer día financiero distinto de 1 (p.ej. el mes va del 25 al 24)
-- Montos que exceden `Int` (hiperinflación / monedas sin decimales)
+Todos cubiertos en `CalcularResumenMensualUseCaseTest`:
+
+- ✅ Mes sin plan y sin transacciones → todo en cero, sin dividir por cero en %
+- ✅ Transacción sin línea de plan asociada → no sale en las desviaciones, sí en el total
+- ✅ Línea de plan desactivada a mitad de mes
+- ✅ Transferencia entre cuentas propias → **no** es ingreso ni gasto
+- ✅ Gasto con fecha fuera del mes del plan
+- ✅ Ingreso planificado que nunca llegó (sobregiro por ingreso faltante, no por gasto)
+- ✅ Mes con primer día financiero distinto de 1 (el mes va del 25 al 24)
+- ✅ Montos que exceden `Int` (hiperinflación / monedas sin decimales)
+- ✅ Desviación desfavorable según el tipo: pasarse en un gasto vs. quedarse corto en un ingreso
