@@ -78,11 +78,25 @@ Dashboard con Vico · gastos por categoría · tendencia mensual · flujo de caj
 proyectado · comparativa mes a mes · deudas con amortización · tarjetas con
 fecha de corte · exportación a CSV.
 
-## Etapa 7 — Pulido para publicar
+## Etapa 7 — Pulido
 
-Baseline Profiles · R8 full mode · accesibilidad (TalkBack, tamaños de fuente,
-contraste) · onboarding · ficha de Play Store · política de privacidad
-("tus datos nunca salen del dispositivo" — y es verdad, ver `05`).
+> **La app no se va a publicar en Play Store.** Es de uso personal y se instala
+> como APK de release firmado con un keystore local (ver `docs/06`). Eso saca de
+> aquí la ficha de la tienda y la política de privacidad, que solo existían para
+> cumplir con Google.
+>
+> Lo que queda **no** era pulido de publicación: era pulido de uso.
+
+| # | Entregable | Rama |
+|---|---|---|
+| 7.1 | **Accesibilidad**: que nada se rompa al subir el tamaño de letra del sistema, y contraste suficiente en ambos temas | `feat/accessibility` |
+| 7.2 | **Onboarding**: la primera ejecución guía a crear la primera cuenta y el primer plan, en vez de dejar una pantalla vacía | `feat/onboarding` |
+| 7.3 | **Baseline Profiles** con Macrobenchmark, para que el arranque no dependa del JIT | `perf/baseline-profiles` |
+| 7.4 | APK de release firmado y reproducible desde un `./gradlew assembleRelease` | `chore/release-apk` |
+
+La accesibilidad entra aquí por orden, pero **se tiene en cuenta desde la Etapa 3**:
+respetar el tamaño de fuente del sistema es casi gratis mientras escribes una
+pantalla, y carísimo cuando ya hay diez hechas con tamaños fijos.
 
 ---
 

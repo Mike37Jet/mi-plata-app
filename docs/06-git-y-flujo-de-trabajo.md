@@ -129,7 +129,10 @@ Historial limpio, `git revert` de una feature entera es un solo comando,
 - `MINOR` — funcionalidad nueva
 - `PATCH` — correcciones
 
-`versionCode` para Play Store se deriva del tag automáticamente en CI.
+`versionCode` y `versionName` se fijan en el convention plugin de `:app` y se
+suben a mano al sacar una versión. No hay automatización desde el tag porque no
+hay tienda que exija un `versionCode` monótono: el tag es para ti, no para
+Google.
 
 ## CI/CD — GitHub Actions
 
@@ -143,13 +146,33 @@ Historial limpio, `git revert` de una feature entera es un solo comando,
 6. subir reportes de test como artifact
 ```
 
-**`.github/workflows/release.yml`** (en tag `v*`):
+**No hay workflow de release, y es deliberado.**
+
+La app no se publica en ninguna tienda: se instala como APK firmado con un
+keystore local. Meter la clave de firma en GitHub Secrets para automatizar algo
+que se hace tres veces al año sería añadir un secreto que proteger a cambio de
+nada.
+
+### Sacar una versión instalable
+
+```bash
+# Una sola vez: crear el keystore. Guárdalo FUERA del repositorio.
+keytool -genkeypair -v -keystore ~/.keys/mi-plata.jks \
+  -alias mi-plata -keyalg RSA -keysize 4096 -validity 10000
+
+# Y un keystore.properties en la raíz (ya está en .gitignore)
+cp keystore.properties.example keystore.properties   # y rellénalo
+
+./gradlew assembleRelease
+# app/build/outputs/apk/release/app-release.apk
 ```
-1. todo lo anterior
-2. ./gradlew bundleRelease  (firmado con keystore desde GitHub Secrets)
-3. generar CHANGELOG desde los conventional commits
-4. crear GitHub Release con el .aab adjunto
-```
+
+Si no existe `keystore.properties`, el build de release **sigue funcionando**
+pero sale sin firmar: así CI puede compilarlo sin tener acceso a ninguna clave.
+
+**El keystore no se pierde ni se sube al repositorio.** Si lo pierdes no puedes
+actualizar la app instalada sin desinstalarla antes, y desinstalar borra la base
+de datos. Ahí es donde tu backup (docs/05) deja de ser teórico.
 
 **`renovate.json`** — actualización automática de dependencias con PRs
 agrupados. Mejor que Dependabot para el version catalog de Gradle.

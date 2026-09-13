@@ -21,6 +21,16 @@ Una sola rama de larga vida (`main`), protegida. Ramas de feature de vida corta
 | GitHub Flow / Trunk-based | Simple, integración continua real, historial limpio | Exige disciplina de partir el trabajo en piezas pequeñas | **Aceptado** |
 | Commits directos a `main` | Máxima velocidad | Sin CI previa; nada impide romper `main` | Rechazado |
 
+## Nota posterior (2026-09-13)
+
+El contexto decía "releases a Play Store". Ya no: la app es de uso personal y se
+instala como APK firmado con un keystore local. **La decisión no cambia** —
+trunk-based sigue siendo lo correcto, y de hecho el argumento se refuerza: sin
+tienda, tampoco hay releases paralelas que justificaran ramas de larga vida.
+
+Se anota aquí en lugar de reescribir el contexto: un ADR registra lo que se
+sabía cuando se decidió.
+
 ## Consecuencias
 
 - "Include administrators" queda activado en la protección de rama: la regla
