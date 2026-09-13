@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">mi plata</string>
+    <string name="placeholder_title">mi plata</string>
+    <string name="placeholder_subtitle">Scaffolding listo. Siguiente: el dominio.</string>
+</resources>

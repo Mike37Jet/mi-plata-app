@@ -1,0 +1,74 @@
+# Configuración de detekt.
+#
+# `buildUponDefaultConfig = true` está activo en el convention plugin, así que
+# aquí solo van las DESVIACIONES respecto del set por defecto. Cada una lleva su
+# motivo; una regla desactivada sin explicación es deuda técnica escondida.
+
+build:
+  maxIssues: 0
+
+complexity:
+  LongMethod:
+    active: true
+    threshold: 40
+    # Los @Composable son declarativos: un árbol de UI de 60 líneas es normal y
+    # partirlo por partirlo empeora la legibilidad.
+    ignoreAnnotated: ['Composable']
+  LongParameterList:
+    active: true
+    functionThreshold: 6
+    constructorThreshold: 8
+    ignoreAnnotated: ['Composable', 'Inject']
+  TooManyFunctions:
+    active: true
+    thresholdInFiles: 15
+    thresholdInClasses: 15
+    ignoreAnnotated: ['Composable']
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 12
+
+naming:
+  FunctionNaming:
+    active: true
+    # Los @Composable se nombran en PascalCase por convención de Compose.
+    ignoreAnnotated: ['Composable']
+  TopLevelPropertyNaming:
+    active: true
+    constantPattern: '[A-Z][_A-Za-z0-9]*'
+
+style:
+  MagicNumber:
+    active: true
+    ignoreNumbers: ['-1', '0', '1', '2', '100']
+    ignoreAnnotated: ['Composable', 'Preview']
+    ignorePropertyDeclaration: true
+  MaxLineLength:
+    active: true
+    maxLineLength: 120
+  ReturnCount:
+    active: true
+    max: 3
+  UnusedPrivateMember:
+    active: true
+    ignoreAnnotated: ['Preview']
+  ForbiddenComment:
+    active: true
+    # Un TODO sin issue asociado no se hace nunca. Formato exigido:
+    #   TODO(Etapa 3): ...   o   TODO(#42): ...
+    comments:
+      - reason: 'Los TODO deben referenciar una etapa del roadmap o un issue.'
+        value: 'TODO:'
+
+exceptions:
+  TooGenericExceptionCaught:
+    active: true
+  SwallowedException:
+    active: true
+
+potential-bugs:
+  # En una app de finanzas, un !! es un crash esperando a pasar.
+  UnsafeCallOnNullableType:
+    active: true
+  UnsafeCast:
+    active: true
