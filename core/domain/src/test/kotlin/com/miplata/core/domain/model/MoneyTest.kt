@@ -33,6 +33,25 @@ class MoneyTest {
         fun `acepta cantidades negativas`() {
             Money.deCentavos(-1).esNegativo shouldBe true
         }
+
+        @Test
+        fun `clasifica el signo`() {
+            Money.deCentavos(1).let {
+                it.esPositivo shouldBe true
+                it.esNegativo shouldBe false
+                it.esCero shouldBe false
+            }
+            Money.deCentavos(-1).let {
+                it.esPositivo shouldBe false
+                it.esNegativo shouldBe true
+                it.esCero shouldBe false
+            }
+            Money.ZERO.let {
+                it.esPositivo shouldBe false
+                it.esNegativo shouldBe false
+                it.esCero shouldBe true
+            }
+        }
     }
 
     @Nested
