@@ -75,26 +75,23 @@ automático y `git log --oneline` legible de verdad. Se valida en CI con
 
 ## Puesta en marcha del repositorio remoto
 
-> **Pendiente.** A fecha de hoy el proyecto solo existe en local: no hay remoto
-> configurado. Todo lo de esta seccion está listo para ejecutarse el día que se
-> decida crearlo.
+✅ **Hecho.** El repositorio vive en
+[Mike37Jet/mi-plata-app](https://github.com/Mike37Jet/mi-plata-app), es público,
+y `main` está protegido con las reglas de la sección siguiente.
 
-```bash
-brew install gh
-gh auth login                      # la autenticación es del humano
+El CI se ejecuta en cada PR y está verde. Verificado que la protección bloquea
+de verdad: un push directo a `main`, hecho por el propietario del repositorio,
+es rechazado por el servidor.
 
-gh repo create mi-plata-app --private --source=. --remote=origin
-git push -u origin main
-git push -u origin chore/project-scaffolding
+```
+remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: - Changes must be made through a pull request.
+remote: - Required status check "Build y verificacion" is expected.
 ```
 
-Después, la protección de rama (abajo) y activar Renovate desde
-[github.com/apps/renovate](https://github.com/apps/renovate) — la configuración
-ya está en `renovate.json`.
-
-**Hasta que exista el remoto, el workflow de CI no se ha ejecutado nunca.** Está
-verificado en local reproduciendo sus mismos comandos con `CI=true`, pero las
-versiones de las actions y la caché solo se prueban en el primer push.
+**Pendiente:** activar Renovate desde
+[github.com/apps/renovate](https://github.com/apps/renovate). La configuración
+ya está en `renovate.json`; solo falta autorizar la app en el repositorio.
 
 ## Protección de `main`
 
