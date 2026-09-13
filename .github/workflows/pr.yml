@@ -60,6 +60,11 @@ jobs:
       - name: Tests unitarios
         run: ./gradlew testDebugUnitTest :core:domain:test
 
+      # La cobertura se exige solo en :core:domain, que es donde vive la logica
+      # financiera. Ver el comentario en core/domain/build.gradle.kts.
+      - name: Cobertura del dominio
+        run: ./gradlew :core:domain:koverVerify :core:domain:koverHtmlReport
+
       - name: Build
         run: ./gradlew assembleDebug
 
@@ -71,6 +76,7 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/reports/detekt/
+            **/build/reports/kover/
             **/build/reports/lint-results-*.html
           retention-days: 7
           if-no-files-found: ignore
