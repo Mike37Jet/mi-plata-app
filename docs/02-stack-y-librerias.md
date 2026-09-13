@@ -91,6 +91,7 @@ Solo si se agregan adjuntos de recibos. No entra en el MVP.
 | Dobles de prueba | **Fakes escritos a mano** > MockK | Un `FakeTransaccionRepository` en memoria es más legible y más robusto que un mock con 8 `every {}`. MockK solo donde el fake no valga la pena. |
 | Data | Room **in-memory** + tests de **migración** | Cada migración se prueba con datos reales. |
 | UI | **Compose UI Test** (`createAndroidComposeRule`) | Flujos críticos: crear plan, registrar gasto, restaurar backup. |
+| Instrumentado | **androidTest en emulador o móvil** | Lo que la JVM no puede probar: que la base quede **realmente cifrada**. SQLCipher usa librerías nativas que Robolectric no carga. **No corre en CI** —sí se compila, para que no se pudra— y se ejecuta a mano con `./gradlew :core:data:connectedDebugAndroidTest`. |
 | Screenshot | **Roborazzi** (Robolectric) | Detecta regresiones visuales en CI sin emulador. Opcional, v0.2+. |
 
 **Regla:** la pirámide es ancha abajo. Cientos de tests de dominio rápidos, unos

@@ -68,6 +68,12 @@ jobs:
       - name: Build
         run: ./gradlew assembleDebug
 
+      # Los tests instrumentados no se EJECUTAN en CI -necesitan un emulador,
+      # que es la parte mas fragil de cualquier CI de Android- pero si se
+      # compilan, para que no se pudran en silencio mientras el codigo avanza.
+      - name: Compilar los tests instrumentados
+        run: ./gradlew assembleDebugAndroidTest
+
       - name: Subir reportes
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
