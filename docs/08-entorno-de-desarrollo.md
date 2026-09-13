@@ -89,6 +89,41 @@ como errores:
 CI=true ./gradlew spotlessCheck detekt lintDebug testDebugUnitTest assembleDebug
 ```
 
+## Instalar la app en el teléfono
+
+La app **no se publica en ninguna tienda**: se instala como APK de release
+firmado con un keystore propio.
+
+```bash
+# Una sola vez: crear el keystore, FUERA del repositorio.
+keytool -genkeypair -v -keystore ~/.keys/mi-plata.jks \
+  -alias mi-plata -keyalg RSA -keysize 4096 -validity 10000
+
+cp keystore.properties.example keystore.properties   # y rellénalo
+
+./gradlew assembleRelease
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
+Sin `keystore.properties` el build de release **sigue funcionando**, pero el APK
+sale sin firmar. Eso es lo que permite que CI compile esa variante sin acceso a
+ninguna clave, y que quien clone el repositorio no necesite un keystore para
+construir.
+
+Comprobar que quedó firmado:
+
+```bash
+~/Library/Android/sdk/build-tools/*/apksigner verify --print-certs \
+  app/build/outputs/apk/release/app-release.apk
+```
+
+> **Guarda el keystore y haz copia.** Si lo pierdes no podrás actualizar la app
+> instalada sin desinstalarla antes, y desinstalar borra la base de datos. Ahí
+> es donde el backup de [docs/05](05-backup-restore.md) deja de ser teórico.
+>
+> Ni el keystore (`*.jks`) ni `keystore.properties` pueden entrar al repositorio:
+> los tres patrones están en `.gitignore`.
+
 ## Hooks de git
 
 Los hooks viven en `.githooks/` y están versionados. Git no los activa solo al
