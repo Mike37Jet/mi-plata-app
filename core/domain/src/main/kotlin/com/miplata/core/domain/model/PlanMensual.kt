@@ -36,9 +36,14 @@ data class LineaDePlan(
     /** Dia del mes en que se espera, de 1 a 31. Sirve para proyectar el flujo de caja. */
     val diaDelMes: Int? = null,
     /**
-     * Una linea desactivada deja de contar en el mes, pero se sigue copiando al
-     * materializar el mes siguiente. Sirve para el gasto que este mes no toca
-     * pero no ha desaparecido.
+     * Si la linea cuenta este mes.
+     *
+     * Desactivar no es borrar, y la diferencia importa:
+     * - **Desactivar** dice "este mes no toca". La linea deja de sumar en los
+     *   totales, pero sigue existiendo y se copia al materializar el mes
+     *   siguiente, conservando su estado. Es el seguro trimestral o la matricula
+     *   de septiembre: no se pagan todos los meses, pero no han desaparecido.
+     * - **Borrar** dice "esto ya no existe". Entonces si deja de copiarse.
      */
     val activa: Boolean = true,
 ) {

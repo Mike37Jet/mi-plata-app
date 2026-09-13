@@ -77,10 +77,8 @@ class MaterializarPlanDelMesUseCaseTest {
         }
 
         @Test
-        fun `un plan anterior sin lineas activas tambien arranca vacio`() {
-            val anterior = planDe(febrero, linea("a", activa = false), linea("b", activa = false))
-
-            materializar(marzo, anterior).lineas shouldBe emptyList()
+        fun `un plan anterior vacio da un mes vacio`() {
+            materializar(marzo, planDe(febrero)).lineas shouldBe emptyList()
         }
     }
 
@@ -94,18 +92,41 @@ class MaterializarPlanDelMesUseCaseTest {
             plan.mes shouldBe marzo
         }
 
+        // Desactivar es "este mes no toca", no "esto ya no existe". El seguro
+        // trimestral o la matricula de septiembre tienen que sobrevivir a los
+        // meses en que no se pagan, o el usuario acabaria tecleandolos de nuevo
+        // cada vez.
         @Test
-        fun `copia solo las lineas activas`() {
+        fun `copia tambien las desactivadas, conservando su estado`() {
             val anterior =
                 planDe(
                     febrero,
                     linea("a", nombre = "Arriendo"),
-                    linea("b", nombre = "Gimnasio", activa = false),
+                    linea("b", nombre = "Matricula", activa = false),
                     linea("c", nombre = "Internet"),
                 )
 
-            materializar(marzo, anterior).lineas.map { it.nombre } shouldContainExactly
-                listOf("Arriendo", "Internet")
+            val copiadas = materializar(marzo, anterior).lineas
+
+            copiadas.map { it.nombre } shouldContainExactly
+                listOf("Arriendo", "Matricula", "Internet")
+            copiadas.map { it.activa } shouldContainExactly listOf(true, false, true)
+        }
+
+        @Test
+        fun `una linea desactivada sigue sin contar en los totales`() {
+            val anterior =
+                planDe(
+                    febrero,
+                    linea("a", tipo = TipoDeLinea.INGRESO, monto = 1000),
+                    linea("b", monto = 900, activa = false),
+                )
+
+            val plan = materializar(marzo, anterior)
+
+            plan.lineas.size shouldBe 2
+            plan.lineasActivas.size shouldBe 1
+            plan.disponiblePlanificado() shouldBe Money.deUnidades(1000)
         }
 
         @Test

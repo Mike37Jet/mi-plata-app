@@ -18,8 +18,14 @@ import com.miplata.core.domain.model.PlanMensual
  * Con lineas compartidas, editar marzo reescribiria febrero y comparar dos meses
  * dejaria de significar nada.
  *
- * Solo se copian las lineas **activas**. Una linea desactivada es un gasto que
- * este mes no toca, y arrastrarla mes tras mes iria llenando el plan de ruido.
+ * Se copian **todas** las lineas, activas y desactivadas, conservando su estado.
+ * Desactivar y borrar son cosas distintas: desactivar dice "este mes no toca" y
+ * borrar dice "esto ya no existe". La matricula del colegio que se paga en
+ * septiembre, o el seguro trimestral, tienen que seguir ahi en los meses en que
+ * no se pagan; si se perdieran al materializar, el usuario tendria que volver a
+ * teclearlos cada vez, que es justo la friccion que este use case evita.
+ *
+ * Lo que ya no existe de verdad se borra, y entonces si deja de copiarse.
  *
  * Deliberadamente **no** se guarda de que linea viene cada copia. Enlazar una
  * linea con su equivalente del mes pasado haria falta para decir "el arriendo
@@ -46,7 +52,7 @@ class MaterializarPlanDelMesUseCase(
             mes = mes,
             lineas =
                 planAnterior
-                    ?.lineasActivas
+                    ?.lineas
                     .orEmpty()
                     .map { it.copy(id = ids.nuevaLineaId()) },
         )
