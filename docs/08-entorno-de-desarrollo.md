@@ -78,6 +78,8 @@ Documentadas para no volver a tropezar:
 ./gradlew spotlessApply             # formatear (automático en pre-commit)
 ./gradlew spotlessCheck detekt      # puertas de calidad
 ./gradlew :core:domain:test         # tests del dominio, sin emulador
+./gradlew :core:domain:koverVerify  # comprueba el suelo de cobertura (90%)
+./gradlew :core:domain:koverHtmlReport   # informe navegable de cobertura
 ```
 
 Para reproducir en local exactamente lo que hará CI, incluidos los warnings
