@@ -1,6 +1,10 @@
 plugins {
     alias(libs.plugins.miplata.jvm.library)
     alias(libs.plugins.kover)
+    // Los fakes de repositorio se publican como test fixtures para que tambien
+    // los usen los tests de los modulos :feature:*. Duplicarlos en cada modulo
+    // seria garantizar que se desincronicen del contrato real.
+    `java-test-fixtures`
 }
 
 // Sin `android { }`, sin namespace, sin nada de AndroidX.
@@ -26,4 +30,10 @@ kover {
             }
         }
     }
+}
+
+dependencies {
+    // Los tests del propio modulo consumen sus fixtures como cualquier otro
+    // modulo, para que el contrato se pruebe tal y como lo veran los demas.
+    testImplementation(testFixtures(project(":core:domain")))
 }
