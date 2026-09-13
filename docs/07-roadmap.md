@@ -20,7 +20,7 @@ por CI**, verificado a propósito con un PR de prueba.
 | # | Entregable | Rama |
 |---|---|---|
 | 1.1 | ✅ `Money` como `value class` + su suite de tests | `feat/money-value-type` |
-| 1.2 | Modelos: `Cuenta`, `Categoria`, `Transaccion`, `PlanMensual`, `LineaDePlan` | `feat/domain-models` |
+| 1.2 | ✅ Modelos: `Mes`, `Cuenta`, `Categoria`, `Transaccion`, `PlanMensual`, `LineaDePlan` | `feat/domain-models` |
 | 1.3 | Interfaces de repositorio + fakes en memoria | `feat/domain-repositories` |
 | 1.4 | `CalcularResumenMensualUseCase` + **todos** los casos borde de `03` | `feat/monthly-summary-usecase` |
 | 1.5 | `MaterializarPlanDelMesUseCase` (copiar del mes anterior) | `feat/plan-materialization` |
