@@ -45,43 +45,9 @@ internal fun Project.configureKotlinAndroid(commonExtension: CommonExtension<*, 
                 excludes += "/META-INF/LICENSE*"
             }
         }
-
-        lint {
-            // En CI cualquier warning de Lint rompe el build; en local solo avisa.
-            warningsAsErrors = isCi
-            abortOnError = true
-
-            // Excepcion: la actualidad de las dependencias NO rompe el build.
-            //
-            // Mantener las versiones al dia es trabajo de Renovate (docs/06),
-            // que abre PRs para eso. Si ademas fueran errores de lint, el build
-            // empezaria a fallar solo, sin que nadie toque el codigo, el dia que
-            // cualquier libreria publique una version nueva. Un CI que falla por
-            // algo que no es un defecto entrena a ignorar el CI.
-            disable +=
-                setOf(
-                    "GradleDependency",
-                    "NewerVersionAvailable",
-                    "AndroidGradlePluginVersion",
-                    // targetSdk 36 es deliberado: la plataforma 37 usa el esquema
-                    // android-37.0 que AGP 8 no resuelve (docs/08).
-                    "OldTargetApi",
-                    // Falso positivo verificado: lint pide fusionar
-                    // mipmap-anydpi-v26 en mipmap-anydpi porque minSdk ya es 26,
-                    // pero el merger de recursos ignora ese directorio y el
-                    // enlazado falla con "resource mipmap/ic_launcher not found".
-                    // El calificador -v26 es obligatorio para iconos adaptativos.
-                    "ObsoleteSdkInt",
-                )
-            checkDependencies = true
-            xmlReport = true
-            htmlReport = true
-            // Solo se usa la baseline si ya existe. Si se declarara siempre,
-            // AGP la generaría y fallaría el primer build con "baseline created",
-            // que es un arranque en falso muy confuso.
-            file("lint-baseline.xml").takeIf(File::exists)?.let { baseline = it }
-        }
     }
+
+    configureLint(commonExtension, isCi)
 
     configureKotlinJvmTarget(javaVersionString)
 
@@ -126,4 +92,51 @@ private fun org.jetbrains.kotlin.gradle.dsl.KotlinCommonCompilerOptions.applyCom
         jvmTarget.set(target)
     }
     allWarningsAsErrors.set(allWarningsAreErrors)
+}
+
+/**
+ * Politica de lint, extraida de [configureKotlinAndroid] para que esa funcion no
+ * haga dos cosas a la vez.
+ */
+private fun Project.configureLint(
+    commonExtension: CommonExtension<*, *, *, *, *, *>,
+    isCi: Boolean,
+) {
+    commonExtension.apply {
+        lint {
+            // En CI cualquier warning de Lint rompe el build; en local solo avisa.
+            warningsAsErrors = isCi
+            abortOnError = true
+
+            // Excepcion: la actualidad de las dependencias NO rompe el build.
+            //
+            // Mantener las versiones al dia es trabajo de Renovate (docs/06),
+            // que abre PRs para eso. Si ademas fueran errores de lint, el build
+            // empezaria a fallar solo, sin que nadie toque el codigo, el dia que
+            // cualquier libreria publique una version nueva. Un CI que falla por
+            // algo que no es un defecto entrena a ignorar el CI.
+            disable +=
+                setOf(
+                    "GradleDependency",
+                    "NewerVersionAvailable",
+                    "AndroidGradlePluginVersion",
+                    // targetSdk 36 es deliberado: la plataforma 37 usa el esquema
+                    // android-37.0 que AGP 8 no resuelve (docs/08).
+                    "OldTargetApi",
+                    // Falso positivo verificado: lint pide fusionar
+                    // mipmap-anydpi-v26 en mipmap-anydpi porque minSdk ya es 26,
+                    // pero el merger de recursos ignora ese directorio y el
+                    // enlazado falla con "resource mipmap/ic_launcher not found".
+                    // El calificador -v26 es obligatorio para iconos adaptativos.
+                    "ObsoleteSdkInt",
+                )
+            checkDependencies = true
+            xmlReport = true
+            htmlReport = true
+            // Solo se usa la baseline si ya existe. Si se declarara siempre,
+            // AGP la generaría y fallaría el primer build con "baseline created",
+            // que es un arranque en falso muy confuso.
+            file("lint-baseline.xml").takeIf(File::exists)?.let { baseline = it }
+        }
+    }
 }
