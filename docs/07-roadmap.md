@@ -23,7 +23,7 @@ por CI**, verificado a propósito con un PR de prueba.
 | 1.2 | ✅ Modelos: `Mes`, `Cuenta`, `Categoria`, `Transaccion`, `PlanMensual`, `LineaDePlan` | `feat/domain-models` |
 | 1.3 | Interfaces de repositorio + fakes en memoria | `feat/domain-repositories` |
 | 1.4 | ✅ `CalcularResumenMensualUseCase` + **todos** los casos borde de `03` | `feat/monthly-summary-usecase` |
-| 1.5 | `MaterializarPlanDelMesUseCase` (copiar del mes anterior) | `feat/plan-materialization` |
+| 1.5 | ✅ `MaterializarPlanDelMesUseCase` (copiar del mes anterior) | `feat/plan-materialization` |
 
 **Criterio de salida:** `:core:domain` con >90% de cobertura, corriendo en <2s,
 sin una sola dependencia de Android. La lógica financiera está probada **antes**
