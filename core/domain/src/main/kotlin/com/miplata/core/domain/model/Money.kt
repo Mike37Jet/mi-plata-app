@@ -60,11 +60,13 @@ value class Money private constructor(
      * independiente del locale. No es formateo para el usuario.
      */
     override fun toString(): String {
+        // Se construye desde los digitos y no negando el valor: `-centavos`
+        // desborda en silencio para Long.MIN_VALUE, que no tiene valor absoluto
+        // representable, y producia una cadena corrupta. Aqui no hay aritmetica
+        // que pueda desbordar.
+        val digitos = centavos.toString().removePrefix("-").padStart(DECIMALES + 1, '0')
         val signo = if (esNegativo) "-" else ""
-        val absoluto = if (esNegativo) -centavos else centavos
-        val unidades = absoluto / CENTAVOS_POR_UNIDAD
-        val resto = absoluto % CENTAVOS_POR_UNIDAD
-        return "$signo$unidades.${resto.toString().padStart(2, '0')}"
+        return "$signo${digitos.dropLast(DECIMALES)}.${digitos.takeLast(DECIMALES)}"
     }
 
     companion object {

@@ -272,5 +272,13 @@ class MoneyTest {
         fun `el cero no lleva signo`() {
             Money.ZERO.toString() shouldBe "0.00"
         }
+
+        // Long.MIN_VALUE no tiene valor absoluto representable: negarlo desborda
+        // en silencio. La version anterior devolvia aqui una cadena corrupta.
+        @Test
+        fun `los extremos del rango se muestran exactos`() {
+            Money.deCentavos(Long.MIN_VALUE).toString() shouldBe "-92233720368547758.08"
+            Money.deCentavos(Long.MAX_VALUE).toString() shouldBe "92233720368547758.07"
+        }
     }
 }
