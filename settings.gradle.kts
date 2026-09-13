@@ -31,6 +31,47 @@ dependencyResolutionManagement {
     }
 }
 
+// --- Hooks de git ---
+//
+// Se instalan solos en el primer build de cada clon. Sin esto, un clon nuevo se
+// queda sin hooks en silencio hasta que alguien lea la documentacion, y una
+// puerta de calidad que hay que acordarse de activar no es una puerta.
+//
+// Se usa `providers.exec` (compatible con el cache de configuracion) y se
+// comprueba primero el valor actual, asi que en la practica esto no se ejecuta
+// mas que una vez por clon.
+installGitHooks()
+
+fun installGitHooks() {
+    val hooksPath = ".githooks"
+
+    // En CI los hooks no pintan nada: la verificacion la hace el workflow.
+    if (providers.environmentVariable("CI").isPresent) return
+    if (!File(settingsDir, ".git").exists()) return
+
+    val configured =
+        providers
+            .exec {
+                workingDir = settingsDir
+                commandLine("git", "config", "--get", "core.hooksPath")
+                isIgnoreExitValue = true
+            }.standardOutput
+            .asText
+            .get()
+            .trim()
+
+    if (configured == hooksPath) return
+
+    providers
+        .exec {
+            workingDir = settingsDir
+            commandLine("git", "config", "core.hooksPath", hooksPath)
+        }.result
+        .get()
+
+    logger.lifecycle("Hooks de git instalados en $hooksPath/ (pre-commit, commit-msg, pre-push).")
+}
+
 rootProject.name = "mi-plata-app"
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
