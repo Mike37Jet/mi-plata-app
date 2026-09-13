@@ -85,7 +85,8 @@ Solo si se agregan adjuntos de recibos. No entra en el MVP.
 
 | Nivel | Herramienta | Objetivo |
 |---|---|---|
-| Unitario (domain) | **JUnit 5 + Kotest assertions** | Los use cases de cálculo. Meta: **>90% de cobertura en `:core:domain`**. |
+| Unitario (domain) | **JUnit 5 + Kotest assertions** | Los use cases de cálculo. |
+| Cobertura | **Kover** | Solo en `:core:domain`, con un suelo del **90%** que CI hace cumplir. Un suelo para que una regresión se note, no un objetivo que perseguir con tests de relleno. En los módulos de UI no se exige: allí el porcentaje empuja a escribir tests de humo. |
 | Coroutines/Flow | **Turbine** + `kotlinx-coroutines-test` | Verificar emisiones de `Flow` sin `Thread.sleep`. |
 | Dobles de prueba | **Fakes escritos a mano** > MockK | Un `FakeTransaccionRepository` en memoria es más legible y más robusto que un mock con 8 `every {}`. MockK solo donde el fake no valga la pena. |
 | Data | Room **in-memory** + tests de **migración** | Cada migración se prueba con datos reales. |
