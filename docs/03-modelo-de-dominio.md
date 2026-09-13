@@ -83,9 +83,17 @@ formas de hacerlo y la diferencia importa mucho:
 finanzas que reescribe el pasado no sirve para nada. El mes en curso y los
 futuros son libremente editables.
 
-Mecanismo: al abrir un mes sin plan, se **materializa** copiando las líneas
-activas del mes anterior. El usuario ve su plan ya armado y solo ajusta lo que
-cambió. Esto es lo que hace que la app se sienta "flexible" sin perder historia.
+Mecanismo: al abrir un mes sin plan, se **materializa** copiando las líneas del
+mes anterior con identificadores nuevos. El usuario ve su plan ya armado y solo
+ajusta lo que cambió. Esto es lo que hace que la app se sienta "flexible" sin
+perder historia.
+
+Se copian **todas** las líneas, activas y desactivadas, conservando su estado.
+Desactivar y borrar son cosas distintas: desactivar dice "este mes no toca" y
+borrar dice "esto ya no existe". El seguro trimestral o la matrícula de
+septiembre tienen que sobrevivir a los meses en que no se pagan; si se perdieran
+al materializar, habría que teclearlos de nuevo cada año — justo la fricción que
+la materialización existe para evitar.
 
 ## 3. La realidad
 
