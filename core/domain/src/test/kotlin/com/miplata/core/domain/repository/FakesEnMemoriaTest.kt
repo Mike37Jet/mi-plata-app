@@ -1,6 +1,8 @@
 package com.miplata.core.domain.repository
 
 import app.cash.turbine.test
+import com.miplata.core.domain.model.Categoria
+import com.miplata.core.domain.model.CategoriaId
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Mes
@@ -98,6 +100,78 @@ class FakesEnMemoriaTest {
                     awaitItem().map { it.id } shouldBe listOf(CuentaId("c1"))
 
                     repo.eliminar(CuentaId("c1"))
+                    awaitItem() shouldBe emptyList()
+                }
+            }
+    }
+
+    @Nested
+    @DisplayName("FakeCategoriaRepository")
+    inner class Categorias {
+        private fun categoria(
+            id: String,
+            nombre: String = "Categoria $id",
+            padre: String? = null,
+        ) = Categoria(
+            id = CategoriaId(id),
+            nombre = nombre,
+            padreId = padre?.let { CategoriaId(it) },
+        )
+
+        @Test
+        fun `guarda y devuelve`() =
+            runTest {
+                val repo = FakeCategoriaRepository()
+
+                repo.guardar(categoria("comida", "Comida"))
+
+                repo.obtener(CategoriaId("comida"))?.nombre shouldBe "Comida"
+            }
+
+        @Test
+        fun `devuelve nulo si no existe`() =
+            runTest {
+                FakeCategoriaRepository().obtener(CategoriaId("fantasma")).shouldBeNull()
+            }
+
+        @Test
+        fun `guardar con el mismo id reemplaza`() =
+            runTest {
+                val repo = FakeCategoriaRepository(listOf(categoria("c", "Viejo")))
+
+                repo.guardar(categoria("c", "Nuevo"))
+
+                repo.observarTodas().first().size shouldBe 1
+                repo.obtener(CategoriaId("c"))?.nombre shouldBe "Nuevo"
+            }
+
+        @Test
+        fun `conserva la jerarquia de dos niveles`() =
+            runTest {
+                val repo =
+                    FakeCategoriaRepository(
+                        listOf(
+                            categoria("comida", "Comida"),
+                            categoria("resto", "Restaurantes", padre = "comida"),
+                        ),
+                    )
+
+                repo.observarTodas().first().count { it.esRaiz } shouldBe 1
+                repo.obtener(CategoriaId("resto"))?.padreId shouldBe CategoriaId("comida")
+            }
+
+        @Test
+        fun `el flujo emite al guardar y al eliminar`() =
+            runTest {
+                val repo = FakeCategoriaRepository()
+
+                repo.observarTodas().test {
+                    awaitItem() shouldBe emptyList()
+
+                    repo.guardar(categoria("c"))
+                    awaitItem().map { it.id } shouldBe listOf(CategoriaId("c"))
+
+                    repo.eliminar(CategoriaId("c"))
                     awaitItem() shouldBe emptyList()
                 }
             }

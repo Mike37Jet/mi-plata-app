@@ -31,6 +31,11 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             forbidAndroidPlugins()
 
             dependencies {
+                // La configuracion `api` esta disponible sin aplicar
+                // `java-library` a mano: el plugin de Kotlin JVM ya lo aplica.
+                // Verificado quitando java-test-fixtures del modulo, por si
+                // fuera ese el que la traia: sigue compilando.
+                //
                 // `api` y no `implementation`: Flow y LocalDate aparecen en las
                 // firmas publicas del dominio -los repositorios devuelven Flow,
                 // Transaccion expone una LocalDate- asi que forman parte de su

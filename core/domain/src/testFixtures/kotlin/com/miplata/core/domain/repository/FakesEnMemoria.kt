@@ -98,11 +98,17 @@ class FakePlanRepository(
 
     override suspend fun obtenerDe(mes: Mes): PlanMensual? = estado.value[mes]
 
-    override suspend fun obtenerUltimoAnteriorA(mes: Mes): PlanMensual? =
-        estado.value.keys
+    override suspend fun obtenerUltimoAnteriorA(mes: Mes): PlanMensual? {
+        // Se captura el estado UNA vez. Leerlo dos veces -una para elegir el mes
+        // y otra para recuperar el plan- permitiria que un guardar o eliminar
+        // concurrente se colara entre ambas y devolviera null, o un plan que no
+        // corresponde a ningun estado que haya existido de verdad.
+        val planes = estado.value
+        return planes.keys
             .filter { it < mes }
             .maxOrNull()
-            ?.let { estado.value[it] }
+            ?.let { planes[it] }
+    }
 
     override suspend fun guardar(plan: PlanMensual) {
         estado.update { it + (plan.mes to plan) }
