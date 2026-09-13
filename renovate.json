@@ -1,0 +1,39 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":semanticCommitTypeAll(chore)"
+  ],
+  "timezone": "America/Guayaquil",
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 3,
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Agrupa Kotlin, KSP y el plugin de Compose: sus versiones estan acopladas y subir una sin las otras rompe el build.",
+      "matchPackagePatterns": [
+        "^org\\.jetbrains\\.kotlin",
+        "^com\\.google\\.devtools\\.ksp"
+      ],
+      "groupName": "Kotlin y KSP"
+    },
+    {
+      "description": "Agrupa todo AndroidX/Compose en un solo PR: subirlos por separado genera ruido sin aportar nada.",
+      "matchPackagePatterns": ["^androidx\\."],
+      "groupName": "AndroidX"
+    },
+    {
+      "description": "AGP se revisa a mano: los saltos de version mayor cambian el DSL y afectan a build-logic.",
+      "matchPackageNames": ["com.android.tools.build:gradle"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Nada de alfas ni betas automaticas en una app que maneja dinero.",
+      "matchCurrentVersion": "!/^0\\./",
+      "ignoreUnstable": true
+    }
+  ],
+  "lockFileMaintenance": { "enabled": false }
+}

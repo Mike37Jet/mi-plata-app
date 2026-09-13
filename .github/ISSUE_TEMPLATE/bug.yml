@@ -1,0 +1,49 @@
+name: Bug
+description: Algo no funciona como deberia
+labels: ["bug"]
+body:
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Que pasa
+      description: Sintoma observable, no la causa que sospechas.
+      placeholder: Al editar el arriendo de marzo, febrero tambien cambia.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduccion
+    attributes:
+      label: Como reproducirlo
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: esperado
+    attributes:
+      label: Que esperabas
+    validations:
+      required: true
+
+  - type: dropdown
+    id: datos
+    attributes:
+      label: Hay riesgo para los datos del usuario?
+      description: >
+        Un bug que corrompe, pierde o descuadra saldos tiene prioridad sobre
+        todo lo demas. Es una app de finanzas.
+      options:
+        - "No: solo afecta a la presentacion"
+        - "Si: muestra cifras incorrectas"
+        - "Si: pierde o corrompe datos"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version de la app / commit
