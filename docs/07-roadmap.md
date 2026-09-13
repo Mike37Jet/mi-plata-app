@@ -33,7 +33,7 @@ de que exista una pantalla.
 
 | # | Entregable | Rama |
 |---|---|---|
-| 2.1 | Room: entities, DAOs, esquema v1 exportado y commiteado | `feat/room-database` |
+| 2.1 | ✅ Room: entities, DAOs, esquema v1 exportado y commiteado | `feat/room-database` |
 | 2.2 | SQLCipher + clave en Android Keystore | `feat/database-encryption` |
 | 2.3 | Implementaciones de repositorio + mappers + tests con DB in-memory | `feat/data-repositories` |
 | 2.4 | Módulos de Hilt, DataStore Proto de preferencias | `feat/di-and-preferences` |
