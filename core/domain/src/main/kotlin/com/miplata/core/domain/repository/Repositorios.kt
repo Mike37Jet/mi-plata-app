@@ -1,0 +1,83 @@
+package com.miplata.core.domain.repository
+
+import com.miplata.core.domain.model.Categoria
+import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.Cuenta
+import com.miplata.core.domain.model.CuentaId
+import com.miplata.core.domain.model.Mes
+import com.miplata.core.domain.model.PeriodoMensual
+import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Transaccion
+import com.miplata.core.domain.model.TransaccionId
+import kotlinx.coroutines.flow.Flow
+
+// Contratos de acceso a datos.
+//
+// Viven en el dominio y los implementa la capa de datos, no al reves (docs/01).
+// Asi el dominio decide que necesita y Room se limita a cumplirlo; si manana
+// Room se cambia por otra cosa, estos contratos no se enteran.
+//
+// Las consultas devuelven Flow: la fuente de verdad es la base de datos y la UI
+// reacciona sola a lo que cambie. Las escrituras son `suspend` porque son
+// puntuales.
+//
+// No hay metodos de borrado logico ni marcas de tiempo: el repositorio filtra lo
+// eliminado y el dominio solo ve lo vigente (docs/03).
+
+interface CuentaRepository {
+    /** Todas las cuentas vigentes, archivadas incluidas. */
+    fun observarTodas(): Flow<List<Cuenta>>
+
+    suspend fun obtener(id: CuentaId): Cuenta?
+
+    suspend fun guardar(cuenta: Cuenta)
+
+    suspend fun eliminar(id: CuentaId)
+}
+
+interface CategoriaRepository {
+    fun observarTodas(): Flow<List<Categoria>>
+
+    suspend fun obtener(id: CategoriaId): Categoria?
+
+    suspend fun guardar(categoria: Categoria)
+
+    suspend fun eliminar(id: CategoriaId)
+}
+
+interface TransaccionRepository {
+    /**
+     * Los movimientos de un periodo.
+     *
+     * Se filtra por periodo y no por mes natural porque el mes economico del
+     * usuario puede empezar cualquier dia (ver `PeriodoMensual`).
+     */
+    fun observarDelPeriodo(periodo: PeriodoMensual): Flow<List<Transaccion>>
+
+    fun observarDeCuenta(cuentaId: CuentaId): Flow<List<Transaccion>>
+
+    suspend fun obtener(id: TransaccionId): Transaccion?
+
+    suspend fun guardar(transaccion: Transaccion)
+
+    suspend fun eliminar(id: TransaccionId)
+}
+
+interface PlanRepository {
+    fun observarDe(mes: Mes): Flow<PlanMensual?>
+
+    suspend fun obtenerDe(mes: Mes): PlanMensual?
+
+    /**
+     * El plan mas reciente anterior a [mes], o `null` si no hay ninguno.
+     *
+     * Existe para materializar: si el usuario no abre la app en tres meses, hay
+     * que copiar del ultimo plan que exista y no del mes inmediatamente
+     * anterior, que no tiene ninguno.
+     */
+    suspend fun obtenerUltimoAnteriorA(mes: Mes): PlanMensual?
+
+    suspend fun guardar(plan: PlanMensual)
+
+    suspend fun eliminar(mes: Mes)
+}

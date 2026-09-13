@@ -31,8 +31,14 @@ class JvmLibraryConventionPlugin : Plugin<Project> {
             forbidAndroidPlugins()
 
             dependencies {
-                add("implementation", libs.library("kotlinx-coroutines-core"))
-                add("implementation", libs.library("kotlinx-datetime"))
+                // `api` y no `implementation`: Flow y LocalDate aparecen en las
+                // firmas publicas del dominio -los repositorios devuelven Flow,
+                // Transaccion expone una LocalDate- asi que forman parte de su
+                // contrato. Con `implementation` quedarian ocultos y ningun otro
+                // modulo podria ni implementar los repositorios ni leer una
+                // fecha.
+                add("api", libs.library("kotlinx-coroutines-core"))
+                add("api", libs.library("kotlinx-datetime"))
 
                 add("testImplementation", libs.library("junit-jupiter"))
                 add("testRuntimeOnly", libs.library("junit-platform-launcher"))

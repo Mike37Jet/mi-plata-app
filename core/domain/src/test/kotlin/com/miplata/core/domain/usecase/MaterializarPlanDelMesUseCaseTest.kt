@@ -1,8 +1,7 @@
 package com.miplata.core.domain.usecase
 
-import com.miplata.core.domain.GeneradorDeIds
+import com.miplata.core.domain.GeneradorDeIdsSecuencial
 import com.miplata.core.domain.model.CategoriaId
-import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
@@ -10,34 +9,12 @@ import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.TipoDeLinea
-import com.miplata.core.domain.model.TransaccionId
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-
-/**
- * Generador predecible: `plan-1`, `linea-1`, `linea-2`...
- *
- * Un fake escrito a mano en vez de un mock. Son cinco lineas, se lee de un
- * vistazo y no depende de la API de ninguna libreria de dobles (docs/02).
- */
-private class GeneradorSecuencial : GeneradorDeIds {
-    private var planes = 0
-    private var lineas = 0
-
-    override fun nuevoPlanId() = PlanId("plan-${++planes}")
-
-    override fun nuevaLineaId() = LineaId("linea-${++lineas}")
-
-    override fun nuevaTransaccionId() = TransaccionId("tx-1")
-
-    override fun nuevaCuentaId() = CuentaId("cuenta-1")
-
-    override fun nuevaCategoriaId() = CategoriaId("categoria-1")
-}
 
 private fun linea(
     id: String,
@@ -55,7 +32,7 @@ private fun linea(
 
 @DisplayName("MaterializarPlanDelMesUseCase")
 class MaterializarPlanDelMesUseCaseTest {
-    private val materializar = MaterializarPlanDelMesUseCase(GeneradorSecuencial())
+    private val materializar = MaterializarPlanDelMesUseCase(GeneradorDeIdsSecuencial())
 
     private val febrero = Mes.de(2026, 2)
     private val marzo = Mes.de(2026, 3)
