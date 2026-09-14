@@ -116,6 +116,8 @@ class FakePlanRepository(
 
     override fun observarDe(mes: Mes): Flow<PlanMensual?> = estado.map { it[mes] }
 
+    override fun observarTodos(): Flow<List<PlanMensual>> = estado.map { planes -> planes.values.sortedBy { it.mes } }
+
     override suspend fun obtenerDe(mes: Mes): PlanMensual? = estado.value[mes]
 
     override suspend fun obtenerUltimoAnteriorA(mes: Mes): PlanMensual? {

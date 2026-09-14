@@ -82,6 +82,7 @@ include(":core:common")
 include(":core:domain")
 include(":core:data")
 include(":core:designsystem")
+include(":core:backup")
 
 include(":feature:resumen")
 include(":feature:plan")

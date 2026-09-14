@@ -58,7 +58,7 @@ jobs:
         run: ./gradlew lintDebug
 
       - name: Tests unitarios
-        run: ./gradlew testDebugUnitTest :core:domain:test
+        run: ./gradlew testDebugUnitTest testsDeJvm
 
       # La cobertura se exige solo en :core:domain, que es donde vive la logica
       # financiera. Ver el comentario en core/domain/build.gradle.kts.

@@ -113,6 +113,9 @@ class RoomPlanRepository(
 
     override suspend fun obtenerDe(mes: Mes): PlanMensual? = dao.obtenerPorMes(mes.toString())?.aDominio()
 
+    override fun observarTodos(): Flow<List<PlanMensual>> =
+        dao.observarTodos().map { filas -> filas.map { it.aDominio() } }
+
     override suspend fun obtenerUltimoAnteriorA(mes: Mes): PlanMensual? =
         dao.obtenerUltimoAnteriorA(mes.toString())?.aDominio()
 

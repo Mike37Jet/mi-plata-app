@@ -159,6 +159,10 @@ interface PlanDao {
     @Query("SELECT * FROM planes WHERE mes = :mes AND eliminadoEn IS NULL")
     suspend fun obtenerPorMes(mes: String): PlanConLineas?
 
+    @Transaction
+    @Query("SELECT * FROM planes WHERE eliminadoEn IS NULL ORDER BY mes")
+    fun observarTodos(): Flow<List<PlanConLineas>>
+
     /**
      * El plan mas reciente anterior a [mes].
      *
