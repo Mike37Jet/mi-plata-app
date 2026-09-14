@@ -1,5 +1,36 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="cuentas_titulo">Cuentas</string>
-    <string name="cuentas_pendiente">Aquí estarán tu efectivo, tus cuentas de banco y tus tarjetas.</string>
+
+    <string name="cuentas_total">Tienes en total</string>
+    <string name="cuentas_saldo_inicial">Saldo inicial</string>
+    <string name="cuentas_vacio">Aún no tienes cuentas. Añade tu efectivo, tu cuenta del banco o una tarjeta.</string>
+
+    <plurals name="cuentas_en_otra_moneda">
+        <item quantity="one">No incluye %1$d cuenta en otra moneda.</item>
+        <item quantity="other">No incluye %1$d cuentas en otra moneda.</item>
+    </plurals>
+
+    <string name="cuentas_anadir">Añadir cuenta</string>
+    <string name="cuentas_nueva">Cuenta nueva</string>
+    <string name="cuentas_editar">Editar cuenta</string>
+    <string name="cuentas_nombre">Nombre</string>
+    <string name="cuentas_nombre_ejemplo">Cuenta del banco</string>
+    <string name="cuentas_tipo">Tipo</string>
+    <string name="cuentas_incluir_en_total">Suma al total</string>
+    <string name="cuentas_incluir_en_total_detalle">Desactívalo para dejarla fuera del total sin borrarla.</string>
+    <string name="cuentas_archivada">Archivada</string>
+    <string name="cuentas_archivada_detalle">Deja de usarse, pero su historial se conserva.</string>
+    <string name="cuentas_guardar">Guardar</string>
+    <string name="cuentas_cancelar">Cancelar</string>
+    <string name="cuentas_eliminar">Eliminar</string>
+    <string name="cuentas_eliminar_titulo">¿Eliminar %1$s?</string>
+    <string name="cuentas_eliminar_aviso">Sus movimientos dejarán de verse en esta cuenta. Si solo quieres dejar de usarla, archívala.</string>
+    <string name="cuentas_etiqueta_archivada">Archivada</string>
+    <string name="cuentas_etiqueta_fuera_del_total">Fuera del total</string>
+
+    <string name="cuentas_tipo_efectivo">Efectivo</string>
+    <string name="cuentas_tipo_bancaria">Banco</string>
+    <string name="cuentas_tipo_tarjeta">Tarjeta de crédito</string>
+    <string name="cuentas_tipo_ahorro">Ahorro</string>
+    <string name="cuentas_tipo_inversion">Inversión</string>
 </resources>

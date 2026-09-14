@@ -65,6 +65,20 @@ interface TransaccionRepository {
 
     fun observarDeCuenta(cuentaId: CuentaId): Flow<List<Transaccion>>
 
+    /**
+     * Todos los movimientos, desde el principio.
+     *
+     * Hace falta para el saldo de una cuenta, que es el saldo inicial mas TODO
+     * lo que ha pasado desde entonces: cortar por un periodo daria un saldo
+     * distinto segun el mes que estuvieras mirando, que no es un saldo.
+     *
+     * Se trae todo a memoria a proposito. Con los movimientos de una persona
+     * son unos pocos miles de filas, y a cambio la suma vive en el dominio,
+     * donde esta probada, en vez de en una consulta SQL (docs/01). Si algun dia
+     * deja de ser barato, el sitio donde arreglarlo es este metodo.
+     */
+    fun observarTodas(): Flow<List<Transaccion>>
+
     suspend fun obtener(id: TransaccionId): Transaccion?
 
     suspend fun guardar(transaccion: Transaccion)

@@ -105,6 +105,9 @@ interface TransaccionDao {
     )
     fun observarDeCuenta(cuentaId: String): Flow<List<TransaccionEntity>>
 
+    @Query("SELECT * FROM transacciones WHERE eliminadaEn IS NULL ORDER BY fecha, id")
+    fun observarTodas(): Flow<List<TransaccionEntity>>
+
     @Query("SELECT * FROM transacciones WHERE id = :id AND eliminadaEn IS NULL")
     suspend fun obtener(id: String): TransaccionEntity?
 

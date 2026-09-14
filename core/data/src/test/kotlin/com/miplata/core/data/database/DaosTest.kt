@@ -227,6 +227,41 @@ class DaosTest {
                 .map { it.id } shouldBe listOf("t1")
         }
 
+    // El saldo de una cuenta es su saldo inicial mas TODO lo que ha pasado, sin
+    // cortar por fechas: por eso hace falta traerlas todas.
+    @Test
+    fun `las trae todas sin filtrar por fecha, y ordenadas`() =
+        runTest {
+            db.cuentaDao().guardar(cuenta("c1"))
+            listOf(
+                transaccion("vieja", "2024-01-05"),
+                transaccion("nueva", "2026-12-31"),
+                transaccion("media", "2025-06-15"),
+            ).forEach { db.transaccionDao().guardar(it) }
+
+            db
+                .transaccionDao()
+                .observarTodas()
+                .first()
+                .map { it.id } shouldBe listOf("vieja", "media", "nueva")
+        }
+
+    @Test
+    fun `una transaccion eliminada desaparece de todas`() =
+        runTest {
+            db.cuentaDao().guardar(cuenta("c1"))
+            db.transaccionDao().guardar(transaccion("t1", "2026-03-10"))
+            db.transaccionDao().guardar(transaccion("t2", "2026-03-11"))
+
+            db.transaccionDao().marcarEliminada("t1", instante = 1_000L)
+
+            db
+                .transaccionDao()
+                .observarTodas()
+                .first()
+                .map { it.id } shouldBe listOf("t2")
+        }
+
     // --- Planes ---
 
     @Test

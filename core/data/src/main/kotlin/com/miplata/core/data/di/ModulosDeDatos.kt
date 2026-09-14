@@ -29,6 +29,7 @@ import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
+import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import com.miplata.core.domain.usecase.SembrarCategoriasPorDefectoUseCase
 import dagger.Module
@@ -139,22 +140,35 @@ object ModuloDeRepositorios {
     fun proveerCalendario(): Calendario = Calendario.DEL_SISTEMA
 
     @Provides
-    fun proveerAbrirPlan(
-        planes: PlanRepository,
-        ids: GeneradorDeIds,
-    ): AbrirPlanDelMesUseCase = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(ids))
-
-    // Sin estado y sin dependencias: una funcion pura envuelta en una clase.
-    // Se instancia aqui, y no con @Inject en el dominio, porque :core:domain no
-    // conoce Hilt -ni ninguna otra cosa de Android- a proposito (docs/01).
-    @Provides
-    fun proveerCalcularResumen(): CalcularResumenMensualUseCase = CalcularResumenMensualUseCase()
-
-    @Provides
     @Singleton
     fun proveerSembrador(
         @ApplicationContext context: Context,
         categorias: CategoriaRepository,
         ids: GeneradorDeIds,
     ): SembradorDeCategorias = SembradorDeCategorias(context, SembrarCategoriasPorDefectoUseCase(categorias, ids))
+}
+
+/**
+ * Los casos de uso del dominio.
+ *
+ * En un modulo aparte del de repositorios porque son cosas distintas: uno dice
+ * de donde salen los datos y este que se hace con ellos. Se instancian aqui, y
+ * no con `@Inject` en el dominio, porque `:core:domain` no conoce Hilt -ni
+ * ninguna otra cosa de Android- a proposito (docs/01).
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object ModuloDeCasosDeUso {
+    @Provides
+    fun proveerAbrirPlan(
+        planes: PlanRepository,
+        ids: GeneradorDeIds,
+    ): AbrirPlanDelMesUseCase = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(ids))
+
+    // Sin estado y sin dependencias: funciones puras envueltas en una clase.
+    @Provides
+    fun proveerCalcularResumen(): CalcularResumenMensualUseCase = CalcularResumenMensualUseCase()
+
+    @Provides
+    fun proveerCalcularSaldos(): CalcularSaldosDeCuentasUseCase = CalcularSaldosDeCuentasUseCase()
 }

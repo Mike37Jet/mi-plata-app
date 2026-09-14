@@ -81,6 +81,9 @@ class FakeTransaccionRepository(
                 .sortedBy { it.fecha }
         }
 
+    override fun observarTodas(): Flow<List<Transaccion>> =
+        estado.map { transacciones -> transacciones.values.sortedBy { it.fecha } }
+
     override suspend fun obtener(id: TransaccionId): Transaccion? = estado.value[id]
 
     override suspend fun guardar(transaccion: Transaccion) {
