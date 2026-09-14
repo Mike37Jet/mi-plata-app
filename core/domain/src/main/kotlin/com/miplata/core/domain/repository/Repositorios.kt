@@ -97,6 +97,16 @@ interface AjustesRepository {
 interface PlanRepository {
     fun observarDe(mes: Mes): Flow<PlanMensual?>
 
+    /**
+     * Todos los planes guardados, del mes mas antiguo al mas reciente.
+     *
+     * Hace falta para el backup: un backup que solo se lleve los meses que
+     * alguien se acuerde de pedir no es un backup. Deducir que meses existen a
+     * partir de los movimientos seria adivinar, y perderia justo el plan del
+     * mes que acabas de armar y aun no has ejecutado.
+     */
+    fun observarTodos(): Flow<List<PlanMensual>>
+
     suspend fun obtenerDe(mes: Mes): PlanMensual?
 
     /**

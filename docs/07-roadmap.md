@@ -56,7 +56,7 @@ de que exista una pantalla.
 
 | # | Entregable | Rama |
 |---|---|---|
-| 4.1 | Serialización del dominio a `data.json` + manifest + checksum | `feat/backup-serialization` |
+| 4.1 | ✅ Serialización del dominio a `data.json` + manifest + checksum | `feat/backup-serialization` |
 | 4.2 | Cifrado AES-256-GCM con frase de respaldo | `feat/backup-encryption` |
 | 4.3 | Export vía SAF (`ACTION_CREATE_DOCUMENT`) | `feat/backup-export` |
 | 4.4 | Import con preview, backup de seguridad previo y rollback atómico | `feat/backup-restore` |
