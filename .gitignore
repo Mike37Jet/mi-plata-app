@@ -44,6 +44,9 @@ build-logic/build/
 **/compose-metrics/
 **/compose-reports/
 
+# Sesiones del daemon de Kotlin (Gradle 8.10+); basura de la maquina local
+.kotlin/
+
 # macOS
 .DS_Store
 
