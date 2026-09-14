@@ -7,6 +7,7 @@ import androidx.datastore.dataStoreFile
 import com.miplata.core.data.ajustes.AjustesEnDataStore
 import com.miplata.core.data.ajustes.AjustesGuardados
 import com.miplata.core.data.ajustes.SerializadorDeAjustes
+import com.miplata.core.data.categorias.SembradorDeCategorias
 import com.miplata.core.data.database.FabricaDeBaseDeDatos
 import com.miplata.core.data.database.MiPlataDatabase
 import com.miplata.core.data.database.dao.CategoriaDao
@@ -25,6 +26,7 @@ import com.miplata.core.domain.repository.CategoriaRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
+import com.miplata.core.domain.usecase.SembrarCategoriasPorDefectoUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -127,4 +129,12 @@ object ModuloDeRepositorios {
     @Provides
     @Singleton
     fun proveerGeneradorDeIds(): GeneradorDeIds = GeneradorDeIdsUuid()
+
+    @Provides
+    @Singleton
+    fun proveerSembrador(
+        @ApplicationContext context: Context,
+        categorias: CategoriaRepository,
+        ids: GeneradorDeIds,
+    ): SembradorDeCategorias = SembradorDeCategorias(context, SembrarCategoriasPorDefectoUseCase(categorias, ids))
 }

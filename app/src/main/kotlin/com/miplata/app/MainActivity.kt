@@ -20,8 +20,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.repository.AjustesRepository
+import com.miplata.core.domain.repository.CategoriaRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +47,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var cuentas: CuentaRepository
 
+    @Inject
+    lateinit var categorias: CategoriaRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
@@ -53,7 +58,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             // TODO(Etapa 0.4): reemplazar por MiPlataTheme de :core:designsystem.
             MaterialTheme {
-                PantallaPlaceholder(ajustes.observar(), cuentas.observarTodas())
+                PantallaPlaceholder(
+                    ajustes.observar(),
+                    cuentas.observarTodas(),
+                    categorias.observarTodas(),
+                )
             }
         }
     }
@@ -63,10 +72,12 @@ class MainActivity : ComponentActivity() {
 private fun PantallaPlaceholder(
     ajustes: Flow<Ajustes>,
     cuentas: Flow<List<Cuenta>>,
+    categorias: Flow<List<Categoria>>,
     modifier: Modifier = Modifier,
 ) {
     val configuracion by ajustes.collectAsStateWithLifecycle(initialValue = null)
     val lasCuentas by cuentas.collectAsStateWithLifecycle(initialValue = emptyList())
+    val lasCategorias by categorias.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
         Column(
@@ -90,6 +101,14 @@ private fun PantallaPlaceholder(
                 text = "cuentas guardadas: ${lasCuentas.size}",
                 style = MaterialTheme.typography.bodySmall,
             )
+            Text(
+                text = "categorias: ${lasCategorias.size}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                text = lasCategorias.filter { it.esRaiz }.take(4).joinToString { it.nombre },
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }
@@ -101,6 +120,7 @@ private fun PantallaPlaceholderPreview() {
         PantallaPlaceholder(
             ajustes = kotlinx.coroutines.flow.flowOf(Ajustes()),
             cuentas = kotlinx.coroutines.flow.flowOf(emptyList()),
+            categorias = kotlinx.coroutines.flow.flowOf(emptyList()),
         )
     }
 }

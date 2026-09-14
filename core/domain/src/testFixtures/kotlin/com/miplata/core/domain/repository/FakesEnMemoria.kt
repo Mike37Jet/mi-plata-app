@@ -56,6 +56,8 @@ class FakeCategoriaRepository(
         estado.update { it + (categoria.id to categoria) }
     }
 
+    override suspend fun cuantasHay(): Int = estado.value.size
+
     override suspend fun eliminar(id: CategoriaId) {
         estado.update { it - id }
     }
