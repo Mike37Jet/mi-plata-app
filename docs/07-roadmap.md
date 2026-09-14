@@ -44,7 +44,7 @@ de que exista una pantalla.
 | # | Entregable | Rama |
 |---|---|---|
 | 3.1 | ✅ NavHost type-safe + scaffold con bottom bar | `feat/navigation` |
-| 3.2 | **Pantalla Plan** — listas de ingresos / fijos / variables, editar en línea | `feat/plan-editor` |
+| 3.2 | ✅ **Pantalla Plan** — listas de ingresos / fijos / variables, editar en línea | `feat/plan-editor` |
 | 3.3 | **Pantalla Resumen** — disponible, sobregiro, progreso del mes | `feat/monthly-summary-screen` |
 | 3.4 | Pantalla Cuentas + CRUD | `feat/accounts-screen` |
 | 3.5 | Pantalla Transacciones + alta rápida | `feat/transactions-screen` |

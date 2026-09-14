@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="plan_titulo">Plan</string>
-    <string name="plan_pendiente">Aquí pondrás tus ingresos, tus gastos fijos y tu estimación de los variables.</string>
+
+    <string name="plan_disponible">Disponible</string>
+    <string name="plan_sobregiro">Te faltan</string>
+    <string name="plan_mes_anterior">Mes anterior</string>
+    <string name="plan_mes_siguiente">Mes siguiente</string>
+
+    <string name="plan_tipo_ingreso">Ingresos</string>
+    <string name="plan_tipo_gasto_fijo">Gastos fijos</string>
+    <string name="plan_tipo_gasto_variable">Gastos variables</string>
+    <string name="plan_tipo_ahorro">Ahorro</string>
+
+    <string name="plan_anadir">Añadir</string>
+    <string name="plan_eliminar">Eliminar</string>
+    <string name="plan_nombre_vacio">Sin nombre</string>
+    <string name="plan_activa">Cuenta este mes</string>
+
+    <string name="plan_borrador">Copiado de tu mes anterior. Se guardará en cuanto cambies algo.</string>
+    <string name="plan_vacio">Aún no hay nada. Empieza por tus ingresos.</string>
 </resources>
