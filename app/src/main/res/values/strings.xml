@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">mi plata</string>
     <string name="placeholder_title">mi plata</string>
-    <string name="placeholder_subtitle">Scaffolding listo. Siguiente: el dominio.</string>
+    <string name="placeholder_subtitle">Dominio y persistencia conectados.</string>
 </resources>

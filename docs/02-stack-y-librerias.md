@@ -45,10 +45,19 @@ integración con el resto de Jetpack.
 La base de datos va cifrada. La clave se genera en el Keystore respaldado por
 hardware y **nunca** toca el disco en claro ni el código fuente.
 
-### Preferencias — **DataStore (Proto)**
-Reemplazo de `SharedPreferences`. Se usa Proto (no Preferences) por tipado
-fuerte. Guarda: moneda, tema, fecha de último backup, primer día del mes
-financiero.
+### Preferencias — **DataStore + kotlinx.serialization**
+Reemplazo de `SharedPreferences`. Guarda moneda, tema, fecha del último backup y
+primer día del mes financiero.
+
+**Se descartó Proto DataStore**, que era la elección original de este documento.
+El motivo que se daba para Proto era el tipado fuerte, y eso ya lo da un
+`data class` serializable: no hace falta añadir el plugin de protobuf, ni
+`protoc`, ni un esquema `.proto`, ni código generado, para cuatro preferencias.
+Además el proyecto ya usa kotlinx.serialization para el backup (docs/05), así que
+son **un** mecanismo de serialización y no dos.
+
+Lo que sí se conserva de la idea original es lo importante: el almacén está
+tipado, no es un saco de claves y strings.
 
 ### Navegación — **Navigation Compose type-safe** (rutas como `@Serializable`)
 Rutas como objetos de Kotlin, no strings. Renombrar una pantalla es un refactor

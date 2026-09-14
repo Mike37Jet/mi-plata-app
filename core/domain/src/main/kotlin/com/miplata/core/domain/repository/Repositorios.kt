@@ -1,5 +1,6 @@
 package com.miplata.core.domain.repository
 
+import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
 import com.miplata.core.domain.model.Cuenta
@@ -61,6 +62,14 @@ interface TransaccionRepository {
     suspend fun guardar(transaccion: Transaccion)
 
     suspend fun eliminar(id: TransaccionId)
+}
+
+interface AjustesRepository {
+    fun observar(): Flow<Ajustes>
+
+    suspend fun obtener(): Ajustes
+
+    suspend fun guardar(ajustes: Ajustes)
 }
 
 interface PlanRepository {
