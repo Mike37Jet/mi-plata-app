@@ -26,6 +26,19 @@ enum class TipoDeLinea {
  */
 data class LineaDePlan(
     val id: LineaId,
+    /**
+     * Etiqueta para el usuario. **Puede estar vacia.**
+     *
+     * Al anadir una linea el usuario la crea antes de saber como llamarla y
+     * escribe encima. Exigir un nombre obligaria a inventarse uno de relleno
+     * -"Nueva linea"- que habria que borrar antes de escribir el de verdad.
+     *
+     * Lo que define una linea es su tipo y su monto; el nombre es como la
+     * reconoce. Una linea sin nombre sigue sumando correctamente.
+     *
+     * Es distinto de [Cuenta], donde el nombre SI es obligatorio: una cuenta se
+     * elige de una lista, y una sin nombre no se puede elegir.
+     */
     val nombre: String,
     val tipo: TipoDeLinea,
     /** Siempre positivo o cero. El signo lo determina [tipo]. */
@@ -48,7 +61,6 @@ data class LineaDePlan(
     val activa: Boolean = true,
 ) {
     init {
-        require(nombre.isNotBlank()) { "Una linea del plan necesita un nombre" }
         require(!montoPlanificado.esNegativo) {
             "El monto planificado es una magnitud sin signo; " +
                 "el tipo decide si suma o resta. Recibido: $montoPlanificado"

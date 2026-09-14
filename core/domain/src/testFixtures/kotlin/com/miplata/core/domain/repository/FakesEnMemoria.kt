@@ -1,5 +1,6 @@
 package com.miplata.core.domain.repository
 
+import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
 import com.miplata.core.domain.model.Cuenta
@@ -88,6 +89,20 @@ class FakeTransaccionRepository(
 
     override suspend fun eliminar(id: TransaccionId) {
         estado.update { it - id }
+    }
+}
+
+class FakeAjustesRepository(
+    inicial: Ajustes = Ajustes(),
+) : AjustesRepository {
+    private val estado = MutableStateFlow(inicial)
+
+    override fun observar(): Flow<Ajustes> = estado
+
+    override suspend fun obtener(): Ajustes = estado.value
+
+    override suspend fun guardar(ajustes: Ajustes) {
+        estado.value = ajustes
     }
 }
 

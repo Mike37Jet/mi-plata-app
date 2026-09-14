@@ -26,16 +26,20 @@ private fun plan(vararg lineas: LineaDePlan) =
 
 @DisplayName("LineaDePlan")
 class LineaDePlanTest {
+    // El usuario anade la linea antes de saber como llamarla y escribe encima.
+    // Exigir un nombre obligaria a inventarse uno de relleno que habria que
+    // borrar antes de escribir el de verdad.
     @Test
-    fun `exige un nombre`() {
-        assertThrows<IllegalArgumentException> {
+    fun `acepta una linea sin nombre todavia`() {
+        val sinNombre =
             LineaDePlan(
                 id = LineaId("l1"),
-                nombre = "   ",
+                nombre = "",
                 tipo = TipoDeLinea.GASTO_FIJO,
                 montoPlanificado = Money.deUnidades(100),
             )
-        }
+
+        sinNombre.montoPlanificado shouldBe Money.deUnidades(100)
     }
 
     // El monto es una magnitud; quien decide si suma o resta es el tipo.
