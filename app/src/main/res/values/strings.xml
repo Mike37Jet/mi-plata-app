@@ -2,5 +2,5 @@
 <resources>
     <string name="app_name">mi plata</string>
     <string name="placeholder_title">mi plata</string>
-    <string name="placeholder_subtitle">Dominio y persistencia conectados.</string>
+    <string name="placeholder_subtitle">Cifras tabulares y colores con significado.</string>
 </resources>
