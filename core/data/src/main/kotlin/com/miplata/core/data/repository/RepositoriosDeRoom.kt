@@ -89,6 +89,9 @@ class RoomTransaccionRepository(
     override fun observarDeCuenta(cuentaId: CuentaId): Flow<List<Transaccion>> =
         dao.observarDeCuenta(cuentaId.valor).map { filas -> filas.map { it.aDominio() } }
 
+    override fun observarTodas(): Flow<List<Transaccion>> =
+        dao.observarTodas().map { filas -> filas.map { it.aDominio() } }
+
     override suspend fun obtener(id: TransaccionId): Transaccion? = dao.obtener(id.valor)?.aDominio()
 
     override suspend fun guardar(transaccion: Transaccion) {
