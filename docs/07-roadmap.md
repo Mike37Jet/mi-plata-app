@@ -47,7 +47,7 @@ de que exista una pantalla.
 | 3.2 | ✅ **Pantalla Plan** — listas de ingresos / fijos / variables, editar en línea | `feat/plan-editor` |
 | 3.3 | ✅ **Pantalla Resumen** — disponible, sobregiro, progreso del mes | `feat/monthly-summary-screen` |
 | 3.4 | ✅ Pantalla Cuentas + CRUD | `feat/accounts-screen` |
-| 3.5 | Pantalla Transacciones + alta rápida | `feat/transactions-screen` |
+| 3.5 | ✅ Pantalla Transacciones + alta rápida | `feat/transactions-screen` |
 | 3.6 | Tests de UI de los 3 flujos críticos | `test/critical-ui-flows` |
 
 **Aquí la app ya responde "¿me alcanza?" y es usable a diario.**

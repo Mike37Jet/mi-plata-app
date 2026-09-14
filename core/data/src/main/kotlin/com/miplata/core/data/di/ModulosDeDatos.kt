@@ -28,6 +28,7 @@ import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
+import com.miplata.core.domain.usecase.AgruparMovimientosPorDiaUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
@@ -171,4 +172,7 @@ object ModuloDeCasosDeUso {
 
     @Provides
     fun proveerCalcularSaldos(): CalcularSaldosDeCuentasUseCase = CalcularSaldosDeCuentasUseCase()
+
+    @Provides
+    fun proveerAgruparPorDia(): AgruparMovimientosPorDiaUseCase = AgruparMovimientosPorDiaUseCase()
 }

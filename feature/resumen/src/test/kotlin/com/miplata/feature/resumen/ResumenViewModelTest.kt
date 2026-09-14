@@ -292,8 +292,9 @@ class ResumenViewModelTest {
             transacciones.guardar(movimiento("t1", 26, 100, TipoDeTransaccion.GASTO))
 
             viewModel(mes = FEBRERO).uiState.test {
-                // Marzo empieza el 25 de febrero: el gasto del 26 de marzo cae
-                // fuera del periodo de febrero.
+                // Con primerDia = 25, el periodo de febrero va del 25 de
+                // febrero al 24 de marzo (ver PeriodoMensual), asi que el gasto
+                // del 26 de marzo cae fuera.
                 esperarCargado().gastosReales shouldBe Money.ZERO
                 cancelAndIgnoreRemainingEvents()
             }
