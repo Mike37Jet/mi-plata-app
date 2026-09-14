@@ -2,6 +2,7 @@ package com.miplata.core.domain.model
 
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
@@ -36,6 +37,26 @@ data class PeriodoMensual(
     val fin: LocalDate get() = diaDe(mes.siguiente(), primerDia).minus(1, DateTimeUnit.DAY)
 
     fun contiene(fecha: LocalDate): Boolean = fecha >= inicio && fecha <= fin
+
+    /** Dias que dura el periodo, incluidos el primero y el ultimo. */
+    val duracionEnDias: Int get() = inicio.daysUntil(fin) + 1
+
+    /**
+     * Que parte del periodo ha pasado, de 0 a 1.
+     *
+     * Sirve para contrastar el ritmo de gasto con el del calendario: haber
+     * gastado el 80% cuando solo ha pasado la mitad del mes es una senal muy
+     * distinta de haberlo gastado el ultimo dia. Fuera del periodo se recorta a
+     * 0 o a 1: un mes pasado esta completo y uno futuro no ha empezado.
+     */
+    fun progreso(hoy: LocalDate): Double =
+        when {
+            hoy < inicio -> 0.0
+            hoy >= fin -> 1.0
+            // +1 porque el primer dia ya cuenta como transcurrido: el dia 1 de un
+            // mes de treinta no es "cero avanzado", es un dia de treinta.
+            else -> (inicio.daysUntil(hoy) + 1).toDouble() / duracionEnDias
+        }
 
     fun siguiente(): PeriodoMensual = copy(mes = mes.siguiente())
 

@@ -1,5 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="resumen_titulo">Resumen</string>
-    <string name="resumen_pendiente">Aquí verás si te alcanza este mes: disponible, sobregiro y en qué te has desviado.</string>
+
+    <string name="resumen_mes_anterior">Mes anterior</string>
+    <string name="resumen_mes_siguiente">Mes siguiente</string>
+
+    <string name="resumen_disponible">Te queda</string>
+    <string name="resumen_sobregiro">Te faltan</string>
+
+    <string name="resumen_sin_plan">Aún no has planificado este mes. Ve a Plan y anota tus ingresos y gastos.</string>
+    <string name="resumen_falto_ingreso">El mes está en rojo porque falta ingreso, no porque hayas gastado de más. Recortar no lo arregla: revisa qué cobro no ha llegado.</string>
+
+    <string name="resumen_comparativa">Plan y realidad</string>
+    <string name="resumen_ingresos">Ingresos</string>
+    <string name="resumen_gastos">Gastos</string>
+    <string name="resumen_columna_plan">Planificado</string>
+    <string name="resumen_columna_real">Real</string>
+
+    <string name="resumen_ritmo">Ritmo del mes</string>
+    <string name="resumen_ritmo_mes">Va del mes</string>
+    <string name="resumen_ritmo_gasto">Va del gasto</string>
+    <string name="resumen_ritmo_aviso">Estás gastando más deprisa de lo que pasa el mes.</string>
+    <string name="resumen_porcentaje">%1$d %%</string>
+
+    <string name="resumen_desviaciones">Donde te has desviado</string>
+    <string name="resumen_desviacion_detalle">%1$s de %2$s</string>
+    <string name="resumen_sin_desviaciones">Ninguna línea se te ha ido del plan.</string>
 </resources>
