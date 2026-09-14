@@ -1,5 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="transacciones_titulo">Movimientos</string>
-    <string name="transacciones_pendiente">Aquí registrarás lo que de verdad entra y sale.</string>
+
+    <string name="transacciones_mes_anterior">Mes anterior</string>
+    <string name="transacciones_mes_siguiente">Mes siguiente</string>
+    <string name="transacciones_entro">Entró</string>
+    <string name="transacciones_salio">Salió</string>
+
+    <string name="transacciones_vacio">Aún no has anotado nada este mes. Toca el botón para apuntar lo primero.</string>
+    <string name="transacciones_sin_cuentas">Primero crea una cuenta: todo movimiento sale de alguna. Ve a Cuentas.</string>
+    <string name="transacciones_anotar">Anotar movimiento</string>
+
+    <string name="transacciones_nuevo">Nuevo movimiento</string>
+    <string name="transacciones_editar">Editar movimiento</string>
+    <string name="transacciones_monto">Cuánto</string>
+    <string name="transacciones_tipo_gasto">Gasto</string>
+    <string name="transacciones_tipo_ingreso">Ingreso</string>
+    <string name="transacciones_tipo_transferencia">Transferencia</string>
+    <string name="transacciones_cuenta">Cuenta</string>
+    <string name="transacciones_cuenta_origen">Desde</string>
+    <string name="transacciones_cuenta_destino">Hacia</string>
+    <string name="transacciones_categoria">Categoría</string>
+    <string name="transacciones_linea_de_plan">Del plan</string>
+    <string name="transacciones_ninguna">Ninguna</string>
+    <string name="transacciones_nota">Nota</string>
+    <string name="transacciones_fecha">Fecha</string>
+    <string name="transacciones_dia_anterior">Día anterior</string>
+    <string name="transacciones_dia_siguiente">Día siguiente</string>
+
+    <string name="transacciones_guardar">Guardar</string>
+    <string name="transacciones_cancelar">Cancelar</string>
+    <string name="transacciones_eliminar">Eliminar</string>
+    <string name="transacciones_sin_categoria">Sin categoría</string>
+    <string name="transacciones_hacia">Hacia %1$s</string>
 </resources>
