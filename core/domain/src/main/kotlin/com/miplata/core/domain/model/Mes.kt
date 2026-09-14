@@ -47,6 +47,7 @@ value class Mes private constructor(
 
     companion object {
         private const val MESES_POR_ANIO = 12
+        private const val SEPARADOR = "-"
 
         fun de(
             anio: Int,
@@ -57,5 +58,26 @@ value class Mes private constructor(
         }
 
         fun de(fecha: LocalDate): Mes = de(fecha.year, fecha.monthNumber)
+
+        /**
+         * Inverso exacto de [toString]: `"2026-03"` vuelve a ser marzo de 2026.
+         *
+         * Vive aqui, junto a [toString], y no en quien lo necesite. El formato
+         * es una sola decision con dos mitades; separarlas es como acaban los
+         * formatos por dejar de encajar sin que nadie se entere.
+         *
+         * Lo usan la capa de datos -SQLite guarda el mes como texto ISO porque
+         * ordena bien- y lo usara el backup.
+         */
+        fun de(texto: String): Mes {
+            val partes = texto.split(SEPARADOR)
+            require(partes.size == 2) { "Un mes se escribe AAAA-MM, no '$texto'" }
+
+            val anio = partes[0].toIntOrNull()
+            val mes = partes[1].toIntOrNull()
+            require(anio != null && mes != null) { "Un mes se escribe AAAA-MM, no '$texto'" }
+
+            return de(anio, mes)
+        }
     }
 }
