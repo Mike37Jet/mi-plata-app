@@ -21,6 +21,10 @@ class AndroidFeatureConventionPlugin : Plugin<Project> {
                 apply("miplata.android.library")
                 apply("miplata.android.compose")
                 apply("miplata.android.hilt")
+                // Las rutas de navegacion son objetos @Serializable: renombrar
+                // una pantalla pasa a ser un refactor del IDE en vez de un
+                // find-and-replace sobre strings que se rompe en silencio.
+                apply("org.jetbrains.kotlin.plugin.serialization")
             }
 
             dependencies {

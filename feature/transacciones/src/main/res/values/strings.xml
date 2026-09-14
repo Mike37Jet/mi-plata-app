@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="transacciones_titulo">Movimientos</string>
+    <string name="transacciones_pendiente">Aquí registrarás lo que de verdad entra y sale.</string>
+</resources>

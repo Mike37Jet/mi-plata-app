@@ -21,6 +21,11 @@ dependencies {
     implementation(projects.core.common)
     implementation(projects.core.designsystem)
 
+    implementation(projects.feature.resumen)
+    implementation(projects.feature.plan)
+    implementation(projects.feature.transacciones)
+    implementation(projects.feature.cuentas)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.splashscreen)

@@ -83,4 +83,7 @@ include(":core:domain")
 include(":core:data")
 include(":core:designsystem")
 
-// Los módulos :feature:* se añaden en la Etapa 3 (ver docs/07-roadmap.md).
+include(":feature:resumen")
+include(":feature:plan")
+include(":feature:transacciones")
+include(":feature:cuentas")

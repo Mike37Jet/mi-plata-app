@@ -11,6 +11,11 @@ Por eso la modularización es **gradual**, en tres etapas.
 
 ## Etapa 1 — Scaffolding del MVP
 
+> **Estado:** los cuatro módulos `:feature:*` existen desde la Etapa 3.1, con sus
+> pantallas todavía vacías. La regla de dependencia está **verificada en vivo**:
+> añadir `:core:data` a `:feature:plan` rompe el build con el mensaje de
+> `ArchitectureRules.kt`.
+
 ```
 mi-plata-app/
 ├── build-logic/convention/      # convention plugins de Gradle
