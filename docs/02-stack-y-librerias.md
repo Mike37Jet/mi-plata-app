@@ -99,12 +99,34 @@ Solo si se agregan adjuntos de recibos. No entra en el MVP.
 | Coroutines/Flow | **Turbine** + `kotlinx-coroutines-test` | Verificar emisiones de `Flow` sin `Thread.sleep`. |
 | Dobles de prueba | **Fakes escritos a mano** > MockK | Un `FakeTransaccionRepository` en memoria es más legible y más robusto que un mock con 8 `every {}`. MockK solo donde el fake no valga la pena. |
 | Data | Room **in-memory** + tests de **migración** | Cada migración se prueba con datos reales. |
-| UI | **Compose UI Test** (`createAndroidComposeRule`) | Flujos críticos: crear plan, registrar gasto, restaurar backup. |
+| UI | **Compose UI Test + Robolectric** (`createComposeRule`) | Flujos críticos: armar el plan, anotar un movimiento, ver si me alcanza. Corren **en la JVM**, en cada PR, por la misma razón que los de Room: un test que necesite un emulador acaba sin ejecutarse nunca. Ver las dos trampas del entorno más abajo. |
 | Instrumentado | **androidTest en emulador o móvil** | Lo que la JVM no puede probar: que la base quede **realmente cifrada**. SQLCipher usa librerías nativas que Robolectric no carga. **No corre en CI** —sí se compila, para que no se pudra— y se ejecuta a mano con `./gradlew :core:data:connectedDebugAndroidTest`. |
 | Screenshot | **Roborazzi** (Robolectric) | Detecta regresiones visuales en CI sin emulador. Opcional, v0.2+. |
 
 **Regla:** la pirámide es ancha abajo. Cientos de tests de dominio rápidos, unos
 pocos de UI para los caminos felices críticos. No al revés.
+
+### Dos trampas de los tests de UI con Robolectric
+
+Las dos hacen que un test pase **sin haber probado nada**, que es peor que un
+test en rojo. Ambas están documentadas en el código, en los tests de flujo:
+
+1. **Una hoja modal es otra ventana.** `ModalBottomSheet` se dibuja en una
+   ventana aparte y, bajo Robolectric, un `performClick()` —que toca unas
+   coordenadas— no se enruta a ella: el gesto se pierde en silencio. Dentro de
+   una hoja hay que invocar la acción por semántica
+   (`performSemanticsAction(SemanticsActions.OnClick)`). A cambio se prueba el
+   cableado pantalla-ViewModel-dominio pero **no** el gesto físico, que se
+   comprueba a mano en el emulador.
+2. **Pulsar antes de tiempo no hace nada.** Un botón que solo se habilita
+   cuando el estado ha llegado a la pantalla —Guardar, por ejemplo— ignora la
+   pulsación si se hace antes, y el test sigue adelante creyendo que guardó.
+   Hay que esperar a que el control esté habilitado, no solo a que exista.
+
+Y una consecuencia menor: la ventana de Robolectric es pequeña, así que lo que
+cae fuera de una `LazyColumn` no se compone. Para una fila que solo importa que
+esté en la lista, `assertExists()` dice la verdad; `assertIsDisplayed()` ataría
+el test al tamaño de la ventana.
 
 ## Calidad de código
 

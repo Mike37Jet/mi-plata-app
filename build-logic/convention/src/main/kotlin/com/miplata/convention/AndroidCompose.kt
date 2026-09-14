@@ -18,6 +18,14 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension<*,
         buildFeatures {
             compose = true
         }
+
+        testOptions.unitTests {
+            // Sin esto, un test de Compose en la JVM no encuentra los recursos y
+            // cualquier `stringResource` revienta. Es la condicion para que los
+            // tests de interfaz corran con Robolectric en vez de necesitar un
+            // emulador (docs/02).
+            isIncludeAndroidResources = true
+        }
     }
 
     dependencies {
@@ -36,6 +44,16 @@ internal fun Project.configureAndroidCompose(commonExtension: CommonExtension<*,
         add("debugImplementation", libs.library("androidx-compose-ui-test-manifest"))
 
         add("androidTestImplementation", libs.library("androidx-compose-ui-test-junit4"))
+
+        // Los mismos utiles de test de Compose, tambien en la JVM. La regla del
+        // proyecto es que un test que necesite un emulador acaba sin ejecutarse
+        // nunca: los flujos de interfaz se prueban con Robolectric para que
+        // corran en cada PR como cualquier otro test unitario.
+        add("testImplementation", platform(bom))
+        add("testImplementation", libs.library("androidx-compose-ui-test-junit4"))
+        add("testImplementation", libs.library("androidx-compose-ui-test-manifest"))
+        add("testImplementation", libs.library("robolectric"))
+        add("testImplementation", libs.library("androidx-test-core"))
     }
 
     extensions.configure<ComposeCompilerGradlePluginExtension> {
