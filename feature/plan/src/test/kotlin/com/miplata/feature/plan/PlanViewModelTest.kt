@@ -1,8 +1,8 @@
 package com.miplata.feature.plan
 
 import app.cash.turbine.test
+import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
-import com.miplata.core.domain.RelojDelMes
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -52,7 +53,10 @@ class PlanViewModelTest {
             abrirPlan = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(ids)),
             ids = ids,
             ajustes = ajustes,
-            reloj = RelojDelMes { mes },
+            calendario =
+                object : Calendario {
+                    override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, 1)
+                },
         )
     }
 

@@ -40,6 +40,49 @@ class PeriodoMensualTest {
     }
 
     @Nested
+    @DisplayName("progreso")
+    inner class Progreso {
+        private val marzo = PeriodoMensual(Mes.de(2026, 3))
+
+        // El dia 1 no es "cero avanzado": es un dia de treinta y uno.
+        @Test
+        fun `el primer dia ya cuenta como transcurrido`() {
+            marzo.progreso(LocalDate(2026, 3, 1)) shouldBe (1.0 / 31)
+        }
+
+        @Test
+        fun `el ultimo dia esta completo`() {
+            marzo.progreso(LocalDate(2026, 3, 31)) shouldBe 1.0
+        }
+
+        @Test
+        fun `a mitad de mes va por la mitad`() {
+            marzo.progreso(LocalDate(2026, 3, 16)) shouldBe (16.0 / 31)
+        }
+
+        // Un mes pasado esta completo y uno futuro no ha empezado: sin recortar,
+        // la barra de progreso se saldria de la pantalla o iria hacia atras.
+        @Test
+        fun `fuera del periodo se recorta`() {
+            marzo.progreso(LocalDate(2026, 2, 15)) shouldBe 0.0
+            marzo.progreso(LocalDate(2026, 5, 1)) shouldBe 1.0
+        }
+
+        @Test
+        fun `cuenta bien los dias de un mes desplazado`() {
+            val desde25 = PeriodoMensual(Mes.de(2026, 3), primerDia = 25)
+
+            desde25.duracionEnDias shouldBe 31
+            desde25.progreso(LocalDate(2026, 4, 24)) shouldBe 1.0
+        }
+
+        @Test
+        fun `febrero bisiesto dura 29 dias`() {
+            PeriodoMensual(Mes.de(2024, 2)).duracionEnDias shouldBe 29
+        }
+    }
+
+    @Nested
     @DisplayName("mes que empieza otro dia")
     inner class MesDesplazado {
         // El caso de quien cobra el 25: su mes economico va del 25 al 24.

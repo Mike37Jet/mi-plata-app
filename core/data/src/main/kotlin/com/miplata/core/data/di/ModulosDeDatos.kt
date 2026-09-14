@@ -20,14 +20,15 @@ import com.miplata.core.data.repository.RoomCategoriaRepository
 import com.miplata.core.data.repository.RoomCuentaRepository
 import com.miplata.core.data.repository.RoomPlanRepository
 import com.miplata.core.data.repository.RoomTransaccionRepository
+import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
-import com.miplata.core.domain.RelojDelMes
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
+import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import com.miplata.core.domain.usecase.SembrarCategoriasPorDefectoUseCase
 import dagger.Module
@@ -135,13 +136,19 @@ object ModuloDeRepositorios {
 
     @Provides
     @Singleton
-    fun proveerRelojDelMes(): RelojDelMes = RelojDelMes.DEL_SISTEMA
+    fun proveerCalendario(): Calendario = Calendario.DEL_SISTEMA
 
     @Provides
     fun proveerAbrirPlan(
         planes: PlanRepository,
         ids: GeneradorDeIds,
     ): AbrirPlanDelMesUseCase = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(ids))
+
+    // Sin estado y sin dependencias: una funcion pura envuelta en una clase.
+    // Se instancia aqui, y no con @Inject en el dominio, porque :core:domain no
+    // conoce Hilt -ni ninguna otra cosa de Android- a proposito (docs/01).
+    @Provides
+    fun proveerCalcularResumen(): CalcularResumenMensualUseCase = CalcularResumenMensualUseCase()
 
     @Provides
     @Singleton

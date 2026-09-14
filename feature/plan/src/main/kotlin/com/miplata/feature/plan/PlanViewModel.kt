@@ -2,8 +2,8 @@ package com.miplata.feature.plan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
-import com.miplata.core.domain.RelojDelMes
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanMensual
@@ -46,9 +46,9 @@ class PlanViewModel
         private val abrirPlan: AbrirPlanDelMesUseCase,
         private val ids: GeneradorDeIds,
         ajustes: AjustesRepository,
-        reloj: RelojDelMes,
+        calendario: Calendario,
     ) : ViewModel() {
-        private val mesSeleccionado = MutableStateFlow(reloj.mesActual())
+        private val mesSeleccionado = MutableStateFlow(calendario.mesActual())
 
         /**
          * El plan del mes en pantalla.
