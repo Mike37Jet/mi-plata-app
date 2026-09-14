@@ -132,5 +132,27 @@ class MesTest {
             Mes.de(2026, 3).toString() shouldBe "2026-03"
             Mes.de(2026, 12).toString() shouldBe "2026-12"
         }
+
+        // Escribir y volver a leer tiene que devolver lo mismo. Es lo que
+        // sostiene que SQLite guarde el mes como texto y que el backup pueda
+        // reconstruirlo.
+        @Test
+        fun `escribir y volver a leer da el mismo mes`() {
+            listOf(Mes.de(2026, 1), Mes.de(2026, 12), Mes.de(1999, 7)).forEach {
+                Mes.de(it.toString()) shouldBe it
+            }
+        }
+
+        @Test
+        fun `lee un mes escrito en ISO`() {
+            Mes.de("2026-03") shouldBe Mes.de(2026, 3)
+        }
+
+        @Test
+        fun `rechaza textos que no son un mes`() {
+            listOf("2026", "2026-03-15", "marzo", "", "2026-13", "abcd-03").forEach {
+                assertThrows<IllegalArgumentException>("deberia rechazar '$it'") { Mes.de(it) }
+            }
+        }
     }
 }
