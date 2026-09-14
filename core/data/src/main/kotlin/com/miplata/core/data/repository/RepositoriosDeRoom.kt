@@ -71,6 +71,8 @@ class RoomCategoriaRepository(
     override suspend fun eliminar(id: CategoriaId) {
         dao.marcarEliminada(id.valor, reloj.ahoraEnMillis())
     }
+
+    override suspend fun cuantasHay(): Int = dao.cuantasVigentesHay()
 }
 
 class RoomTransaccionRepository(

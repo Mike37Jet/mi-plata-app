@@ -37,7 +37,7 @@ de que exista una pantalla.
 | 2.2 | ✅ SQLCipher + clave en Android Keystore | `feat/database-encryption` |
 | 2.3 | ✅ Implementaciones de repositorio + mappers + tests con DB in-memory | `feat/data-repositories` |
 | 2.4 | ✅ Módulos de Hilt, DataStore de preferencias | `feat/di-and-preferences` |
-| 2.5 | Seed de categorías por defecto en la primera ejecución | `feat/default-categories` |
+| 2.5 | ✅ Seed de categorías por defecto en la primera ejecución | `feat/default-categories` |
 
 ## Etapa 3 — MVP usable
 

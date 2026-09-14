@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Nombres de las categorias iniciales.
+
+  Viven aqui y no en el codigo porque son texto visible al usuario (docs/04). El
+  dominio decide la ESTRUCTURA -que vivienda tenga arriendo y servicios dentro- y
+  estas cadenas ponen las palabras.
+
+  Se guardan en la base tal y como esten al sembrar, asi que quedan en el idioma
+  que tuviera el telefono esa primera vez. Es lo correcto: a partir de ahi son
+  datos del usuario y puede renombrarlas.
+-->
+<resources>
+    <string name="categoria_sueldo">Sueldo</string>
+    <string name="categoria_otros_ingresos">Otros ingresos</string>
+
+    <string name="categoria_vivienda">Vivienda</string>
+    <string name="categoria_arriendo">Arriendo</string>
+    <string name="categoria_servicios">Servicios</string>
+    <string name="categoria_internet">Internet</string>
+
+    <string name="categoria_alimentacion">Alimentación</string>
+    <string name="categoria_mercado">Mercado</string>
+    <string name="categoria_restaurantes">Restaurantes</string>
+
+    <string name="categoria_transporte">Transporte</string>
+    <string name="categoria_combustible">Combustible</string>
+    <string name="categoria_transporte_publico">Transporte público</string>
+
+    <string name="categoria_salud">Salud</string>
+    <string name="categoria_educacion">Educación</string>
+    <string name="categoria_ocio">Ocio</string>
+    <string name="categoria_suscripciones">Suscripciones</string>
+    <string name="categoria_ropa">Ropa</string>
+    <string name="categoria_ahorro">Ahorro</string>
+    <string name="categoria_otros_gastos">Otros gastos</string>
+</resources>

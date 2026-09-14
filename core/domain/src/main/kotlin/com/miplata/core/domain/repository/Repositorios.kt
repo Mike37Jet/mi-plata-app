@@ -44,6 +44,14 @@ interface CategoriaRepository {
     suspend fun guardar(categoria: Categoria)
 
     suspend fun eliminar(id: CategoriaId)
+
+    /**
+     * Cuantas categorias vigentes hay.
+     *
+     * Existe para decidir si hay que sembrar las por defecto sin tener que
+     * traerse todas las filas solo para contarlas.
+     */
+    suspend fun cuantasHay(): Int
 }
 
 interface TransaccionRepository {
