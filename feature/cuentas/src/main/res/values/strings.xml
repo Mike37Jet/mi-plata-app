@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cuentas_titulo">Cuentas</string>
+    <string name="cuentas_pendiente">Aquí estarán tu efectivo, tus cuentas de banco y tus tarjetas.</string>
+</resources>

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">mi plata</string>
-    <string name="placeholder_title">mi plata</string>
-    <string name="placeholder_subtitle">Cifras tabulares y colores con significado.</string>
+    <string name="destino_resumen">Resumen</string>
+    <string name="destino_plan">Plan</string>
+    <string name="destino_movimientos">Movimientos</string>
+    <string name="destino_cuentas">Cuentas</string>
 </resources>

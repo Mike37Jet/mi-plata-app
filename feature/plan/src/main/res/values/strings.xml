@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="plan_titulo">Plan</string>
+    <string name="plan_pendiente">Aquí pondrás tus ingresos, tus gastos fijos y tu estimación de los variables.</string>
+</resources>
