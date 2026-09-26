@@ -38,6 +38,7 @@ Sin backend. Sin cuentas de usuario. Sin permiso de INTERNET.
 | [07 — Roadmap](docs/07-roadmap.md) | Etapas de construcción, cada una con entregable ejecutable |
 | [ADRs](docs/adr/) | Registro de decisiones arquitectónicas |
 | [08 — Entorno de desarrollo](docs/08-entorno-de-desarrollo.md) | Qué instalar, versiones verificadas y trampas del entorno |
+| [09 — Accesibilidad](docs/09-accesibilidad.md) | Letra grande hasta el 200%, contraste WCAG AA y cómo se prueba |
 
 ## Convenciones de contribución
 

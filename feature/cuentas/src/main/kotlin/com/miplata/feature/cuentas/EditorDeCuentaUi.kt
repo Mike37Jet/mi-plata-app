@@ -29,12 +29,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
@@ -267,7 +267,7 @@ private fun CabeceraDelEditor(
 ) {
     val titulo =
         stringResource(if (editor.esNueva) R.string.cuentas_nueva else R.string.cuentas_editar)
-    val apilado = LocalDensity.current.fontScale >= ESCALA_QUE_NO_CABE
+    val apilado = conLetraGrande()
 
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
         if (apilado) {
@@ -295,5 +295,3 @@ private fun CabeceraDelEditor(
         }
     }
 }
-
-private const val ESCALA_QUE_NO_CABE = 1.5f

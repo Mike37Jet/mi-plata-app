@@ -34,7 +34,7 @@ data class ColoresDeDinero(
     val ahorro: Color,
 )
 
-private val ColoresDeDineroClaros =
+internal val ColoresDeDineroClaros =
     ColoresDeDinero(
         ingreso = IngresoClaro,
         gasto = GastoClaro,
@@ -42,7 +42,7 @@ private val ColoresDeDineroClaros =
         ahorro = AhorroClaro,
     )
 
-private val ColoresDeDineroOscuros =
+internal val ColoresDeDineroOscuros =
     ColoresDeDinero(
         ingreso = IngresoOscuro,
         gasto = GastoOscuro,
