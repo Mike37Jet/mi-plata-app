@@ -1,6 +1,7 @@
 package com.miplata.core.backup
 
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -26,6 +27,7 @@ import java.util.zip.ZipOutputStream
 class ArchivoDeBackup(
     private val cifrador: CifradorDeBackup = CifradorDeBackup(),
     private val json: Json = JSON,
+    private val migrador: MigradorDeFormato = MigradorDeFormato(),
 ) {
     /**
      * Escribe el backup en [destino], **sin cerrarlo**.
@@ -105,7 +107,7 @@ class ArchivoDeBackup(
             )
 
         return try {
-            BackupLeido(manifiesto, decodificar(claro))
+            BackupLeido(manifiesto, decodificar(claro, manifiesto.versionDelFormato))
         } finally {
             claro.fill(0)
         }
@@ -158,9 +160,19 @@ class ArchivoDeBackup(
         }
     }
 
-    private fun decodificar(datos: ByteArray): DatosDelBackup =
+    /**
+     * Del JSON descifrado a los datos, pasando antes por las migraciones.
+     *
+     * Una copia del formato actual pasa por el migrador sin cambios; una de un
+     * formato anterior sale convertida al de hoy antes de tocar los DTOs.
+     */
+    private fun decodificar(
+        datos: ByteArray,
+        versionDelArchivo: Int,
+    ): DatosDelBackup =
         try {
-            json.decodeFromString(DatosDelBackup.serializer(), datos.decodeToString())
+            val crudo = json.parseToJsonElement(datos.decodeToString()).jsonObject
+            json.decodeFromJsonElement(DatosDelBackup.serializer(), migrador.migrar(crudo, versionDelArchivo))
         } catch (e: IllegalArgumentException) {
             throw BackupInvalido("Los datos del backup no se pueden leer", e)
         }
