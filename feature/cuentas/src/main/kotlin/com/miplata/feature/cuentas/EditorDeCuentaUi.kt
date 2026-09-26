@@ -53,6 +53,11 @@ internal fun Editor(
     // fuera el estado, teclear "12," se convertiria en "12" al instante y no
     // habria forma de llegar al segundo decimal.
     var saldoTecleado by rememberSaveable { mutableStateOf(textoInicial(editor.saldoInicial)) }
+    // El nombre tambien, aunque sea texto sin interpretar. Su valor sube al
+    // ViewModel y vuelve por un StateFlow; si el campo leyera de ahi, cualquier
+    // recomposicion que llegue antes que ese valor devolveria el campo al texto
+    // anterior y la siguiente tecla se aplicaria sobre el: se pierden letras.
+    var nombreTecleado by rememberSaveable { mutableStateOf(editor.nombre) }
     val estadoDeLaHoja = rememberModalBottomSheetState()
 
     ModalBottomSheet(
@@ -78,8 +83,11 @@ internal fun Editor(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 OutlinedTextField(
-                    value = editor.nombre,
-                    onValueChange = { alEvento(EventoDeCuentas.CambiarNombre(it)) },
+                    value = nombreTecleado,
+                    onValueChange = { texto ->
+                        nombreTecleado = texto
+                        alEvento(EventoDeCuentas.CambiarNombre(texto))
+                    },
                     label = { Text(stringResource(R.string.cuentas_nombre)) },
                     placeholder = { Text(stringResource(R.string.cuentas_nombre_ejemplo)) },
                     singleLine = true,
