@@ -7,12 +7,17 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.miplata.app.navigation.FlujoDeBienvenida
 import com.miplata.app.navigation.NavegacionPrincipal
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.Ajustes
@@ -35,8 +40,10 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var ajustes: AjustesRepository
 
+    private val arranque: ArranqueViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        installSplashScreen().setKeepOnScreenCondition { arranque.empezarPorLaBienvenida.value == null }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
@@ -46,7 +53,8 @@ class MainActivity : ComponentActivity() {
             savedInstanceState == null && intent.getBooleanExtra(EXTRA_ABRIR_COPIA_DE_SEGURIDAD, false)
 
         setContent {
-            AplicacionMiPlata(ajustes.observar(), abrirCopia)
+            val bienvenida by arranque.empezarPorLaBienvenida.collectAsStateWithLifecycle()
+            AplicacionMiPlata(ajustes.observar(), bienvenida, abrirCopia)
         }
     }
 }
@@ -54,6 +62,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun AplicacionMiPlata(
     ajustes: Flow<Ajustes>,
+    empezarPorLaBienvenida: Boolean?,
     abrirCopia: Boolean,
 ) {
     val configuracion by ajustes.collectAsStateWithLifecycle(initialValue = Ajustes())
@@ -68,8 +77,22 @@ private fun AplicacionMiPlata(
 
     BarrasDelSistemaSegunElTema(oscuro)
 
+    // Quien termina la bienvenida entra en el plan, a seguir con lo que empezo:
+    // ya tiene su ingreso y le faltan los gastos. Quien entra restaurando una
+    // copia llega a su resumen, como cualquier otro dia.
+    var vieneDeLaBienvenida by rememberSaveable { mutableStateOf(false) }
+
     MiPlataTheme(temaOscuro = oscuro) {
-        NavegacionPrincipal(abrirCopiaAlEmpezar = abrirCopia)
+        when (empezarPorLaBienvenida) {
+            // Aun no se sabe: la splash screen sigue encima.
+            null -> Unit
+            true -> FlujoDeBienvenida(alTerminar = { vieneDeLaBienvenida = true })
+            false ->
+                NavegacionPrincipal(
+                    abrirCopiaAlEmpezar = abrirCopia,
+                    empezarEnElPlan = vieneDeLaBienvenida,
+                )
+        }
     }
 }
 

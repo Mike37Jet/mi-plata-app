@@ -33,6 +33,8 @@ import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.AgruparMovimientosPorDiaUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
+import com.miplata.core.domain.usecase.CompletarPrimerosPasosUseCase
+import com.miplata.core.domain.usecase.HayQueDarLaBienvenidaUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import com.miplata.core.domain.usecase.SembrarCategoriasPorDefectoUseCase
 import dagger.Module
@@ -184,4 +186,17 @@ object ModuloDeCasosDeUso {
 
     @Provides
     fun proveerAgruparPorDia(): AgruparMovimientosPorDiaUseCase = AgruparMovimientosPorDiaUseCase()
+
+    @Provides
+    fun proveerHayQueDarLaBienvenida(cuentas: CuentaRepository): HayQueDarLaBienvenidaUseCase =
+        HayQueDarLaBienvenidaUseCase(cuentas)
+
+    @Provides
+    fun proveerCompletarPrimerosPasos(
+        ajustes: AjustesRepository,
+        cuentas: CuentaRepository,
+        planes: PlanRepository,
+        ids: GeneradorDeIds,
+        calendario: Calendario,
+    ): CompletarPrimerosPasosUseCase = CompletarPrimerosPasosUseCase(ajustes, cuentas, planes, ids, calendario)
 }

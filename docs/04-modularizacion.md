@@ -25,13 +25,20 @@ mi-plata-app/
 │   ├── domain/                  # kotlin("jvm") ← SIN Android. La regla se impone aquí.
 │   ├── data/                    # Room, DataStore, repos
 │   ├── designsystem/            # tema M3, tipografía, color, componentes base
+│   ├── backup/                  # formato y cifrado del backup, JVM puro (docs/05)
 │   └── common/                  # utils, dispatchers, Result
 └── feature/
     ├── resumen/                 # dashboard "¿me alcanza?"
     ├── plan/                    # editar ingresos y gastos del mes
     ├── transacciones/
-    └── ajustes/                 # incluye backup/restore
+    ├── cuentas/
+    ├── backup/                  # copia, restauración y recordatorio
+    └── bienvenida/              # primeros pasos (ADR 0006)
 ```
+
+El plan original tenía un `ajustes/` que agrupaba el backup. Al construirlo, el
+backup creció lo bastante como para tener su módulo, y los ajustes que quedaban
+(moneda y día de inicio del mes) se piden en la bienvenida.
 
 Cinco a nueve módulos. Manejable desde el primer día, y ya da el beneficio
 grande: `:core:domain` como módulo JVM puro.
