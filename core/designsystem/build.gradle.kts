@@ -13,4 +13,6 @@ dependencies {
     implementation(projects.core.domain)
     implementation(libs.androidx.core.ktx)
     api(libs.androidx.compose.material.icons.extended)
+    // El desenfoque de la barra inferior y las hojas (docs/10).
+    api(libs.haze)
 }

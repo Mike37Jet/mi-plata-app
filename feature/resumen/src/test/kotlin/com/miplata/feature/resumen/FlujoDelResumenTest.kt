@@ -1,11 +1,14 @@
 package com.miplata.feature.resumen
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.model.CuentaId
@@ -212,10 +215,12 @@ class FlujoDelResumenTest {
         abrirPantalla()
 
         compose.onNodeWithText("Donde te has desviado").assertIsDisplayed()
-        // `assertExists` y no `assertIsDisplayed`: la ventana de Robolectric es
-        // pequena y la fila cae por debajo del borde. Lo que se comprueba aqui
-        // es que la desviacion se calcula y llega a la lista -planificaste 400,
-        // llevas 520, sobran 120-, no en que pixel acaba dibujada.
+        // La ventana de Robolectric es pequena y la fila cae por debajo del
+        // borde; como la lista es perezosa, ni siquiera se compone hasta que se
+        // llega a ella. Se desplaza hasta alli. Lo que se comprueba es que la
+        // desviacion se calcula y llega a la lista -planificaste 400, llevas
+        // 520, sobran 120-, no en que pixel acaba dibujada.
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText("+$120.00"))
         compose.onNodeWithText("Comida").assertExists()
         compose.onNodeWithText("+$120.00").assertExists()
     }

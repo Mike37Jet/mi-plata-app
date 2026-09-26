@@ -34,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.miplata.core.designsystem.componentes.CifraPrincipal
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
 import com.miplata.core.designsystem.theme.EstilosDeDinero
@@ -137,9 +138,8 @@ private fun Total(
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Text(
-            text = dinero.formatear(estado.total),
-            style = EstilosDeDinero.destacado,
+        CifraPrincipal(
+            texto = dinero.formatear(estado.total),
             color = colorDelSaldo(estado.total),
         )
 

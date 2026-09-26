@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
+import com.miplata.core.designsystem.componentes.CifraPrincipal
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
 import com.miplata.core.designsystem.theme.EstilosDeDinero
@@ -138,9 +139,8 @@ private fun Cabecera(
         )
         // Siempre en valor absoluto: el signo lo dice la etiqueta de arriba.
         // "Te faltan -120" se lee como una doble negacion y confunde.
-        Text(
-            text = dinero.formatear(estado.disponibleReal.valorAbsoluto()),
-            style = EstilosDeDinero.destacado,
+        CifraPrincipal(
+            texto = dinero.formatear(estado.disponibleReal.valorAbsoluto()),
             color =
                 if (estado.enSobregiro) MiPlataTheme.dinero.sobregiro else MiPlataTheme.dinero.ingreso,
         )

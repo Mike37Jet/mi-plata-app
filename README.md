@@ -39,6 +39,7 @@ Sin backend. Sin cuentas de usuario. Sin permiso de INTERNET.
 | [ADRs](docs/adr/) | Registro de decisiones arquitectónicas |
 | [08 — Entorno de desarrollo](docs/08-entorno-de-desarrollo.md) | Qué instalar, versiones verificadas y trampas del entorno |
 | [09 — Accesibilidad](docs/09-accesibilidad.md) | Letra grande hasta el 200%, contraste WCAG AA y cómo se prueba |
+| [10 — Rediseño visual](docs/10-rediseno.md) | Auditoría de Nielsen, escala áurea, Inter, cristal y el plan por PRs |
 
 ## Convenciones de contribución
 

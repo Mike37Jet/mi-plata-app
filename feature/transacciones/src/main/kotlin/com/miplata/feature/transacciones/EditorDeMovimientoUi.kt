@@ -115,7 +115,7 @@ internal fun EditorDeMovimientoUi(
                     placeholder = { Text("0") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
-                    textStyle = EstilosDeDinero.destacado,
+                    textStyle = EstilosDeDinero.entrada,
                     modifier = Modifier.fillMaxWidth().focusRequester(foco),
                 )
 
