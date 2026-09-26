@@ -72,6 +72,10 @@ internal fun EditorDeMovimientoUi(
     // fuera el estado, teclear "12," se convertiria en "12" al instante y no
     // habria forma de llegar al segundo decimal.
     var montoTecleado by rememberSaveable { mutableStateOf(textoInicial(editor.monto)) }
+    // La nota tambien: su valor hace la ida y vuelta por el ViewModel, y un
+    // campo que leyera de ahi volveria al texto anterior en cualquier
+    // recomposicion que se adelantase a esa vuelta, perdiendo letras.
+    var notaTecleada by rememberSaveable { mutableStateOf(editor.nota) }
     val foco = remember { FocusRequester() }
 
     // El teclado, puesto en el importe desde el primer instante: es el unico
@@ -184,8 +188,11 @@ internal fun EditorDeMovimientoUi(
                 }
 
                 OutlinedTextField(
-                    value = editor.nota,
-                    onValueChange = { alEvento(EventoDeMovimientos.CambioDeCampo.Nota(it)) },
+                    value = notaTecleada,
+                    onValueChange = { texto ->
+                        notaTecleada = texto
+                        alEvento(EventoDeMovimientos.CambioDeCampo.Nota(texto))
+                    },
                     label = { Text(stringResource(R.string.transacciones_nota)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
