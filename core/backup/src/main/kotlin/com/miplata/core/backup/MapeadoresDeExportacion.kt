@@ -19,6 +19,7 @@ internal fun Ajustes.aDto() =
         primerDiaDelMesFinanciero = primerDiaDelMesFinanciero,
         tema = tema.name,
         ultimoBackupEnMillis = ultimoBackupEnMillis,
+        frecuenciaDeRecordatorio = frecuenciaDeRecordatorio.name,
     )
 
 internal fun Cuenta.aDto() =

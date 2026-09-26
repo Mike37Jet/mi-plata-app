@@ -3,6 +3,7 @@ package com.miplata.core.data.ajustes
 import androidx.datastore.core.DataStoreFactory
 import app.cash.turbine.test
 import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Tema
 import io.kotest.matchers.shouldBe
@@ -57,6 +58,7 @@ class AjustesEnDataStoreTest {
                     primerDiaDelMesFinanciero = 25,
                     tema = Tema.OSCURO,
                     ultimoBackupEnMillis = 1_772_000_000_000L,
+                    frecuenciaDeRecordatorio = FrecuenciaDeRecordatorio.SEMANAL,
                 )
 
             repo.guardar(elegidos)
@@ -86,6 +88,25 @@ class AjustesEnDataStoreTest {
 
         guardados.aDominio().tema shouldBe Tema.SEGUN_EL_SISTEMA
     }
+
+    @Test
+    fun `una frecuencia desconocida cae a la mensual`() {
+        AjustesGuardados(frecuenciaDeRecordatorio = "CADA_HORA").aDominio().frecuenciaDeRecordatorio shouldBe
+            FrecuenciaDeRecordatorio.MENSUAL
+    }
+
+    // Unos ajustes guardados antes de que existiera la frecuencia no traen ese
+    // campo: tienen que leerse, con el valor por defecto.
+    @Test
+    fun `unos ajustes antiguos sin frecuencia se leen con la mensual`() =
+        runTest {
+            val archivo = File(carpeta.root, "antiguos.json")
+            archivo.writeText("""{"moneda":"EUR","primerDiaDelMesFinanciero":1,"tema":"CLARO"}""")
+            val repo = AjustesEnDataStore(DataStoreFactory.create(serializer = SerializadorDeAjustes) { archivo })
+
+            repo.obtener().frecuenciaDeRecordatorio shouldBe FrecuenciaDeRecordatorio.MENSUAL
+            repo.obtener().moneda shouldBe Moneda("EUR")
+        }
 
     @Test
     fun `el DTO y el dominio se corresponden en ambos sentidos`() {

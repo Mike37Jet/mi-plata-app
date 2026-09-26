@@ -97,6 +97,12 @@ data class AjustesDto(
     val primerDiaDelMesFinanciero: Int,
     val tema: String,
     val ultimoBackupEnMillis: Long? = null,
+    /**
+     * Campo añadido despues de la version 1 del formato, con valor por defecto:
+     * las copias hechas antes no lo traen y se siguen leyendo igual. Un campo
+     * nuevo con valor por defecto no obliga a subir la version del formato.
+     */
+    val frecuenciaDeRecordatorio: String = "MENSUAL",
 )
 
 @Serializable

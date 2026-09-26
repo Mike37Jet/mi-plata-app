@@ -198,15 +198,57 @@ error: la copia se daba por guardada sin garantía de haber llegado al disco.
 
 ## Automatización del recordatorio
 
-- `WorkManager` con `PeriodicWorkRequest` (semanal o mensual, configurable).
-- Como la app no puede escribir sola en una URI de SAF cuya permanencia no está
-  garantizada, el comportamiento por defecto es **notificar**: *"Tu último
-  backup fue hace 34 días."*
-- Mejora posible: si el usuario concede una URI de carpeta persistente
-  (`ACTION_OPEN_DOCUMENT_TREE` + `takePersistableUriPermission`), el worker
-  **sí** puede escribir el archivo automáticamente ahí, y si esa carpeta está
-  sincronizada con Drive/OneDrive, la subida la hace la app de la nube. Backup
-  automático real, sin una línea de código de red.
+Un trabajo de **WorkManager** se ejecuta **una vez al día** y decide si toca
+avisar. Diario y no semanal o mensual: la frecuencia la elige el usuario y la
+última copia cambia en cualquier momento, así que en vez de reprogramar el
+trabajo se mira a diario y decide la política. Cambiar la frecuencia funciona sin
+tocar WorkManager.
+
+La decisión es una función pura del dominio (`PoliticaDeRecordatorio`), probada
+sin Android:
+
+1. Frecuencia **Nunca** → no se avisa.
+2. **Sin datos que proteger** (sin cuentas, movimientos ni planes; las
+   categorías de serie no cuentan) → no se avisa. Pedir una copia de nada enseña
+   a ignorar el aviso.
+3. Se avisa si la última copia es más vieja que la frecuencia (**7** o **30**
+   días), o si nunca se hizo ninguna.
+4. Un aviso no se repite hasta pasados **3 días**. Uno diario acaba silenciado;
+   uno que no se repite, olvidado.
+
+El aviso es una notificación de importancia baja, sin sonido: *"Tu última copia
+fue hace 34 días"*. Tocarla abre la app directamente en la pantalla de copia.
+
+### El permiso de notificaciones
+
+Desde Android 13 hace falta `POST_NOTIFICATIONS`, que se pide en tiempo de
+ejecución. Se pide **al elegir una frecuencia** en la pantalla de copia, que es
+cuando la pregunta tiene sentido. Si las notificaciones están desactivadas, la
+pantalla lo dice ("no verás el recordatorio") con un botón a los ajustes del
+sistema: sin ese aviso, el usuario elegiría "cada mes", creería estar cubierto y
+no le llegaría nada nunca. Un aviso que no llega a enseñarse no se apunta como
+dado: sigue pendiente.
+
+**Limitación conocida:** quien nunca abre la pantalla de copia nunca ve la
+pregunta del permiso, así que en Android 13 o superior no recibe el
+recordatorio. Un aviso dentro de la app (por ejemplo, en la entrada de Cuentas)
+lo cubriría sin permisos.
+
+### Permisos que añade WorkManager
+
+WorkManager suma cuatro permisos al manifiesto final: `WAKE_LOCK`,
+`RECEIVE_BOOT_COMPLETED` (reprogramarse tras reiniciar), `FOREGROUND_SERVICE` y
+`ACCESS_NETWORK_STATE`. Este último solo lo usaría una restricción de red, que
+este trabajo no tiene. **Ninguno es `INTERNET`**: comprobado en el APK.
+
+### Mejora posible
+
+Si el usuario concede una carpeta persistente (`ACTION_OPEN_DOCUMENT_TREE` +
+`takePersistableUriPermission`), el trabajo **sí** podría escribir la copia ahí
+automáticamente, y si esa carpeta está sincronizada con Drive u OneDrive, la
+subida la haría la app de la nube. Backup automático real, sin una línea de
+código de red. Requiere guardar la frase, así que es una decisión de diseño
+aparte.
 
 ## Lo que hay que desactivar
 

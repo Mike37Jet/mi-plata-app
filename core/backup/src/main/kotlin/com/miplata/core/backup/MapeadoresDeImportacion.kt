@@ -6,6 +6,7 @@ import com.miplata.core.domain.model.CategoriaId
 import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
@@ -43,6 +44,10 @@ internal fun AjustesDto.aDominio() =
         // perder el backup entero: son preferencias, no datos financieros.
         tema = Tema.entries.firstOrNull { it.name == tema } ?: Tema.SEGUN_EL_SISTEMA,
         ultimoBackupEnMillis = ultimoBackupEnMillis,
+        // Preferencia, no dinero: un valor desconocido no invalida la copia.
+        frecuenciaDeRecordatorio =
+            FrecuenciaDeRecordatorio.entries.firstOrNull { it.name == frecuenciaDeRecordatorio }
+                ?: FrecuenciaDeRecordatorio.MENSUAL,
     )
 
 internal fun CuentaDto.aDominio() =

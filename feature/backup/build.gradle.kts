@@ -15,5 +15,8 @@ dependencies {
     // archivos del sistema desde Compose.
     implementation(libs.androidx.activity.compose)
 
+    // El recordatorio periodico de copia (docs/05).
+    implementation(libs.androidx.work.runtime.ktx)
+
     testImplementation(testFixtures(projects.core.domain))
 }

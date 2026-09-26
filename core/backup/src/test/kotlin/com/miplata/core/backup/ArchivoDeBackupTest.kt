@@ -73,6 +73,16 @@ class ArchivoDeBackupTest {
         archivo.leerManifiesto(ByteArrayInputStream(bytesDe())).contenido.cuentas shouldBe 1
     }
 
+    // Una copia hecha antes de que existiera la frecuencia de recordatorio no
+    // trae el campo, y tiene que seguir leyendose.
+    @Test
+    fun `una copia sin la frecuencia de recordatorio se lee con la mensual`() {
+        val sinCampo = AjustesDto(moneda = "EUR", primerDiaDelMesFinanciero = 1, tema = "CLARO")
+
+        sinCampo.aDominio().frecuenciaDeRecordatorio shouldBe
+            com.miplata.core.domain.model.FrecuenciaDeRecordatorio.MENSUAL
+    }
+
     @Test
     fun `un backup vacio se escribe y se lee igual`() {
         val vacio = DatosDelBackup(ajustes = AjustesDto("USD", 1, "SEGUN_EL_SISTEMA"))

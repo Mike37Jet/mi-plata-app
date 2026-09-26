@@ -72,4 +72,20 @@
     <string name="restaurar_deshaciendo">Deshaciendo…</string>
     <string name="restaurar_deshecha">Hecho. Lo que tenías justo antes se ha guardado: puedes volver a ello desde esta pantalla.</string>
     <string name="restaurar_volver">Volver</string>
+
+    <!-- Recordatorio -->
+    <string name="recordatorio_titulo">Haz una copia de seguridad</string>
+    <string name="recordatorio_nunca">Todavía no has hecho ninguna copia de tus datos. Si pierdes el teléfono, los pierdes.</string>
+    <plurals name="recordatorio_dias">
+        <item quantity="one">Tu última copia fue hace %1$d día.</item>
+        <item quantity="other">Tu última copia fue hace %1$d días.</item>
+    </plurals>
+    <string name="recordatorio_canal">Recordatorio de copia de seguridad</string>
+    <string name="recordatorio_canal_descripcion">Te avisa cuando hace tiempo que no haces una copia de tus datos.</string>
+    <string name="recordatorio_frecuencia">Recordarme hacer una copia</string>
+    <string name="recordatorio_semanal">Cada semana</string>
+    <string name="recordatorio_mensual">Cada mes</string>
+    <string name="recordatorio_nunca_opcion">Nunca</string>
+    <string name="recordatorio_sin_permiso">Las notificaciones están desactivadas, así que no verás el recordatorio.</string>
+    <string name="recordatorio_activar">Activar notificaciones</string>
 </resources>

@@ -8,6 +8,7 @@ import com.miplata.core.backup.FraseIncorrecta
 import com.miplata.core.backup.RecolectorDeDatos
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeCuenta
@@ -263,6 +264,22 @@ class CopiaViewModelTest {
                 esperarHasta { it.exportacion == Exportacion.Inactiva }
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+
+    @Test
+    fun `cambiar la frecuencia la guarda y la enseña`() =
+        runTest(despachador) {
+            val vm = viewModel()
+
+            vm.uiState.test {
+                awaitItem().frecuencia shouldBe FrecuenciaDeRecordatorio.MENSUAL
+
+                vm.cambiarFrecuencia(FrecuenciaDeRecordatorio.SEMANAL)
+
+                esperarHasta { it.frecuencia == FrecuenciaDeRecordatorio.SEMANAL }
+                cancelAndIgnoreRemainingEvents()
+            }
+            ajustes.obtener().frecuenciaDeRecordatorio shouldBe FrecuenciaDeRecordatorio.SEMANAL
         }
 
     @Test

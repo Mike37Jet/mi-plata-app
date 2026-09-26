@@ -5,6 +5,7 @@ import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
@@ -66,6 +67,8 @@ class RoundTripTest {
                 primerDiaDelMesFinanciero = 25,
                 tema = Tema.OSCURO,
                 ultimoBackupEnMillis = 1_772_000_000_000L,
+                // Distinta de la de por defecto, para que el round-trip la pruebe.
+                frecuenciaDeRecordatorio = FrecuenciaDeRecordatorio.SEMANAL,
             ),
         )
     }
