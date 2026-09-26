@@ -34,8 +34,10 @@ necesita ningún permiso peligroso.
 `miplata-backup-2026-03-15-1042.mpb` — un ZIP con:
 
 ```
-manifest.json      { formatVersion, schemaVersion, appVersion, createdAt, deviceName, checksum }
-data.json          todas las entidades serializadas con kotlinx.serialization
+manifest.json      en claro: versiones, fecha, dispositivo, recuento, checksum
+                   y los parámetros de cifrado (salt, IV, iteraciones)
+data.enc           las entidades serializadas con kotlinx.serialization,
+                   cifradas con AES-256-GCM
 attachments/       (futuro) fotos de recibos
 ```
 
@@ -46,7 +48,11 @@ Decisiones:
   vuelve imposible. JSON permite migrar el backup al importarlo.
 - **`formatVersion` separado de `schemaVersion`.** El formato del backup es un
   contrato público con el usuario y evoluciona más lento que la base de datos.
-- **Checksum SHA-256** en el manifest → detectar corrupción antes de tocar nada.
+- **Checksum SHA-256 del contenido *cifrado*** en el manifest → detectar
+  corrupción antes de tocar nada, y **sin necesitar la frase**. Sobre el cifrado y
+  no sobre el claro: así un archivo dañado se distingue de una frase mal escrita,
+  y no queda al lado del cifrado un hash del claro que permitiría confirmar un
+  contenido adivinado.
 - Un `.zip` renombrado, para que el usuario no lo abra por accidente ni una app
   de mensajería lo recomprima.
 
@@ -56,12 +62,42 @@ El backup contiene todas las finanzas del usuario y va a terminar en una nube de
 terceros. **Se cifra siempre**, no es opcional.
 
 - El usuario define una **frase de respaldo** al configurar el primer backup.
-- Derivación de clave: **Argon2id** (o PBKDF2-HMAC-SHA256 con ≥600.000
-  iteraciones si se prefiere no añadir dependencia nativa), con salt aleatorio
-  guardado en el manifest.
+  Mínimo **12 caracteres**; la interfaz recomienda tres o cuatro palabras.
+- Derivación de clave: **PBKDF2-HMAC-SHA256 con 600.000 iteraciones** (la cifra
+  de OWASP). Se eligió sobre Argon2id porque viene en la biblioteca estándar de
+  Java: `:core:backup` sigue siendo Kotlin puro y se prueba en la JVM sin
+  dependencias nativas. Las iteraciones **se guardan en el archivo**, así que se
+  pueden subir en el futuro sin dejar de abrir los backups antiguos.
+- Salt (16 bytes) e IV (12 bytes) **aleatorios en cada backup**. Dos copias con la
+  misma frase dan claves distintas: nunca se reutiliza un IV con la misma clave.
 - Cifrado: **AES-256-GCM** (autenticado: detecta manipulación, no solo corrupción).
+- Los parámetros y la versión del formato se autentican como **datos asociados**
+  de GCM: van en claro, pero cambiarlos impide abrir el archivo.
+- Un tope de iteraciones al leer evita que un archivo malicioso cuelgue la app
+  derivando una clave durante minutos.
 - La frase **no se guarda en ningún lado**. Si se pierde, el backup se pierde. La
   UI debe decirlo con todas sus letras, al menos dos veces, antes de continuar.
+- El contenido en claro vive solo en memoria y se sobrescribe al terminar. La
+  frase se guarda como `CharArray` para poder borrarla. La JVM no garantiza que
+  el borrado alcance todas las copias, pero no dejarla entera en un `String`
+  inmutable es lo mínimo razonable.
+
+### Qué dice la app cuando algo falla
+
+El orden de las comprobaciones al leer es lo que hace útiles los mensajes:
+
+| Comprobación | Si falla | ¿Necesita la frase? |
+|---|---|---|
+| ¿Hay manifiesto? | "Esto no parece un backup de mi-plata" | No |
+| ¿Versión legible? | "Actualiza la app para restaurarlo" | No |
+| ¿Checksum del cifrado? | "El backup está dañado. No se ha modificado nada." | No |
+| ¿Descifra? | **Frase incorrecta** → se vuelve a pedir | Sí |
+
+GCM no distingue "frase equivocada" de "datos manipulados". Pero como el checksum
+se comprueba antes, si se llega al último paso el archivo está entero y lo casi
+seguro es la frase. Es un tipo de error propio (`FraseIncorrecta`) porque la
+interfaz reacciona distinto: ante un archivo dañado aborta, ante una frase mal
+tecleada la vuelve a pedir.
 
 ## Restauración
 
