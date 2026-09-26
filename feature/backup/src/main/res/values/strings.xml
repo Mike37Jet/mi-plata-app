@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="copia_titulo">Copia de seguridad</string>
+    <string name="copia_volver">Volver</string>
+
+    <string name="copia_ultima">Última copia: %1$s</string>
+    <string name="copia_nunca">Todavía no has hecho ninguna copia.</string>
+
+    <string name="copia_explicacion">La copia se cifra con una frase que eliges tú. Guárdala donde quieras: Drive, OneDrive, un USB o tu correo. Nadie puede leerla sin la frase.</string>
+    <string name="copia_advertencia">Si olvidas la frase, la copia no se puede abrir. No hay forma de recuperarla: no se guarda en ningún sitio, tampoco en este teléfono.</string>
+
+    <string name="copia_frase">Frase de respaldo</string>
+    <plurals name="copia_frase_ayuda">
+        <item quantity="one">Al menos %1$d carácter. Mejor tres o cuatro palabras que recuerdes.</item>
+        <item quantity="other">Al menos %1$d caracteres. Mejor tres o cuatro palabras que recuerdes.</item>
+    </plurals>
+    <string name="copia_confirmacion">Repite la frase</string>
+    <string name="copia_mostrar">Mostrar la frase</string>
+    <string name="copia_ocultar">Ocultar la frase</string>
+    <string name="copia_asumo_el_riesgo">Entiendo que si pierdo la frase, pierdo la copia.</string>
+
+    <string name="copia_problema_corta">La frase es demasiado corta.</string>
+    <string name="copia_problema_no_coinciden">Las dos frases no coinciden.</string>
+    <string name="copia_problema_riesgo">Marca la casilla para confirmar que lo entiendes.</string>
+
+    <string name="copia_guardar">Guardar copia</string>
+    <string name="copia_en_curso">Cifrando la copia… puede tardar unos segundos.</string>
+    <string name="copia_terminada">Copia guardada: %1$s</string>
+    <string name="copia_fallida">No se pudo guardar la copia: %1$s</string>
+    <string name="copia_entendido">Entendido</string>
+</resources>

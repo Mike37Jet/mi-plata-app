@@ -15,9 +15,14 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object RutaCuentas
 
-/** El feature declara como se entra en el; `:app` solo lo ensambla. */
-fun NavGraphBuilder.pantallaCuentas() {
+/**
+ * El feature declara como se entra en el; `:app` solo lo ensambla.
+ *
+ * @param alAbrirCopiaDeSeguridad a donde se va lo decide `:app`: este feature no
+ *   puede depender del de la copia (docs/04).
+ */
+fun NavGraphBuilder.pantallaCuentas(alAbrirCopiaDeSeguridad: () -> Unit) {
     composable<RutaCuentas> {
-        PantallaCuentas()
+        PantallaCuentas(alAbrirCopiaDeSeguridad = alAbrirCopiaDeSeguridad)
     }
 }
