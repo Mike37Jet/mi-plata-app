@@ -20,11 +20,13 @@ dependencies {
     implementation(projects.core.data)
     implementation(projects.core.common)
     implementation(projects.core.designsystem)
+    implementation(projects.core.backup)
 
     implementation(projects.feature.resumen)
     implementation(projects.feature.plan)
     implementation(projects.feature.transacciones)
     implementation(projects.feature.cuentas)
+    implementation(projects.feature.backup)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

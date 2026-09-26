@@ -99,6 +99,35 @@ seguro es la frase. Es un tipo de error propio (`FraseIncorrecta`) porque la
 interfaz reacciona distinto: ante un archivo dañado aborta, ante una frase mal
 tecleada la vuelve a pedir.
 
+## Exportación
+
+Se entra desde **Cuentas → Copia de seguridad**. Cuentas no conoce el feature de
+la copia (docs/04): solo avisa de que se pidió, y `:app` decide a dónde se va.
+
+1. El usuario escribe la frase **dos veces** y marca *"Entiendo que si pierdo la
+   frase, pierdo la copia"*. El aviso en rojo y la casilla son las dos veces que
+   exige este documento.
+2. `ACTION_CREATE_DOCUMENT` con el nombre `miplata-backup-AAAA-MM-DD-HHMM.mpb`.
+   Año-mes-día para que ordenar por nombre sea ordenar por fecha.
+3. Se reúne, se cifra y se escribe fuera del hilo principal (`Dispatchers.IO`:
+   derivar la clave tiene un hilo bloqueado un par de segundos).
+4. Solo si salió bien se anota la fecha en `Ajustes.ultimoBackupEnMillis`.
+   Anotarla antes haría que un fallo dejara al usuario creyendo que tiene una
+   copia reciente que no existe.
+
+Detalles que no se ven y que importan:
+
+- **Modo `"wt"` al abrir el documento, no `"w"`.** Al sobrescribir una copia
+  antigua más grande, con `"w"` algunos proveedores escriben encima sin vaciar
+  el archivo: el final de la copia vieja queda detrás de la nueva, el ZIP sale
+  roto, y nadie se entera hasta el día en que hace falta restaurar.
+- **La frase nunca pasa por `rememberSaveable` ni por el estado del ViewModel.**
+  Eso se escribe en disco cuando el sistema mata la app en segundo plano. Vive
+  en un `remember` de la pantalla y se entrega al ViewModel al exportar, que la
+  borra en cuanto la ha copiado.
+- **Teclado de tipo contraseña y sin autocorrección**: un teclado normal
+  aprendería la frase y la guardaría en su diccionario de sugerencias.
+
 ## Restauración
 
 Es la operación más peligrosa de la app. El flujo:

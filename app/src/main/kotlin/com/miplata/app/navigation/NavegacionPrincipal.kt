@@ -1,5 +1,6 @@
 package com.miplata.app.navigation
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -19,6 +20,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.miplata.feature.backup.navigation.RutaCopia
+import com.miplata.feature.backup.navigation.pantallaCopia
 import com.miplata.feature.cuentas.navigation.pantallaCuentas
 import com.miplata.feature.plan.navigation.pantallaPlan
 import com.miplata.feature.resumen.navigation.RutaResumen
@@ -47,12 +50,21 @@ fun NavegacionPrincipal(
         NavHost(
             navController = navController,
             startDestination = RutaResumen,
-            modifier = Modifier.padding(innerPadding),
+            // `consumeWindowInsets` avisa a las pantallas de que la barra
+            // inferior ya se desconto. Sin esto, una pantalla que se aparta del
+            // teclado con `imePadding()` restaba el teclado ENTERO, sin saber que
+            // parte de ese hueco ya lo ocupaba la barra: quedaba una franja en
+            // blanco encima del teclado del alto de la barra.
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
         ) {
             pantallaResumen()
             pantallaPlan()
             pantallaTransacciones()
-            pantallaCuentas()
+            pantallaCuentas(alAbrirCopiaDeSeguridad = { navController.navigate(RutaCopia) })
+            pantallaCopia(alVolver = navController::popBackStack)
         }
     }
 }

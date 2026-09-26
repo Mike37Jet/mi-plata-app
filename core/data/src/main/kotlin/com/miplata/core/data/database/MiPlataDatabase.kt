@@ -34,7 +34,7 @@ import com.miplata.core.data.database.entity.TransaccionEntity
         PlanEntity::class,
         LineaDePlanEntity::class,
     ],
-    version = 1,
+    version = MiPlataDatabase.VERSION,
     exportSchema = true,
 )
 abstract class MiPlataDatabase : RoomDatabase() {
@@ -48,5 +48,16 @@ abstract class MiPlataDatabase : RoomDatabase() {
 
     companion object {
         const val NOMBRE = "mi-plata.db"
+
+        /**
+         * La version del esquema, en un solo sitio.
+         *
+         * La lee Room en la anotacion de arriba y la lee el backup para
+         * anotarla en el manifiesto: asi, al restaurar un archivo de otra
+         * version, se sabe de que esquema salieron sus datos. Con el numero
+         * escrito dos veces, el dia que se suba uno y se olvide el otro, el
+         * backup mentiria sobre su origen.
+         */
+        const val VERSION = 1
     }
 }
