@@ -58,14 +58,16 @@ private val LocalColoresDeDinero =
  *
  * @param temaOscuro por defecto sigue al sistema. La pantalla de ajustes lo
  *   fuerza a claro u oscuro cuando el usuario lo elige.
- * @param colorDinamico usa la paleta del fondo de pantalla en Android 12+. Se
- *   deja activo porque hace que la app se sienta parte del telefono; los colores
- *   de dinero no participan, por lo que se explica en [ColoresDeDinero].
+ * @param colorDinamico usa la paleta del fondo de pantalla en Android 12+.
+ *   **Apagado por defecto** desde el rediseño (docs/10): el lenguaje visual
+ *   busca un solo color de acento sobre neutros, y el color dinamico teñia toda
+ *   la interfaz del tono del fondo de pantalla. Se deja el parametro por si se
+ *   quiere ofrecer como ajuste.
  */
 @Composable
 fun MiPlataTheme(
     temaOscuro: Boolean = isSystemInDarkTheme(),
-    colorDinamico: Boolean = true,
+    colorDinamico: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val esquema = esquemaDeColor(temaOscuro, colorDinamico)
@@ -76,6 +78,7 @@ fun MiPlataTheme(
         MaterialTheme(
             colorScheme = esquema,
             typography = TipografiaDeLaApp,
+            shapes = FormasDeLaApp,
             content = content,
         )
     }

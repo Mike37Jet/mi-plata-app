@@ -3,6 +3,7 @@ package com.miplata.core.designsystem.theme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import com.miplata.core.designsystem.componentes.OPACIDAD_DEL_VELO
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -48,6 +49,34 @@ private fun grisDeTono(tono: Double): Color {
 private val PEOR_SUPERFICIE_DINAMICA_CLARA = grisDeTono(87.0)
 private val PEOR_SUPERFICIE_DINAMICA_OSCURA = grisDeTono(24.0)
 
+/** [arriba] con opacidad [alfa] pintado sobre [abajo], como hace un velo. */
+private fun mezcla(
+    arriba: Color,
+    abajo: Color,
+    alfa: Float,
+): Color =
+    Color(
+        red = arriba.red * alfa + abajo.red * (1 - alfa),
+        green = arriba.green * alfa + abajo.green * (1 - alfa),
+        blue = arriba.blue * alfa + abajo.blue * (1 - alfa),
+    )
+
+/**
+ * El texto de una barra de cristal sobre el peor fondo posible: el velo encima
+ * de lo mas opuesto al tema que pueda pasar por detras (blanco puro bajo el
+ * tema oscuro, negro puro bajo el claro). El desenfoque no ayuda aqui: una
+ * foto grande y clara detras de la barra se desenfoca, pero sigue siendo clara.
+ */
+private fun textoSobreCristal(esquema: ColorScheme): List<Par> {
+    val peorDetras = if (esquema.surface.luminance() < 0.5f) Color.White else Color.Black
+    val cristal = mezcla(esquema.surfaceContainer, peorDetras, OPACIDAD_DEL_VELO)
+    return listOf(
+        Par("onSurface sobre cristal", esquema.onSurface, cristal),
+        Par("onSurfaceVariant sobre cristal", esquema.onSurfaceVariant, cristal),
+        Par("primary sobre cristal", esquema.primary, cristal),
+    )
+}
+
 private data class Par(
     val nombre: String,
     val texto: Color,
@@ -61,7 +90,8 @@ private fun paresDe(
     esquema: ColorScheme,
     dinero: ColoresDeDinero,
     peorSuperficieDinamica: Color,
-): List<Par> = sobreSuperficies(esquema, dinero, peorSuperficieDinamica) + sobreSuColor(esquema)
+): List<Par> =
+    sobreSuperficies(esquema, dinero, peorSuperficieDinamica) + sobreSuColor(esquema) + textoSobreCristal(esquema)
 
 private fun sobreSuperficies(
     esquema: ColorScheme,

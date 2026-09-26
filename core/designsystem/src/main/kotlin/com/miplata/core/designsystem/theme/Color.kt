@@ -17,7 +17,6 @@ private val VerdeAzulado10 = Color(0xFF00251F)
 
 private val Arena40 = Color(0xFF6B5E4F)
 private val Arena80 = Color(0xFFD7C7B4)
-private val Arena90 = Color(0xFFEFE3D6)
 private val Arena10 = Color(0xFF241A10)
 
 private val Rojo40 = Color(0xFFB3261E)
@@ -25,10 +24,27 @@ private val Rojo80 = Color(0xFFF2B8B5)
 private val Rojo90 = Color(0xFFF9DEDC)
 private val Rojo10 = Color(0xFF410E0B)
 
-private val Gris10 = Color(0xFF1A1C1B)
-private val Gris20 = Color(0xFF2F3130)
-private val Gris90 = Color(0xFFE1E3E1)
-private val Gris99 = Color(0xFFFBFDFA)
+// Neutros al estilo de iOS: el fondo agrupado gris claro con celdas blancas en
+// claro, y negro con celdas grafito en oscuro. Son los que hacen que una lista
+// agrupada se lea como tal sin necesitar sombras ni bordes.
+//
+// Los grises del texto secundario NO son los de Apple. El `secondaryLabel` de
+// iOS (#8A8A8E) se queda en 3.08:1 sobre el fondo agrupado y no llega al 4.5:1
+// de WCAG AA (docs/09). Estos son los mas claros que pasan en todos los fondos.
+private val FondoAgrupadoClaro = Color(0xFFF2F2F7)
+private val CeldaClara = Color(0xFFFFFFFF)
+private val CeldaAltaClara = Color(0xFFE5E5EA)
+private val SeparadorClaro = Color(0xFFC6C6C8)
+private val TextoClaro = Color(0xFF1C1C1E)
+private val TextoSecundarioClaro = Color(0xFF636366)
+
+private val FondoAgrupadoOscuro = Color(0xFF000000)
+private val SeleccionOscura = Color(0xFF1E3A36)
+private val CeldaOscura = Color(0xFF1C1C1E)
+private val CeldaAltaOscura = Color(0xFF2C2C2E)
+private val SeparadorOscuro = Color(0xFF38383A)
+private val TextoOscuro = Color(0xFFF2F2F7)
+private val TextoSecundarioOscuro = Color(0xFF98989F)
 
 internal val EsquemaClaro =
     lightColorScheme(
@@ -38,16 +54,27 @@ internal val EsquemaClaro =
         onPrimaryContainer = VerdeAzulado10,
         secondary = Arena40,
         onSecondary = Color.White,
-        secondaryContainer = Arena90,
-        onSecondaryContainer = Arena10,
+        // La seleccion -la pestaña activa, un chip elegido- es un tinte del
+        // acento, como en iOS. Antes era arena y la pestaña activa se veia marron.
+        secondaryContainer = VerdeAzulado90,
+        onSecondaryContainer = VerdeAzulado10,
         error = Rojo40,
         onError = Color.White,
         errorContainer = Rojo90,
         onErrorContainer = Rojo10,
-        background = Gris99,
-        onBackground = Gris10,
-        surface = Gris99,
-        onSurface = Gris10,
+        background = FondoAgrupadoClaro,
+        onBackground = TextoClaro,
+        surface = FondoAgrupadoClaro,
+        onSurface = TextoClaro,
+        surfaceVariant = CeldaAltaClara,
+        onSurfaceVariant = TextoSecundarioClaro,
+        surfaceContainerLowest = CeldaClara,
+        surfaceContainerLow = CeldaClara,
+        surfaceContainer = CeldaClara,
+        surfaceContainerHigh = CeldaAltaClara,
+        surfaceContainerHighest = CeldaAltaClara,
+        outline = TextoSecundarioClaro,
+        outlineVariant = SeparadorClaro,
     )
 
 internal val EsquemaOscuro =
@@ -58,16 +85,25 @@ internal val EsquemaOscuro =
         onPrimaryContainer = VerdeAzulado90,
         secondary = Arena80,
         onSecondary = Arena10,
-        secondaryContainer = Arena40,
-        onSecondaryContainer = Arena90,
+        secondaryContainer = SeleccionOscura,
+        onSecondaryContainer = VerdeAzulado90,
         error = Rojo80,
         onError = Rojo10,
         errorContainer = Rojo40,
         onErrorContainer = Rojo90,
-        background = Gris10,
-        onBackground = Gris90,
-        surface = Gris10,
-        onSurface = Gris90,
+        background = FondoAgrupadoOscuro,
+        onBackground = TextoOscuro,
+        surface = FondoAgrupadoOscuro,
+        onSurface = TextoOscuro,
+        surfaceVariant = CeldaAltaOscura,
+        onSurfaceVariant = TextoSecundarioOscuro,
+        surfaceContainerLowest = CeldaOscura,
+        surfaceContainerLow = CeldaOscura,
+        surfaceContainer = CeldaOscura,
+        surfaceContainerHigh = CeldaAltaOscura,
+        surfaceContainerHighest = CeldaAltaOscura,
+        outline = TextoSecundarioOscuro,
+        outlineVariant = SeparadorOscuro,
     )
 
 // Colores con significado financiero.
@@ -93,8 +129,3 @@ internal val SobregiroOscuro = Color(0xFFFF8A80)
 
 internal val AhorroClaro = Color(0xFF0D47A1)
 internal val AhorroOscuro = Color(0xFF82B1FF)
-
-internal val FondoClaro = Gris99
-internal val FondoOscuro = Gris10
-internal val SuperficieElevadaClara = Gris90
-internal val SuperficieElevadaOscura = Gris20

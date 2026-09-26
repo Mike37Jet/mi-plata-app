@@ -70,6 +70,11 @@ sobre cada fondo en el que puede aparecer, en los dos temas. Cubre:
   pantalla. El resto de colores cambia junto con su fondo, y Material ya
   garantiza su contraste.
 
+Desde el rediseño (docs/10) cubre también el **texto sobre el cristal** de las
+barras translúcidas. Lo mide en el peor caso: el velo sobre contenido blanco puro
+bajo el tema oscuro, o negro puro bajo el claro. Por eso el velo tapa el 92 %. Con
+el 80 %, el texto secundario bajaba a 3,1:1.
+
 Hoy todo pasa. El par más justo es `onPrimaryContainer` sobre
 `primaryContainer` en oscuro, con 4.56. Saboteado con un rojo de sobregiro más
 claro (`#E57373`), el test falla con el par exacto:
