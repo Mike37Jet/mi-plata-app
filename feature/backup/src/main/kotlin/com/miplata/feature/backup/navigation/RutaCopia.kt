@@ -14,8 +14,11 @@ data object RutaCopia
  *
  * @param alVolver lo decide `:app`, que es quien conoce la pila de navegacion.
  */
-fun NavGraphBuilder.pantallaCopia(alVolver: () -> Unit) {
+fun NavGraphBuilder.pantallaCopia(
+    alVolver: () -> Unit,
+    alAbrirRestaurar: () -> Unit,
+) {
     composable<RutaCopia> {
-        PantallaCopia(alVolver = alVolver)
+        PantallaCopia(alVolver = alVolver, alAbrirRestaurar = alAbrirRestaurar)
     }
 }

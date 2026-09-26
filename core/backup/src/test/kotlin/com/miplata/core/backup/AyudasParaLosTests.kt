@@ -111,3 +111,45 @@ private fun conUnBitCambiado(bytes: ByteArray): ByteArray =
 
 private fun sha256(bytes: ByteArray): String =
     MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it) }
+
+/**
+ * Un almacen de copia previa en memoria, con escritura atomica como el real:
+ * lo que se escribe solo sustituye a lo anterior si la escritura termina bien.
+ */
+internal class AlmacenEnMemoria : AlmacenDeLaCopiaPrevia {
+    var contenido: ByteArray? = null
+        private set
+    var fallarAlGuardar: Boolean = false
+
+    override fun frase(): FraseDeRespaldo = FraseDeRespaldo.de("frase interna de la copia previa")
+
+    override fun guardar(escribir: (java.io.OutputStream) -> Unit) {
+        if (fallarAlGuardar) throw java.io.IOException("Sin espacio para la copia previa")
+        val buffer = ByteArrayOutputStream()
+        escribir(buffer)
+        contenido = buffer.toByteArray()
+    }
+
+    override fun abrir() = contenido?.let(::ByteArrayInputStream)
+
+    override fun borrar() {
+        contenido = null
+    }
+
+    private var sustituta: ByteArray? = null
+    var fallarAlPrepararSustituta: Boolean = false
+
+    override fun prepararSustituta(escribir: (java.io.OutputStream) -> Unit) {
+        if (fallarAlPrepararSustituta) throw java.io.IOException("Sin espacio para la sustituta")
+        sustituta = ByteArrayOutputStream().also(escribir).toByteArray()
+    }
+
+    override fun confirmarSustituta() {
+        contenido = checkNotNull(sustituta) { "No hay sustituta que confirmar" }
+        sustituta = null
+    }
+
+    override fun descartarSustituta() {
+        sustituta = null
+    }
+}

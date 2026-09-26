@@ -59,7 +59,7 @@ de que exista una pantalla.
 | 4.1 | ✅ Serialización del dominio a `data.json` + manifest + checksum | `feat/backup-serialization` |
 | 4.2 | ✅ Cifrado AES-256-GCM con frase de respaldo | `feat/backup-encryption` |
 | 4.3 | ✅ Export vía SAF (`ACTION_CREATE_DOCUMENT`) | `feat/backup-export` |
-| 4.4 | Import con preview, backup de seguridad previo y rollback atómico | `feat/backup-restore` |
+| 4.4 | ✅ Import con preview, backup de seguridad previo y rollback atómico | `feat/backup-restore` |
 | 4.5 | `WorkManager` con recordatorio periódico | `feat/backup-reminder` |
 | 4.6 | Tests de round-trip y de migración de formato | `test/backup-roundtrip` |
 

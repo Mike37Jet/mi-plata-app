@@ -1,5 +1,6 @@
 package com.miplata.feature.backup
 
+import java.io.InputStream
 import java.io.OutputStream
 
 // Lo que este feature necesita del resto de la app, expresado como interfaces.
@@ -17,6 +18,12 @@ fun interface AbridorDeDestino {
      *   que venir **vaciado**: ver la implementacion en `:app`.
      */
     fun abrir(uri: String): OutputStream
+}
+
+/** Abre para leer el documento que el usuario eligio para restaurar. */
+fun interface AbridorDeOrigen {
+    /** @return un stream que hay que cerrar. */
+    fun abrir(uri: String): InputStream
 }
 
 /** Datos de la instalacion que se anotan en el manifiesto del backup. */

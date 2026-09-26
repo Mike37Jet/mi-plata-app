@@ -130,21 +130,71 @@ Detalles que no se ven y que importan:
 
 ## Restauración
 
-Es la operación más peligrosa de la app. El flujo:
+Es la operación más peligrosa de la app. Se entra desde **Cuentas → Copia de
+seguridad → Restaurar una copia**. El flujo:
 
-1. Seleccionar archivo (`ACTION_OPEN_DOCUMENT`).
-2. Pedir la frase, descifrar **en memoria**. Nunca escribir el claro en disco.
-3. Validar checksum y `formatVersion`.
-   - ¿Backup más nuevo que la app? → "Actualiza la app para restaurar esta copia." Abortar.
-   - ¿Backup más viejo? → aplicar las migraciones de formato en cadena.
-4. Mostrar un **resumen previo**: "Se restaurarán 4 cuentas, 312 transacciones,
-   6 meses de planes, del 2026-03-15."
-5. Elegir estrategia:
-   - **Reemplazar todo** (caso "celular nuevo") — el de tu escenario.
-   - **Fusionar** (v0.3, requiere IDs estables y resolución de conflictos).
-6. **Backup de seguridad automático del estado actual antes de escribir nada.**
-7. Importar en **una sola transacción de Room**. Si algo falla, rollback total.
-   Nunca un estado a medias.
+1. Seleccionar archivo (`ACTION_OPEN_DOCUMENT`, cualquier tipo: Drive guarda el
+   `.mpb` como "binario desconocido" y un filtro por MIME lo escondería).
+2. Leer **solo el manifiesto**, sin pedir la frase. Si el formato es más nuevo
+   que la app: "actualiza la app", y se para aquí.
+3. **Resumen previo**, comparando lo que trae la copia con lo que hay ahora:
+   *"Trae 1 cuenta · 312 movimientos… / Ahora tienes 5 cuentas · 900
+   movimientos…"*. Es lo que evita el error más fácil: restaurar una copia vieja
+   por equivocación.
+4. Pedir la frase y descifrar **en memoria**. Frase incorrecta → se vuelve a
+   pedir, sin tener que elegir el archivo otra vez.
+5. **Confirmación explícita** ("¿Sustituir todos tus datos?").
+6. **Copia de seguridad automática de lo que hay ahora.** Si no se puede
+   guardar, se para: no se toca nada sin poder deshacerlo.
+7. Sustituir los datos en **una sola transacción de Room**. Si algo falla,
+   SQLite deshace la transacción entera. Nunca un estado a medias.
+8. Los ajustes, aparte (viven en DataStore, no pueden entrar en la
+   transacción). Si fallan, los datos ya entraron: se avisa y se puede deshacer.
+
+Estrategia: solo **reemplazar todo** (el caso "celular nuevo"). **Fusionar**
+queda para v0.3: requiere resolver conflictos.
+
+### La transacción
+
+`RoomRepositorioDeRestauracion` borra y vuelve a insertar dentro de
+`withTransaction`. Detalles que no se ven:
+
+- **Se borra de verdad**, no se marca como eliminado: un registro marcado que
+  sobreviviera podría chocar con uno de la copia con el mismo id.
+- **`@Insert` con `ABORT`, no `@Upsert`**: un id repetido dentro de la copia
+  tiene que hacer fallar la restauración, no sobrescribirse en silencio.
+- Las claves foráneas trabajan a favor: una copia incoherente (un movimiento
+  que apunta a una cuenta que no trae) no entra, en vez de entrar a medias.
+- **Las subcategorías se borran antes que las categorías raíz.** Su clave
+  foránea es `RESTRICT`, y SQLite la comprueba fila a fila en el momento (ni
+  siquiera se puede aplazar): un `DELETE FROM categorias` a secas falla en
+  cuanto borra una madre antes que alguna de sus hijas. Y al insertar, las raíz
+  van primero.
+
+### La copia previa y volver atrás
+
+- Vive en `filesDir` (privado, no sale del teléfono). Es para deshacer aquí,
+  no para llevarla a otro móvil.
+- Va cifrada con una frase **derivada** de la clave de la base
+  (HMAC-SHA256 con una etiqueta propia): igual de protegida que la base, sin un
+  secreto nuevo que guardar, y sin reutilizar la clave tal cual para dos usos.
+- Se escribe de forma atómica (`AtomicFile`): si la app muere a mitad, queda la
+  anterior.
+- **Volver atrás también guarda antes lo que hay.** Sin esto, quien restaura,
+  apunta una semana de gastos y vuelve atrás, perdería esa semana sin remedio.
+  Va en dos fases: lo de ahora se escribe aparte, se sustituyen los datos, y
+  solo si sale bien lo escrito aparte pasa a ser la copia previa. Como volver
+  atrás es reversible, no pide confirmación.
+- El botón sigue disponible al volver a entrar: se puede deshacer aunque la
+  restauración fuera hace una semana.
+
+### Un contrato que importa: `escribir` no cierra el stream
+
+`ArchivoDeBackup.escribir` termina el ZIP con `finish()` pero no cierra el
+stream que recibe. Quien abre un stream es quien lo cierra, y quien llama
+necesita hacer `fsync` antes de dar la copia por buena. Cerrándolo, guardar la
+copia previa fallaba con *"sync failed"*, y `AtomicFile` se tragaba el mismo
+error: la copia se daba por guardada sin garantía de haber llegado al disco.
 
 ## Automatización del recordatorio
 

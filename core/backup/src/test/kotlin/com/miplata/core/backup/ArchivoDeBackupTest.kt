@@ -83,6 +83,27 @@ class ArchivoDeBackupTest {
         leido.manifiesto.contenido shouldBe Recuento()
     }
 
+    // Quien abre un stream lo cierra. Si escribir lo cerrara, quien llama no
+    // podria hacer fsync despues: paso de verdad en el telefono, donde guardar la
+    // copia previa fallaba con "sync failed" y la de restaurar se quedaba sin
+    // la garantia de haber llegado al disco.
+    @Test
+    fun `escribir no cierra el stream de quien llama`() {
+        var cerrado = false
+        val destino =
+            object : java.io.ByteArrayOutputStream() {
+                override fun close() {
+                    cerrado = true
+                    super.close()
+                }
+            }
+
+        archivo.escribir(contenido(), FRASE, destino)
+
+        cerrado shouldBe false
+        leer(destino.toByteArray()).datos shouldBe DATOS_DE_EJEMPLO
+    }
+
     // Elegir el archivo equivocado en el selector es facil de hacer, asi que el
     // mensaje tiene que decir que pasa sin hablar de zips ni de manifiestos.
     @Test

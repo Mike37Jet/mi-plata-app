@@ -2,6 +2,8 @@ package com.miplata.core.data.database.dao
 
 import androidx.room.Dao
 import androidx.room.Embedded
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Relation
 import androidx.room.Transaction
@@ -212,4 +214,75 @@ interface PlanDao {
         mes: String,
         instante: Long,
     )
+}
+
+/**
+ * Lo que necesita una restauracion: vaciar la base y rellenarla de golpe.
+ *
+ * Estas consultas **borran de verdad**, no marcan como eliminado. Es a
+ * proposito: restaurar es dejar la base exactamente como estaba la copia, y un
+ * registro marcado como borrado que sobreviviera a la restauracion podria
+ * chocar con uno de la copia que tuviera su mismo id.
+ *
+ * Nunca se llaman sueltas: solo desde `RoomRepositorioDeRestauracion`, dentro de
+ * una transaccion. Por eso el DAO es `internal`.
+ *
+ * Las inserciones usan `@Insert` y no `@Upsert` a proposito: un id repetido
+ * dentro de la copia tiene que hacer FALLAR la restauracion, no sobrescribirse
+ * en silencio con el ultimo que llegue.
+ */
+@Dao
+internal interface VaciadoDeRestauracionDao {
+    // El orden de borrado respeta las claves foraneas: primero lo que apunta a
+    // otras tablas, al final aquello a lo que se apunta.
+    @Query("DELETE FROM transacciones")
+    suspend fun borrarTransacciones()
+
+    @Query("DELETE FROM lineas_de_plan")
+    suspend fun borrarLineasDePlan()
+
+    @Query("DELETE FROM planes")
+    suspend fun borrarPlanes()
+
+    /**
+     * Primero las subcategorias, despues las raiz.
+     *
+     * La clave foranea de una subcategoria a su madre es `RESTRICT`, y SQLite
+     * comprueba `RESTRICT` fila a fila en el mismo momento, no al final de la
+     * sentencia (ni siquiera se puede aplazar). Un `DELETE FROM categorias` a
+     * secas falla en cuanto borra una madre antes que alguna de sus hijas. Con
+     * dos niveles como mucho (ver `Categoria`), dos pasadas bastan.
+     */
+    @Query("DELETE FROM categorias WHERE padreId IS NOT NULL")
+    suspend fun borrarSubcategorias()
+
+    @Query("DELETE FROM categorias")
+    suspend fun borrarCategorias()
+
+    @Query("DELETE FROM cuentas")
+    suspend fun borrarCuentas()
+}
+
+/**
+ * La otra mitad de la restauracion: rellenar la base vacia.
+ *
+ * Separada del vaciado porque son dos responsabilidades distintas, y solo se
+ * usan juntas y dentro de la misma transaccion (`RoomRepositorioDeRestauracion`).
+ */
+@Dao
+internal interface CargaDeRestauracionDao {
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarCuentas(cuentas: List<CuentaEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarCategorias(categorias: List<CategoriaEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarPlanes(planes: List<PlanEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarLineas(lineas: List<LineaDePlanEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarTransacciones(transacciones: List<TransaccionEntity>)
 }

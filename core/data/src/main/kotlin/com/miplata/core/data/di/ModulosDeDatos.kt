@@ -19,6 +19,7 @@ import com.miplata.core.data.repository.Reloj
 import com.miplata.core.data.repository.RoomCategoriaRepository
 import com.miplata.core.data.repository.RoomCuentaRepository
 import com.miplata.core.data.repository.RoomPlanRepository
+import com.miplata.core.data.repository.RoomRepositorioDeRestauracion
 import com.miplata.core.data.repository.RoomTransaccionRepository
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
@@ -26,6 +27,7 @@ import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
+import com.miplata.core.domain.repository.RepositorioDeRestauracion
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.AgruparMovimientosPorDiaUseCase
@@ -126,6 +128,13 @@ object ModuloDeRepositorios {
         dao: PlanDao,
         reloj: Reloj,
     ): PlanRepository = RoomPlanRepository(dao, reloj)
+
+    @Provides
+    @Singleton
+    fun proveerRepositorioDeRestauracion(
+        db: MiPlataDatabase,
+        reloj: Reloj,
+    ): RepositorioDeRestauracion = RoomRepositorioDeRestauracion(db, reloj)
 
     @Provides
     @Singleton

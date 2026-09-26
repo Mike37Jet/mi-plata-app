@@ -3,15 +3,19 @@ package com.miplata.app.copia
 import android.content.Context
 import android.os.Build
 import androidx.core.net.toUri
+import com.miplata.core.backup.AlmacenDeLaCopiaPrevia
 import com.miplata.core.backup.ArchivoDeBackup
 import com.miplata.core.backup.RecolectorDeDatos
+import com.miplata.core.backup.RestauradorDeCopias
 import com.miplata.core.data.database.MiPlataDatabase
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
+import com.miplata.core.domain.repository.RepositorioDeRestauracion
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.feature.backup.AbridorDeDestino
+import com.miplata.feature.backup.AbridorDeOrigen
 import com.miplata.feature.backup.InformacionDeLaApp
 import dagger.Module
 import dagger.Provides
@@ -51,6 +55,29 @@ object ModuloDeCopia {
     fun proveerAbridor(
         @ApplicationContext context: Context,
     ): AbridorDeDestino = AbridorConContentResolver(context)
+
+    @Provides
+    fun proveerAbridorDeOrigen(
+        @ApplicationContext context: Context,
+    ): AbridorDeOrigen =
+        AbridorDeOrigen { uri ->
+            context.contentResolver.openInputStream(uri.toUri())
+                ?: throw FileNotFoundException("El archivo elegido ya no esta disponible")
+        }
+
+    @Provides
+    fun proveerCopiaPrevia(
+        @ApplicationContext context: Context,
+    ): AlmacenDeLaCopiaPrevia = CopiaPreviaEnArchivo(context)
+
+    @Provides
+    fun proveerRestaurador(
+        recolector: RecolectorDeDatos,
+        archivo: ArchivoDeBackup,
+        repositorio: RepositorioDeRestauracion,
+        ajustes: AjustesRepository,
+        copiaPrevia: AlmacenDeLaCopiaPrevia,
+    ): RestauradorDeCopias = RestauradorDeCopias(recolector, archivo, repositorio, ajustes, copiaPrevia)
 
     @Provides
     fun proveerInformacion(

@@ -21,7 +21,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.miplata.feature.backup.navigation.RutaCopia
+import com.miplata.feature.backup.navigation.RutaRestaurar
 import com.miplata.feature.backup.navigation.pantallaCopia
+import com.miplata.feature.backup.navigation.pantallaRestaurar
 import com.miplata.feature.cuentas.navigation.pantallaCuentas
 import com.miplata.feature.plan.navigation.pantallaPlan
 import com.miplata.feature.resumen.navigation.RutaResumen
@@ -64,7 +66,11 @@ fun NavegacionPrincipal(
             pantallaPlan()
             pantallaTransacciones()
             pantallaCuentas(alAbrirCopiaDeSeguridad = { navController.navigate(RutaCopia) })
-            pantallaCopia(alVolver = navController::popBackStack)
+            pantallaCopia(
+                alVolver = navController::popBackStack,
+                alAbrirRestaurar = { navController.navigate(RutaRestaurar) },
+            )
+            pantallaRestaurar(alVolver = navController::popBackStack)
         }
     }
 }

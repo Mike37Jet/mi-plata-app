@@ -22,6 +22,7 @@ import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakeCategoriaRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
+import com.miplata.core.domain.repository.FakeRepositorioDeRestauracion
 import com.miplata.core.domain.repository.FakeTransaccionRepository
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.first
@@ -29,6 +30,12 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import org.junit.jupiter.api.Test
 import java.io.ByteArrayInputStream
+
+private val PROCEDENCIA = Procedencia(versionDelEsquema = 1, versionDeLaApp = "0.1.0", dispositivo = "Pixel nuevo")
+private const val AHORA = 1_790_000_000_000L
+
+/** Distinta de la ultima copia que traen los ajustes, para que no coincidan por casualidad. */
+private const val CREADA_EN = 1_785_000_000_000L
 
 /**
  * El test que de verdad importa: exportar, importar en una app vacia, y que
@@ -162,9 +169,11 @@ class RoundTripTest {
             val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE), PROCEDENCIA, AHORA)
 
-            nuevo.ajustes.obtener() shouldBe original.ajustes.obtener()
+            // Los ajustes viajan todos igual salvo la fecha de la ultima copia, que
+            // pasa a ser la de ESTA copia (ver RestauradorDeCopias).
+            nuevo.ajustes.obtener() shouldBe original.ajustes.obtener().copy(ultimoBackupEnMillis = CREADA_EN)
             nuevo.cuentas.observarTodas().first() shouldBe original.cuentas.observarTodas().first()
             nuevo.categorias.observarTodas().first() shouldBe original.categorias.observarTodas().first()
             nuevo.transacciones.observarTodas().first() shouldBe original.transacciones.observarTodas().first()
@@ -180,7 +189,7 @@ class RoundTripTest {
             val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE), PROCEDENCIA, AHORA)
 
             nuevo.transacciones.obtener(TransaccionId("t1"))!!.monto shouldBe Money.deCentavos(4_275)
             nuevo.planes
@@ -199,7 +208,7 @@ class RoundTripTest {
             val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE), PROCEDENCIA, AHORA)
 
             nuevo.planes.obtenerDe(Mes.de(2026, 4)) shouldBe original.planes.obtenerDe(Mes.de(2026, 4))
         }
@@ -213,7 +222,7 @@ class RoundTripTest {
             val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE), PROCEDENCIA, AHORA)
 
             val transferencia = nuevo.transacciones.obtener(TransaccionId("t3"))!!
             transferencia.tipo shouldBe TipoDeTransaccion.TRANSFERENCIA
@@ -228,7 +237,7 @@ class RoundTripTest {
             val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE), PROCEDENCIA, AHORA)
 
             val visa = nuevo.cuentas.obtener(CuentaId("visa"))!!
             visa.archivada shouldBe true
@@ -243,7 +252,7 @@ class RoundTripTest {
             val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE), PROCEDENCIA, AHORA)
 
             nuevo.planes
                 .obtenerDe(Mes.de(2026, 3))!!
@@ -275,14 +284,21 @@ private class AppEnMemoria {
     val ajustes = FakeAjustesRepository()
 
     val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes)
-    val restaurador = Restaurador(cuentas, categorias, transacciones, planes, ajustes)
+    val restaurador =
+        RestauradorDeCopias(
+            recolector = recolector,
+            archivo = archivoRapido(),
+            repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes),
+            ajustes = ajustes,
+            copiaPrevia = AlmacenEnMemoria(),
+        )
 
     suspend fun aContenido() =
         ContenidoDelBackup(
             datos = recolector.recolectar(),
             versionDelEsquema = 1,
             versionDeLaApp = "0.1.0",
-            creadoEnMillis = 1_772_000_000_000L,
+            creadoEnMillis = CREADA_EN,
             dispositivo = "Pixel de prueba",
         )
 }

@@ -23,6 +23,16 @@ plugins {
 // El 90% es un SUELO, no un objetivo. Sirve para que una regresion de cobertura
 // se note; no para que nadie escriba tests de relleno persiguiendo el numero.
 kover {
+    // Los fakes de `testFixtures` NO cuentan. Son dobles de prueba que usan
+    // otros modulos, no logica financiera, y medirlos aqui falseaba el numero en
+    // los dos sentidos: un fake nuevo que solo ejercitan los tests de
+    // `:core:backup` bajaba la cobertura del dominio sin que faltara ningun test
+    // de dominio. Salto al anadir `FakeRepositorioDeRestauracion` (4.4).
+    currentProject {
+        sources {
+            excludedSourceSets.add("testFixtures")
+        }
+    }
     reports {
         verify {
             rule {
