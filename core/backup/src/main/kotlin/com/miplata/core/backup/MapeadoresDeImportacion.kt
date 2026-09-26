@@ -3,6 +3,7 @@ package com.miplata.core.backup
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
@@ -24,6 +25,15 @@ import kotlinx.datetime.LocalDate
 // Es la direccion peligrosa: aqui entran datos que pueden venir de un archivo
 // editado a mano, truncado o de otra version. Cada conversion decide de forma
 // explicita si un valor raro se tolera o aborta la restauracion.
+
+/** Todo el contenido financiero de la copia, listo para sustituir lo que hay. */
+internal fun DatosDelBackup.aContenidoFinanciero() =
+    ContenidoFinanciero(
+        cuentas = cuentas.map { it.aDominio() },
+        categorias = categorias.map { it.aDominio() },
+        transacciones = transacciones.map { it.aDominio() },
+        planes = planes.map { it.aDominio() },
+    )
 
 internal fun AjustesDto.aDominio() =
     Ajustes(

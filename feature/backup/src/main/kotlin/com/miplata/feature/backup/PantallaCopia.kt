@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -50,6 +51,7 @@ import kotlinx.datetime.TimeZone
 @Composable
 fun PantallaCopia(
     alVolver: () -> Unit,
+    alAbrirRestaurar: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CopiaViewModel = hiltViewModel(),
 ) {
@@ -92,6 +94,7 @@ fun PantallaCopia(
         },
         alDescartarAviso = viewModel::descartarAviso,
         alVolver = alVolver,
+        alAbrirRestaurar = alAbrirRestaurar,
         modifier = modifier,
     )
 }
@@ -117,6 +120,7 @@ internal fun PantallaCopia(
     alDescartarAviso: () -> Unit,
     alVolver: () -> Unit,
     modifier: Modifier = Modifier,
+    alAbrirRestaurar: () -> Unit = {},
 ) {
     val problema = problemaCon(frase, confirmacion, riesgoAsumido)
     val enCurso = estado.exportacion == Exportacion.EnCurso
@@ -191,6 +195,12 @@ internal fun PantallaCopia(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.copia_guardar))
+        }
+
+        // Restaurar va al final y con menos peso visual: es lo que se hace una
+        // vez, al cambiar de movil, y no lo que se viene a hacer cada mes.
+        OutlinedButton(onClick = alAbrirRestaurar, enabled = !enCurso, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.restaurar_abrir))
         }
     }
 }

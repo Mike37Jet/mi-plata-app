@@ -3,6 +3,7 @@ package com.miplata.core.domain.repository
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Mes
@@ -84,6 +85,25 @@ interface TransaccionRepository {
     suspend fun guardar(transaccion: Transaccion)
 
     suspend fun eliminar(id: TransaccionId)
+}
+
+/**
+ * Sustituye todos los datos del usuario por otros, de golpe.
+ *
+ * Es el contrato que hace segura la restauracion de una copia (docs/05): la
+ * implementacion tiene que ser **atomica**. Si algo falla a mitad -una cuenta
+ * que no existe, el disco lleno, la app muerta por el sistema-, la base queda
+ * exactamente como estaba antes de empezar. Nunca a medias: una base con la
+ * mitad de los movimientos de una copia y la mitad de los de otra da saldos que
+ * no son de nadie, y nada avisa de que lo son.
+ */
+interface RepositorioDeRestauracion {
+    /**
+     * Borra todo lo que hay y deja en su lugar [contenido].
+     *
+     * @throws Exception si no se pudo. En ese caso no se ha cambiado nada.
+     */
+    suspend fun reemplazarTodo(contenido: ContenidoFinanciero)
 }
 
 interface AjustesRepository {

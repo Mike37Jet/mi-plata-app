@@ -2,10 +2,12 @@ package com.miplata.core.data.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.miplata.core.data.database.dao.CargaDeRestauracionDao
 import com.miplata.core.data.database.dao.CategoriaDao
 import com.miplata.core.data.database.dao.CuentaDao
 import com.miplata.core.data.database.dao.PlanDao
 import com.miplata.core.data.database.dao.TransaccionDao
+import com.miplata.core.data.database.dao.VaciadoDeRestauracionDao
 import com.miplata.core.data.database.entity.CategoriaEntity
 import com.miplata.core.data.database.entity.CuentaEntity
 import com.miplata.core.data.database.entity.LineaDePlanEntity
@@ -45,6 +47,10 @@ abstract class MiPlataDatabase : RoomDatabase() {
     abstract fun transaccionDao(): TransaccionDao
 
     abstract fun planDao(): PlanDao
+
+    internal abstract fun vaciadoDeRestauracionDao(): VaciadoDeRestauracionDao
+
+    internal abstract fun cargaDeRestauracionDao(): CargaDeRestauracionDao
 
     companion object {
         const val NOMBRE = "mi-plata.db"

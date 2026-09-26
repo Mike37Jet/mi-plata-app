@@ -3,6 +3,7 @@ package com.miplata.core.domain.repository
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Mes
@@ -42,6 +43,11 @@ class FakeCuentaRepository(
     override suspend fun eliminar(id: CuentaId) {
         estado.update { it - id }
     }
+
+    /** Deja exactamente [nuevas], de una vez. Lo usa el fake de restauracion. */
+    fun sustituirTodo(nuevas: List<Cuenta>) {
+        estado.value = nuevas.associateBy { it.id }
+    }
 }
 
 class FakeCategoriaRepository(
@@ -61,6 +67,10 @@ class FakeCategoriaRepository(
 
     override suspend fun eliminar(id: CategoriaId) {
         estado.update { it - id }
+    }
+
+    fun sustituirTodo(nuevas: List<Categoria>) {
+        estado.value = nuevas.associateBy { it.id }
     }
 }
 
@@ -92,6 +102,10 @@ class FakeTransaccionRepository(
 
     override suspend fun eliminar(id: TransaccionId) {
         estado.update { it - id }
+    }
+
+    fun sustituirTodo(nuevas: List<Transaccion>) {
+        estado.value = nuevas.associateBy { it.id }
     }
 }
 
@@ -138,5 +152,39 @@ class FakePlanRepository(
 
     override suspend fun eliminar(mes: Mes) {
         estado.update { it - mes }
+    }
+
+    fun sustituirTodo(nuevos: List<PlanMensual>) {
+        estado.value = nuevos.associateBy { it.mes }
+    }
+}
+
+/**
+ * Restauracion sobre los fakes: sustituye su contenido de una vez.
+ *
+ * Imita la garantia del contrato con lo minimo: si [fallarLaProximaVez] esta
+ * activo, lanza **antes** de tocar nada, que es lo que la transaccion de Room
+ * garantiza de verdad (y se prueba contra Room en `:core:data`).
+ */
+class FakeRepositorioDeRestauracion(
+    private val cuentas: FakeCuentaRepository,
+    private val categorias: FakeCategoriaRepository,
+    private val transacciones: FakeTransaccionRepository,
+    private val planes: FakePlanRepository,
+) : RepositorioDeRestauracion {
+    var fallarLaProximaVez: Boolean = false
+    var vecesReemplazado: Int = 0
+        private set
+
+    override suspend fun reemplazarTodo(contenido: ContenidoFinanciero) {
+        if (fallarLaProximaVez) {
+            fallarLaProximaVez = false
+            error("Fallo simulado al reemplazar")
+        }
+        cuentas.sustituirTodo(contenido.cuentas)
+        categorias.sustituirTodo(contenido.categorias)
+        transacciones.sustituirTodo(contenido.transacciones)
+        planes.sustituirTodo(contenido.planes)
+        vecesReemplazado++
     }
 }

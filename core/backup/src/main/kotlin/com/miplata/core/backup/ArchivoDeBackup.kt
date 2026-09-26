@@ -28,7 +28,7 @@ class ArchivoDeBackup(
     private val json: Json = JSON,
 ) {
     /**
-     * Escribe el backup en [destino].
+     * Escribe el backup en [destino], **sin cerrarlo**.
      *
      * El manifiesto va **primero** dentro del ZIP a proposito: al leer se puede
      * comprobar la version del formato sin descomprimir los datos, que es lo que
@@ -55,10 +55,16 @@ class ArchivoDeBackup(
                 contenido = recuentoDe(contenido.datos),
             )
 
-        ZipOutputStream(destino).use { zip ->
-            zip.escribir(Piezas.MANIFIESTO, json.encodeToString(Manifiesto.serializer(), manifiesto).toByteArray())
-            zip.escribir(Piezas.DATOS, cifrado.bytes)
-        }
+        // `finish` y no `close`: se cierra el ZIP -se escribe su indice final-
+        // pero NO el stream de quien llama. Quien abre un stream es quien lo
+        // cierra. Si esto lo cerrara, quien llama ya no podria hacer `fsync`
+        // para asegurarse de que la copia llego al disco antes de darla por
+        // buena, y ese paso es justo el que hace fiable la copia previa.
+        val zip = ZipOutputStream(destino)
+        zip.escribir(Piezas.MANIFIESTO, json.encodeToString(Manifiesto.serializer(), manifiesto).toByteArray())
+        zip.escribir(Piezas.DATOS, cifrado.bytes)
+        zip.finish()
+        destino.flush()
     }
 
     /**

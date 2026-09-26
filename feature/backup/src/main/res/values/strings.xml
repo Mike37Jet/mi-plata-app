@@ -29,4 +29,47 @@
     <string name="copia_terminada">Copia guardada: %1$s</string>
     <string name="copia_fallida">No se pudo guardar la copia: %1$s</string>
     <string name="copia_entendido">Entendido</string>
+
+    <!-- Restaurar -->
+    <string name="restaurar_abrir">Restaurar una copia</string>
+    <string name="restaurar_titulo">Restaurar una copia</string>
+    <string name="restaurar_explicacion">Elige un archivo de copia de mi-plata. Antes de cambiar nada verás qué trae y podrás cancelar.</string>
+    <string name="restaurar_elegir">Elegir archivo</string>
+    <string name="restaurar_leyendo">Leyendo el archivo…</string>
+    <string name="restaurar_copia_de">Copia del %1$s, hecha en %2$s.</string>
+    <string name="restaurar_trae">Trae:</string>
+    <string name="restaurar_tienes">Ahora tienes:</string>
+    <plurals name="restaurar_cuentas">
+        <item quantity="one">%1$d cuenta</item>
+        <item quantity="other">%1$d cuentas</item>
+    </plurals>
+    <plurals name="restaurar_movimientos">
+        <item quantity="one">%1$d movimiento</item>
+        <item quantity="other">%1$d movimientos</item>
+    </plurals>
+    <plurals name="restaurar_planes">
+        <item quantity="one">%1$d mes planificado</item>
+        <item quantity="other">%1$d meses planificados</item>
+    </plurals>
+    <plurals name="restaurar_categorias">
+        <item quantity="one">%1$d categoría</item>
+        <item quantity="other">%1$d categorías</item>
+    </plurals>
+    <string name="restaurar_sustituira">Todo lo que tienes ahora se sustituirá por el contenido de la copia.</string>
+    <string name="restaurar_frase">Frase de la copia</string>
+    <string name="restaurar_frase_incorrecta">La frase no abre esta copia. Revisa mayúsculas y espacios.</string>
+    <string name="restaurar_boton">Restaurar</string>
+    <string name="restaurar_otro_archivo">Elegir otro archivo</string>
+    <string name="restaurar_confirmar_titulo">¿Sustituir todos tus datos?</string>
+    <string name="restaurar_confirmar_texto">Se sustituirán por los de la copia. Antes se guarda lo que tienes ahora en este teléfono, para que puedas deshacerlo.</string>
+    <string name="restaurar_confirmar_si">Sustituir</string>
+    <string name="restaurar_cancelar">Cancelar</string>
+    <string name="restaurar_restaurando">Restaurando… no cierres la app.</string>
+    <string name="restaurar_hecho">Copia restaurada.</string>
+    <string name="restaurar_deshacer">Deshacer</string>
+    <string name="restaurar_deshacer_ultima">Volver a los datos del %1$s</string>
+    <string name="restaurar_deshacer_explicacion">Lo que tienes ahora se guarda antes, así que siempre podrás volver a ello.</string>
+    <string name="restaurar_deshaciendo">Deshaciendo…</string>
+    <string name="restaurar_deshecha">Hecho. Lo que tenías justo antes se ha guardado: puedes volver a ello desde esta pantalla.</string>
+    <string name="restaurar_volver">Volver</string>
 </resources>
