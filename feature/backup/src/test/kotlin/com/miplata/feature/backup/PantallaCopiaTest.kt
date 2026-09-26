@@ -9,8 +9,10 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.miplata.core.designsystem.theme.MiPlataTheme
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import io.kotest.matchers.shouldBe
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +37,13 @@ class PantallaCopiaTest {
 
     private var guardados = 0
 
-    private fun abrir(estado: CopiaUiState = CopiaUiState()) {
+    private val frecuenciasElegidas = mutableListOf<FrecuenciaDeRecordatorio>()
+    private var activaciones = 0
+
+    private fun abrir(
+        estado: CopiaUiState = CopiaUiState(),
+        notificacionesActivas: Boolean = true,
+    ) {
         compose.setContent {
             var frase by androidx.compose.runtime.remember { mutableStateOf("") }
             var confirmacion by androidx.compose.runtime.remember { mutableStateOf("") }
@@ -53,6 +61,9 @@ class PantallaCopiaTest {
                     alGuardar = { guardados++ },
                     alDescartarAviso = {},
                     alVolver = {},
+                    notificacionesActivas = notificacionesActivas,
+                    alCambiarFrecuencia = { frecuenciasElegidas += it },
+                    alActivarNotificaciones = { activaciones++ },
                 )
             }
         }
@@ -149,5 +160,39 @@ class PantallaCopiaTest {
         compose
             .onNodeWithText("No se pudo guardar la copia: Sin espacio en el destino")
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun `se puede elegir cada cuanto recordar`() {
+        abrir()
+
+        compose.onNodeWithText("Cada semana").performScrollTo().performClick()
+
+        frecuenciasElegidas shouldBe listOf(FrecuenciaDeRecordatorio.SEMANAL)
+    }
+
+    // Sin este aviso, el usuario elegiria "cada mes", creeria estar cubierto, y
+    // no le llegaria nada nunca.
+    @Test
+    fun `con las notificaciones apagadas avisa de que no vera el recordatorio`() {
+        abrir(notificacionesActivas = false)
+
+        compose
+            .onNodeWithText(
+                "Las notificaciones están desactivadas",
+                substring = true,
+            ).performScrollTo()
+            .assertIsDisplayed()
+        compose.onNodeWithText("Activar notificaciones").performScrollTo().performClick()
+        activaciones shouldBe 1
+    }
+
+    // Quien eligio no recibir recordatorios no necesita notificaciones: el
+    // aviso seria ruido.
+    @Test
+    fun `sin recordatorio no se habla de notificaciones`() {
+        abrir(CopiaUiState(frecuencia = FrecuenciaDeRecordatorio.NUNCA), notificacionesActivas = false)
+
+        compose.onNodeWithText("Las notificaciones están desactivadas", substring = true).assertDoesNotExist()
     }
 }

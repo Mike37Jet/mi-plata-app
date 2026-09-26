@@ -1,15 +1,21 @@
 package com.miplata.feature.backup
 
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -19,6 +25,7 @@ import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -34,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -43,9 +51,12 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.backup.FraseDeRespaldo
 import com.miplata.core.designsystem.theme.MiPlataTheme
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
+import com.miplata.feature.backup.recordatorio.NotificadorEnAndroid
 import kotlinx.datetime.TimeZone
 
 @Composable
@@ -65,6 +76,20 @@ fun PantallaCopia(
     var confirmacion by remember { mutableStateOf("") }
     var riesgoAsumido by remember { mutableStateOf(false) }
     var nombrePendiente by remember { mutableStateOf("") }
+
+    // Si se pueden enseñar notificaciones. Se vuelve a mirar cada vez que la
+    // pantalla vuelve a primer plano: el usuario puede haber ido a los ajustes
+    // del sistema a activarlas desde el boton de esta misma pantalla.
+    val contexto = LocalContext.current
+    var notificacionesActivas by remember { mutableStateOf(NotificadorEnAndroid.sePuedenMostrar(contexto)) }
+    LifecycleResumeEffect(Unit) {
+        notificacionesActivas = NotificadorEnAndroid.sePuedenMostrar(contexto)
+        onPauseOrDispose {}
+    }
+    val pedirPermiso =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+            notificacionesActivas = NotificadorEnAndroid.sePuedenMostrar(contexto)
+        }
 
     // El selector de "Guardar como" del sistema. Drive y OneDrive aparecen en el
     // como cualquier otra carpeta porque sus apps se registran como proveedores
@@ -95,6 +120,27 @@ fun PantallaCopia(
         alDescartarAviso = viewModel::descartarAviso,
         alVolver = alVolver,
         alAbrirRestaurar = alAbrirRestaurar,
+        notificacionesActivas = notificacionesActivas,
+        alCambiarFrecuencia = { frecuencia ->
+            viewModel.cambiarFrecuencia(frecuencia)
+            // El permiso se pide aqui, al pedir un recordatorio: es cuando la
+            // pregunta tiene sentido. Pedirlo al abrir la app, sin contexto, es la
+            // forma mas segura de que se deniegue.
+            if (frecuencia != FrecuenciaDeRecordatorio.NUNCA &&
+                !notificacionesActivas &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+            ) {
+                pedirPermiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        },
+        alActivarNotificaciones = {
+            // Si el usuario ya las denego, el sistema no vuelve a enseñar la
+            // pregunta: lo unico que funciona es llevarle a los ajustes.
+            contexto.startActivity(
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                    .putExtra(Settings.EXTRA_APP_PACKAGE, contexto.packageName),
+            )
+        },
         modifier = modifier,
     )
 }
@@ -121,6 +167,9 @@ internal fun PantallaCopia(
     alVolver: () -> Unit,
     modifier: Modifier = Modifier,
     alAbrirRestaurar: () -> Unit = {},
+    notificacionesActivas: Boolean = true,
+    alCambiarFrecuencia: (FrecuenciaDeRecordatorio) -> Unit = {},
+    alActivarNotificaciones: () -> Unit = {},
 ) {
     val problema = problemaCon(frase, confirmacion, riesgoAsumido)
     val enCurso = estado.exportacion == Exportacion.EnCurso
@@ -197,6 +246,13 @@ internal fun PantallaCopia(
             Text(stringResource(R.string.copia_guardar))
         }
 
+        Recordatorio(
+            frecuencia = estado.frecuencia,
+            notificacionesActivas = notificacionesActivas,
+            alCambiar = alCambiarFrecuencia,
+            alActivarNotificaciones = alActivarNotificaciones,
+        )
+
         // Restaurar va al final y con menos peso visual: es lo que se hace una
         // vez, al cambiar de movil, y no lo que se viene a hacer cada mes.
         OutlinedButton(onClick = alAbrirRestaurar, enabled = !enCurso, modifier = Modifier.fillMaxWidth()) {
@@ -204,6 +260,48 @@ internal fun PantallaCopia(
         }
     }
 }
+
+/**
+ * Cada cuanto recordar la copia, y si ese recordatorio va a poder verse.
+ *
+ * El aviso de notificaciones desactivadas es importante: sin el, el usuario
+ * elegiria "cada mes", creeria que esta cubierto, y no le llegaria nada nunca.
+ */
+@Composable
+private fun Recordatorio(
+    frecuencia: FrecuenciaDeRecordatorio,
+    notificacionesActivas: Boolean,
+    alCambiar: (FrecuenciaDeRecordatorio) -> Unit,
+    alActivarNotificaciones: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.recordatorio_frecuencia), style = MaterialTheme.typography.titleSmall)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.selectableGroup()) {
+            FrecuenciaDeRecordatorio.entries.forEach { opcion ->
+                FilterChip(
+                    selected = opcion == frecuencia,
+                    onClick = { alCambiar(opcion) },
+                    label = { Text(stringResource(opcion.etiqueta())) },
+                )
+            }
+        }
+        if (frecuencia != FrecuenciaDeRecordatorio.NUNCA && !notificacionesActivas) {
+            Text(
+                text = stringResource(R.string.recordatorio_sin_permiso),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+            TextButton(onClick = alActivarNotificaciones) { Text(stringResource(R.string.recordatorio_activar)) }
+        }
+    }
+}
+
+private fun FrecuenciaDeRecordatorio.etiqueta(): Int =
+    when (this) {
+        FrecuenciaDeRecordatorio.SEMANAL -> R.string.recordatorio_semanal
+        FrecuenciaDeRecordatorio.MENSUAL -> R.string.recordatorio_mensual
+        FrecuenciaDeRecordatorio.NUNCA -> R.string.recordatorio_nunca_opcion
+    }
 
 @Composable
 private fun Cabecera(alVolver: () -> Unit) {
