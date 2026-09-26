@@ -264,3 +264,50 @@ El backup de la app es explícito o no es.
 - Archivo truncado / bit cambiado → GCM lo detecta, se aborta.
 - Backup de `formatVersion` N−1 → migra y restaura bien. Un test por versión,
   con un archivo de ejemplo commiteado en `src/test/resources/backups/`.
+
+## Migraciones de formato
+
+Un round-trip no protege las copias viejas. Escribe y lee con el mismo código,
+así que un cambio que rompe el formato rompe los dos lados a la vez y el test
+sigue en verde. Solo un archivo generado hoy y congelado en el repositorio
+detecta que el código de mañana ya no sabe leerlo.
+
+**Cómo se lee una copia antigua.** `ArchivoDeBackup` descifra los datos con la
+versión que declara **el archivo**, no la de la app. Después pasa el JSON por
+`MigradorDeFormato` antes de convertirlo a DTOs. El migrador aplica en orden los
+pasos `v → v+1` de `MIGRACIONES_DE_FORMATO`, desde la versión del archivo hasta
+la actual. Una copia del formato actual pasa sin cambios.
+
+Las migraciones trabajan sobre el `JsonObject` y no sobre los DTOs. Los DTOs
+solo describen el formato de hoy: la forma de ayer ya no existe como clase.
+
+Si falta un eslabón de la cadena, la lectura falla con `BackupInvalido`, antes
+de tocar la base de datos. Lo mismo pasa si la versión es imposible (0 o
+negativa).
+
+**Archivos de referencia.** En `core/backup/src/test/resources/backups/` hay una
+copia real por cada versión del formato, con una frase conocida. Esas copias
+**no se regeneran nunca**: representan lo que un usuario tiene en su Drive.
+`ArchivosDeReferenciaTest` abre cada una y comprueba lo siguiente:
+
+- El contenido exacto, campo a campo.
+- El manifiesto.
+- Que el contenido se sigue convirtiendo al dominio. Esto detecta un enum
+  renombrado, que haría fallar la restauración después de dar la copia por
+  buena.
+
+**Guardianes.** Si alguien sube `VERSION_DEL_FORMATO` y olvida alguna de estas
+dos cosas, el build falla:
+
+- Su migración en `MIGRACIONES_DE_FORMATO`.
+- Su archivo `formato-N.mpb`.
+
+Los pasos para una versión nueva están en el README de esa carpeta.
+
+**Comprobado con sabotajes:**
+
+- Renombrar el campo serializado `saldoInicialEnCentavos` con `@SerialName`
+  compila y deja el round-trip en verde. Sin embargo, los tests del archivo de
+  referencia fallan.
+- Subir la versión a 2 sin migración ni archivo hace fallar los dos guardianes
+  y la lectura del formato 1.
