@@ -23,6 +23,8 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 
 /** El plan que se esta viendo, y si ya existe en la base o es una propuesta. */
@@ -49,6 +51,9 @@ class PlanViewModel
         calendario: Calendario,
     ) : ViewModel() {
         private val mesSeleccionado = MutableStateFlow(calendario.mesActual())
+
+        /** Una escritura del plan cada vez; ver [editarPlan]. */
+        private val escrituras = Mutex()
 
         /**
          * El plan del mes en pantalla.
@@ -153,10 +158,24 @@ class PlanViewModel
          * Cualquier edicion lo persiste, incluido el borrador copiado del mes
          * anterior: desde el primer cambio deja de ser una propuesta y pasa a ser
          * el plan del usuario.
+         *
+         * Las escrituras van **de una en una y en orden**, y cada cambio se aplica
+         * sobre lo ultimo que se guardo, no sobre lo que hay en pantalla. Escribir
+         * un nombre genera una edicion por tecla, mucho mas rapido de lo que la
+         * base tarda en devolver el plan: con el plan en pantalla como punto de
+         * partida, cada edicion pisaria a las anteriores que aun no han vuelto
+         * -el importe recien tecleado borraria el nombre- y dos guardados en
+         * paralelo podrian terminar en cualquier orden, dejando en la base una
+         * version a medias.
          */
         private fun editarPlan(cambio: (PlanMensual) -> PlanMensual) {
-            val actual = planEnPantalla.value?.plan ?: return
-            viewModelScope.launch { planes.guardar(cambio(actual)) }
+            val enPantalla = planEnPantalla.value?.plan ?: return
+            viewModelScope.launch {
+                escrituras.withLock {
+                    val actual = planes.obtenerDe(enPantalla.mes) ?: enPantalla
+                    planes.guardar(cambio(actual))
+                }
+            }
         }
 
         private fun seccionesDe(plan: PlanMensual): List<SeccionDelPlan> =

@@ -1,8 +1,10 @@
 package com.miplata.feature.plan
 
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -13,8 +15,10 @@ import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
 import com.miplata.core.domain.model.Mes
+import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakePlanRepository
+import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import io.kotest.matchers.shouldBe
@@ -65,12 +69,12 @@ class FlujoDelPlanTest {
     @After
     fun soltarDispatcher() = Dispatchers.resetMain()
 
-    private fun abrirPantalla() {
+    private fun abrirPantalla(repositorio: PlanRepository = planes) {
         val ids = GeneradorDeIdsSecuencial()
         val viewModel =
             PlanViewModel(
-                planes = planes,
-                abrirPlan = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(ids)),
+                planes = repositorio,
+                abrirPlan = AbrirPlanDelMesUseCase(repositorio, MaterializarPlanDelMesUseCase(ids)),
                 ids = ids,
                 ajustes = ajustes,
                 calendario =
@@ -114,6 +118,32 @@ class FlujoDelPlanTest {
         guardado.lineasActivas.single().nombre shouldBe "Sueldo"
     }
 
+    // Cada tecla del nombre se guarda en la base y vuelve por el flujo del plan
+    // un rato despues. Si el campo leyera su texto de ese flujo, la
+    // recomposicion que llega antes lo devolveria al texto anterior y la
+    // siguiente tecla se aplicaria encima: en el emulador, "Transporte" quedo
+    // como "ransTe". Aqui la base retiene las escrituras hasta que se ha
+    // terminado de escribir, que es el caso extremo de lo mismo.
+    @Test
+    fun `escribir tecla a tecla no pierde letras aunque la base tarde en devolver el plan`() {
+        val base = BaseQueRetiene(planes)
+        abrirPantalla(base)
+        botonAnadirDe("Ingresos").performClick()
+        compose.onNodeWithText("Sin nombre").assertIsDisplayed()
+
+        base.retener = true
+        "Sueldo".forEach { letra ->
+            compose.onAllNodes(hasSetTextAction())[0].performTextInput(letra.toString())
+            compose.waitForIdle()
+        }
+        base.soltar()
+
+        compose.waitUntil(ESPERA) {
+            runBlocking { planes.obtenerDe(marzo) }?.lineas?.singleOrNull()?.nombre == "Sueldo"
+        }
+        compose.onAllNodes(hasSetTextAction())[0].assert(hasText("Sueldo"))
+    }
+
     /**
      * Anade una linea a una seccion y la rellena.
      *
@@ -148,5 +178,26 @@ class FlujoDelPlanTest {
 
     private companion object {
         const val ESPERA = 5_000L
+    }
+}
+
+/**
+ * Una base que, mientras [retener] este activo, guarda las escrituras sin
+ * aplicarlas: el plan no vuelve a la pantalla hasta [soltar].
+ */
+private class BaseQueRetiene(
+    private val real: FakePlanRepository,
+) : PlanRepository by real {
+    var retener = false
+    private val retenidas = mutableListOf<PlanMensual>()
+
+    override suspend fun guardar(plan: PlanMensual) {
+        if (retener) retenidas += plan else real.guardar(plan)
+    }
+
+    fun soltar() {
+        retener = false
+        runBlocking { retenidas.forEach { real.guardar(it) } }
+        retenidas.clear()
     }
 }
