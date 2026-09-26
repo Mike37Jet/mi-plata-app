@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
@@ -41,6 +42,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
@@ -123,7 +125,7 @@ private fun Cabecera(
             Text(
                 text = estado.mes.toString(),
                 style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.width(120.dp),
+                modifier = Modifier.widthIn(min = 120.dp),
                 textAlign = TextAlign.Center,
             )
             IconButton(onClick = { alEvento(EventoDelPlan.MesSiguiente) }) {
@@ -214,7 +216,7 @@ private fun FilaDeLinea(
     }
     var nombreTecleado by rememberSaveable(linea.id) { mutableStateOf(linea.nombre) }
 
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+    val nombre: @Composable (Modifier) -> Unit = { modificador ->
         TextField(
             value = nombreTecleado,
             onValueChange = { texto ->
@@ -224,8 +226,10 @@ private fun FilaDeLinea(
             placeholder = { Text(stringResource(R.string.plan_nombre_vacio)) },
             singleLine = true,
             colors = camposSinFondo(),
-            modifier = Modifier.weight(1f),
+            modifier = modificador,
         )
+    }
+    val monto: @Composable (Modifier) -> Unit = { modificador ->
         TextField(
             value = montoTecleado,
             onValueChange = { texto ->
@@ -241,24 +245,53 @@ private fun FilaDeLinea(
             // importes forman una columna y se comparan de un vistazo.
             textStyle = EstilosDeDinero.enLista.copy(textAlign = TextAlign.End),
             colors = camposSinFondo(),
-            modifier = Modifier.width(130.dp),
+            modifier = modificador,
         )
-        // Sin descripcion, un lector de pantalla anuncia "interruptor" y no dice
-        // de que. El nombre de la linea no basta: hay que decir que hace.
-        val descripcionDelInterruptor = stringResource(R.string.plan_activa)
-        Switch(
-            checked = linea.activa,
-            onCheckedChange = { alEvento(EventoDelPlan.CambiarActiva(linea, it)) },
-            modifier = Modifier.semantics { contentDescription = descripcionDelInterruptor },
-        )
-        IconButton(onClick = { alEvento(EventoDelPlan.EliminarLinea(linea)) }) {
-            Icon(
-                Icons.Outlined.DeleteOutline,
-                contentDescription = stringResource(R.string.plan_eliminar),
-            )
+    }
+
+    // Con letra grande, el importe no cabe en su ancho fijo junto al nombre y
+    // los controles: al 200% de "2000.00" solo asomaba el primer digito. Se
+    // apila: el nombre ocupa su propia fila y el importe se queda con todo el
+    // ancho que dejan los controles.
+    if (conLetraGrande()) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            nombre(Modifier.fillMaxWidth())
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                monto(Modifier.weight(1f))
+                ControlesDeLinea(linea, alEvento)
+            }
+        }
+    } else {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            nombre(Modifier.weight(1f))
+            monto(Modifier.width(ANCHO_DEL_IMPORTE))
+            ControlesDeLinea(linea, alEvento)
         }
     }
 }
+
+@Composable
+private fun ControlesDeLinea(
+    linea: LineaDePlan,
+    alEvento: (EventoDelPlan) -> Unit,
+) {
+    // Sin descripcion, un lector de pantalla anuncia "interruptor" y no dice
+    // de que. El nombre de la linea no basta: hay que decir que hace.
+    val descripcionDelInterruptor = stringResource(R.string.plan_activa)
+    Switch(
+        checked = linea.activa,
+        onCheckedChange = { alEvento(EventoDelPlan.CambiarActiva(linea, it)) },
+        modifier = Modifier.semantics { contentDescription = descripcionDelInterruptor },
+    )
+    IconButton(onClick = { alEvento(EventoDelPlan.EliminarLinea(linea)) }) {
+        Icon(
+            Icons.Outlined.DeleteOutline,
+            contentDescription = stringResource(R.string.plan_eliminar),
+        )
+    }
+}
+
+private val ANCHO_DEL_IMPORTE = 130.dp
 
 @Composable
 private fun camposSinFondo() =

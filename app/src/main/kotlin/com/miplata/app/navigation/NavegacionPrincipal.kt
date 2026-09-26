@@ -7,7 +7,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +20,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.miplata.core.designsystem.accesibilidad.TextoQueCabe
 import com.miplata.feature.backup.navigation.RutaCopia
 import com.miplata.feature.backup.navigation.RutaRestaurar
 import com.miplata.feature.backup.navigation.pantallaCopia
@@ -105,7 +105,10 @@ private fun BarraInferior(
                     // leyera cada pestana dos veces.
                     Icon(imageVector = destino.icono, contentDescription = null)
                 },
-                label = { Text(stringResource(destino.etiqueta)) },
+                // Cada pestaña tiene un cuarto del ancho y no se puede apilar. Con
+                // letra grande, un Text normal partia "Movimientos" en dos lineas
+                // a mitad de palabra; este se reduce lo justo para caber entero.
+                label = { TextoQueCabe(stringResource(destino.etiqueta)) },
             )
         }
     }

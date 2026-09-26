@@ -1,11 +1,15 @@
 package com.miplata.app
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,7 +66,35 @@ private fun AplicacionMiPlata(
             Tema.SEGUN_EL_SISTEMA -> isSystemInDarkTheme()
         }
 
+    BarrasDelSistemaSegunElTema(oscuro)
+
     MiPlataTheme(temaOscuro = oscuro) {
         NavegacionPrincipal(abrirCopiaAlEmpezar = abrirCopia)
     }
 }
+
+/**
+ * Los iconos de la barra de estado y de navegacion, del color que se lee sobre
+ * el tema **de la app**.
+ *
+ * `enableEdgeToEdge()` sin argumentos los ajusta al tema del sistema. Si el
+ * usuario elige el tema oscuro con el movil en claro, la hora y la bateria
+ * salian en negro sobre el fondo negro de la app: invisibles. Se vuelve a
+ * llamar cada vez que cambia el tema, con el que manda de verdad.
+ */
+@Composable
+private fun BarrasDelSistemaSegunElTema(oscuro: Boolean) {
+    val actividad = LocalActivity.current as? ComponentActivity ?: return
+    DisposableEffect(oscuro) {
+        actividad.enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { oscuro },
+            navigationBarStyle = SystemBarStyle.auto(VELO_CLARO, VELO_OSCURO) { oscuro },
+        )
+        onDispose {}
+    }
+}
+
+// Los mismos velos que pone `enableEdgeToEdge()` por defecto tras la barra de
+// navegacion de tres botones. La libreria no los expone.
+private val VELO_CLARO = Color.argb(0xe6, 0xFF, 0xFF, 0xFF)
+private val VELO_OSCURO = Color.argb(0x80, 0x1b, 0x1b, 0x1b)
