@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="bienvenida_titulo">Tu plata, con plan</string>
+    <string name="bienvenida_texto">Anota lo que esperas ganar y gastar este mes, y ve si te alcanza a medida que pasa. Todo se queda en este teléfono.</string>
+    <string name="bienvenida_empezar">Empezar</string>
+    <string name="bienvenida_tengo_copia">Ya tengo una copia de seguridad</string>
+
+    <string name="bienvenida_paso">Paso %1$d de %2$d</string>
+    <string name="bienvenida_siguiente">Siguiente</string>
+    <string name="bienvenida_atras">Atrás</string>
+
+    <string name="bienvenida_mes_titulo">Tu mes</string>
+    <string name="bienvenida_moneda">¿En qué moneda llevas tus cuentas?</string>
+    <string name="bienvenida_primer_dia">¿Qué día empieza tu mes?</string>
+    <string name="bienvenida_primer_dia_detalle">Si cobras a fin de mes, el día que cobras. Tus resúmenes irán de ese día al anterior del mes siguiente.</string>
+    <string name="bienvenida_dia">Día %1$d</string>
+    <string name="bienvenida_dia_anterior">Un día antes</string>
+    <string name="bienvenida_dia_siguiente">Un día después</string>
+
+    <string name="bienvenida_cuenta_titulo">Tu primera cuenta</string>
+    <string name="bienvenida_cuenta_texto">Donde tienes el dinero: la cuenta del banco, la cartera. Luego puedes añadir más.</string>
+    <string name="bienvenida_cuenta_nombre">Nombre</string>
+    <string name="bienvenida_cuenta_nombre_ejemplo">Cuenta del banco</string>
+    <string name="bienvenida_cuenta_tipo">Tipo</string>
+    <string name="bienvenida_cuenta_saldo">¿Cuánto tiene hoy?</string>
+
+    <string name="bienvenida_tipo_efectivo">Efectivo</string>
+    <string name="bienvenida_tipo_bancaria">Banco</string>
+    <string name="bienvenida_tipo_tarjeta">Tarjeta de crédito</string>
+    <string name="bienvenida_tipo_ahorro">Ahorro</string>
+    <string name="bienvenida_tipo_inversion">Inversión</string>
+
+    <string name="bienvenida_ingreso_titulo">¿Cuánto entra al mes?</string>
+    <string name="bienvenida_ingreso_texto">Tu sueldo o lo que recibas cada mes. Es el punto de partida del plan: después le restarás los gastos.</string>
+    <string name="bienvenida_ingreso_monto">Ingreso mensual</string>
+    <string name="bienvenida_ingreso_nombre">Sueldo</string>
+    <string name="bienvenida_terminar">Empezar a planear</string>
+    <string name="bienvenida_despues">Lo haré después</string>
+
+    <string name="bienvenida_error">No se pudo guardar. Inténtalo de nuevo.</string>
+</resources>

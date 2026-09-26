@@ -25,6 +25,8 @@ import com.miplata.feature.backup.navigation.RutaCopia
 import com.miplata.feature.backup.navigation.RutaRestaurar
 import com.miplata.feature.backup.navigation.pantallaCopia
 import com.miplata.feature.backup.navigation.pantallaRestaurar
+import com.miplata.feature.bienvenida.navigation.RutaBienvenida
+import com.miplata.feature.bienvenida.navigation.pantallaBienvenida
 import com.miplata.feature.cuentas.navigation.pantallaCuentas
 import com.miplata.feature.plan.navigation.pantallaPlan
 import com.miplata.feature.resumen.navigation.RutaResumen
@@ -42,6 +44,7 @@ import com.miplata.feature.transacciones.navigation.pantallaTransacciones
 fun NavegacionPrincipal(
     modifier: Modifier = Modifier,
     abrirCopiaAlEmpezar: Boolean = false,
+    empezarEnElPlan: Boolean = false,
     navController: NavHostController = rememberNavController(),
 ) {
     val entradaActual by navController.currentBackStackEntryAsState()
@@ -55,6 +58,10 @@ fun NavegacionPrincipal(
             navController.irA(DestinoPrincipal.CUENTAS)
             navController.navigate(RutaCopia)
         }
+    }
+
+    LaunchedEffect(empezarEnElPlan) {
+        if (empezarEnElPlan) navController.irA(DestinoPrincipal.PLAN)
     }
 
     Scaffold(
@@ -130,5 +137,40 @@ private fun NavHostController.irA(destino: DestinoPrincipal) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * La bienvenida, fuera del esqueleto de pestañas: sin barra inferior, porque
+ * todavia no hay nada a lo que ir.
+ *
+ * Lleva su propio grafo para poder restaurar una copia desde aqui. Al terminar
+ * no navega a ningun sitio: en cuanto existe una cuenta, la app cambia sola a
+ * [NavegacionPrincipal] (ver `ArranqueViewModel`).
+ */
+@Composable
+fun FlujoDeBienvenida(
+    alTerminar: () -> Unit,
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+) {
+    // El mismo Scaffold que el de las pestañas, sin barras: aparta las pantallas
+    // de la barra de estado y de la de navegacion. La de restaurar se escribio
+    // contando con el y, sin el, quedaba debajo de la hora.
+    Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = RutaBienvenida,
+            modifier =
+                Modifier
+                    .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding),
+        ) {
+            pantallaBienvenida(
+                alTenerCopia = { navController.navigate(RutaRestaurar) },
+                alTerminar = alTerminar,
+            )
+            pantallaRestaurar(alVolver = navController::popBackStack)
+        }
     }
 }
