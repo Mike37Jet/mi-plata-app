@@ -12,7 +12,8 @@ import java.util.zip.ZipOutputStream
 /**
  * Lee y escribe el archivo de backup.
  *
- * El archivo es un ZIP con `manifest.json` y `data.json` dentro (docs/05). Un
+ * El archivo es un ZIP con `manifest.json` en claro y `data.enc` cifrado con
+ * la frase del usuario (docs/05). Un
  * ZIP y no un JSON suelto porque deja sitio para lo que vendra -adjuntos, fotos
  * de recibos- sin cambiar el formato, y porque comprime bien un JSON que es casi
  * todo texto repetido.
@@ -23,6 +24,7 @@ import java.util.zip.ZipOutputStream
  * datos del usuario sobreviven a un cambio de movil no es un detalle menor.
  */
 class ArchivoDeBackup(
+    private val cifrador: CifradorDeBackup = CifradorDeBackup(),
     private val json: Json = JSON,
 ) {
     /**
@@ -34,9 +36,13 @@ class ArchivoDeBackup(
      */
     fun escribir(
         contenido: ContenidoDelBackup,
+        frase: FraseDeRespaldo,
         destino: OutputStream,
     ) {
-        val datos = json.encodeToString(DatosDelBackup.serializer(), contenido.datos).toByteArray()
+        val claro = json.encodeToString(DatosDelBackup.serializer(), contenido.datos).toByteArray()
+        val cifrado = cifrador.cifrar(claro, frase, contextoDe(VERSION_DEL_FORMATO))
+        // El claro no sale de esta funcion: se sobrescribe en cuanto esta cifrado.
+        claro.fill(0)
 
         val manifiesto =
             Manifiesto(
@@ -44,34 +50,59 @@ class ArchivoDeBackup(
                 versionDeLaApp = contenido.versionDeLaApp,
                 creadoEnMillis = contenido.creadoEnMillis,
                 dispositivo = contenido.dispositivo,
-                checksum = sha256De(datos),
+                checksum = sha256De(cifrado.bytes),
+                cifrado = cifrado.parametros,
                 contenido = recuentoDe(contenido.datos),
             )
 
         ZipOutputStream(destino).use { zip ->
             zip.escribir(Piezas.MANIFIESTO, json.encodeToString(Manifiesto.serializer(), manifiesto).toByteArray())
-            zip.escribir(Piezas.DATOS, datos)
+            zip.escribir(Piezas.DATOS, cifrado.bytes)
         }
     }
 
     /**
-     * Lee el backup de [origen], comprobando que este entero.
+     * Lee y descifra el backup de [origen].
      *
-     * Se valida en este orden y no en otro: primero que el archivo tenga las dos
-     * piezas, luego que la version del formato sea legible, y solo despues el
-     * checksum. Asi un archivo de una version futura da el mensaje util
-     * -"actualiza la app"- en vez de un "checksum incorrecto" que no le dice
-     * nada a nadie.
+     * El orden de las comprobaciones es lo que hace utiles los mensajes de error:
+     *
+     * 1. Que el archivo tenga manifiesto: si no, "esto no es un backup".
+     * 2. Que la version del formato sea legible: si no, "actualiza la app".
+     * 3. Que el contenido cifrado coincida con su checksum: si no, "archivo
+     *    dañado". Esto se sabe **sin la frase**.
+     * 4. Solo entonces se descifra. Si falla ahora, el archivo esta entero y lo
+     *    que no cuadra es la frase: [FraseIncorrecta], y la interfaz puede
+     *    volver a pedirla en vez de dar el backup por perdido.
+     *
+     * @throws FraseIncorrecta si la frase no abre el backup.
+     * @throws BackupInvalido en cualquier otro caso.
      */
-    fun leer(origen: InputStream): BackupLeido {
+    fun leer(
+        origen: InputStream,
+        frase: FraseDeRespaldo,
+    ): BackupLeido {
         val piezas = descomprimir(origen)
         val manifiesto = manifiestoDe(piezas)
 
         exigirFormatoLegible(manifiesto)
-        val datos = datosDe(piezas)
-        exigirChecksumCorrecto(datos, manifiesto)
+        val cifrado = datosDe(piezas)
+        exigirChecksumCorrecto(cifrado, manifiesto)
 
-        return BackupLeido(manifiesto, decodificar(datos))
+        val claro =
+            cifrador.descifrar(
+                cifrado = cifrado,
+                parametros = manifiesto.cifrado,
+                frase = frase,
+                // La version del ARCHIVO, no la de la app: un backup v1 tiene
+                // que seguir abriendose cuando la app vaya por la v3.
+                contexto = contextoDe(manifiesto.versionDelFormato),
+            )
+
+        return try {
+            BackupLeido(manifiesto, decodificar(claro))
+        } finally {
+            claro.fill(0)
+        }
     }
 
     private fun exigirFormatoLegible(manifiesto: Manifiesto) {
@@ -92,7 +123,7 @@ class ArchivoDeBackup(
     ) {
         if (sha256De(datos) != manifiesto.checksum) {
             throw BackupInvalido(
-                "El backup esta corrupto: el contenido no coincide con su checksum. " +
+                "El backup esta dañado: su contenido no coincide con el que se guardo. " +
                     "No se ha modificado nada.",
             )
         }
@@ -101,9 +132,9 @@ class ArchivoDeBackup(
     /**
      * Lee **solo** el manifiesto.
      *
-     * Sirve para enseñar el resumen previo -"4 cuentas, 312 movimientos, del 15
-     * de marzo"- y, mas adelante, para saber si hay que pedir la frase de
-     * descifrado antes de pedirla (docs/05).
+     * No necesita la frase. Sirve para enseñar el resumen previo -"4 cuentas,
+     * 312 movimientos, del 15 de marzo"- y para rechazar un archivo de una
+     * version futura antes de pedirle nada al usuario (docs/05).
      */
     fun leerManifiesto(origen: InputStream): Manifiesto = manifiestoDe(descomprimir(origen))
 
@@ -185,6 +216,14 @@ data class BackupLeido(
     val datos: DatosDelBackup,
 )
 
+/**
+ * Lo que se autentica junto al contenido cifrado, ademas de los parametros.
+ *
+ * Incluye la version del formato: si alguien la cambia en el manifiesto para
+ * forzar otra ruta de lectura, el descifrado falla.
+ */
+private fun contextoDe(versionDelFormato: Int) = "formato=$versionDelFormato"
+
 private fun ZipOutputStream.escribir(
     nombre: String,
     contenido: ByteArray,
@@ -201,5 +240,7 @@ private fun sha256De(datos: ByteArray): String =
         .joinToString("") { "%02x".format(it) }
 
 /** Escribe el backup y devuelve los bytes, para quien no tenga un stream a mano. */
-fun ArchivoDeBackup.escribirABytes(contenido: ContenidoDelBackup): ByteArray =
-    ByteArrayOutputStream().also { escribir(contenido, it) }.toByteArray()
+fun ArchivoDeBackup.escribirABytes(
+    contenido: ContenidoDelBackup,
+    frase: FraseDeRespaldo,
+): ByteArray = ByteArrayOutputStream().also { escribir(contenido, frase, it) }.toByteArray()

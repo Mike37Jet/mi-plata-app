@@ -12,25 +12,42 @@ import kotlinx.serialization.Serializable
  *
  * Subirlo obliga a escribir la migracion de formato correspondiente y a dejar un
  * archivo de ejemplo en los tests.
+ *
+ * La version 1 **ya es la cifrada**. Hubo un paso intermedio sin cifrar mientras
+ * se construia (4.1), pero nunca salio del repositorio: no hay un solo archivo
+ * de ese formato en manos de nadie, asi que no merece un numero de version ni
+ * una migracion que mantener para siempre.
  */
 const val VERSION_DEL_FORMATO: Int = 1
 
 /** Nombre de cada pieza dentro del archivo. */
 internal object Piezas {
     const val MANIFIESTO = "manifest.json"
-    const val DATOS = "data.json"
+
+    /**
+     * `data.json` cifrado. La extension no es decorativa: quien abra el ZIP a
+     * mano ve de un vistazo que ahi no hay nada que leer.
+     */
+    const val DATOS = "data.enc"
 }
 
 /**
  * La ficha del backup: que es, de cuando, y como comprobar que esta entero.
  *
- * Va sin cifrar dentro del archivo aunque los datos si lo esten (4.2), porque
- * hay que poder leer la version del formato **antes** de pedirle la frase al
- * usuario: si el archivo es de una version que esta app no entiende, lo suyo es
- * decirlo en vez de hacerle teclear una frase para nada.
+ * Va **sin cifrar**, aunque los datos si lo esten, porque hay que poder leerla
+ * antes de pedirle la frase al usuario: si el archivo es de una version que esta
+ * app no entiende, o esta dañado, lo suyo es decirlo en vez de hacerle teclear
+ * una frase para nada.
  *
- * @param checksum SHA-256 de `data.json` en hexadecimal. Detecta corrupcion
- *   antes de tocar la base de datos; es lo que permite abortar a tiempo.
+ * Lo que expone es deliberadamente poco: versiones, fecha, nombre del movil y
+ * cuantos registros hay. Ni un importe, ni un nombre de cuenta.
+ *
+ * @param checksum SHA-256 del contenido **cifrado**, en hexadecimal. Sobre el
+ *   cifrado y no sobre el claro por dos motivos: permite detectar un archivo
+ *   dañado sin conocer la frase -y distinguirlo asi de una frase mal escrita-,
+ *   y un hash del claro al lado del cifrado permitiria confirmar un contenido
+ *   adivinado sin descifrar nada.
+ * @param cifrado lo necesario para descifrar, salvo la frase.
  */
 @Serializable
 data class Manifiesto(
@@ -42,6 +59,7 @@ data class Manifiesto(
     /** Para que el usuario reconozca de que movil salio. */
     val dispositivo: String,
     val checksum: String,
+    val cifrado: ParametrosDeCifrado,
     /** Cuantos de cada cosa, para el resumen previo a restaurar (docs/05). */
     val contenido: Recuento,
 )

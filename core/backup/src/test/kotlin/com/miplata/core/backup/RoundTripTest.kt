@@ -39,7 +39,7 @@ import java.io.ByteArrayInputStream
  * este test pasa, un backup sirve para lo que promete.
  */
 class RoundTripTest {
-    private val archivo = ArchivoDeBackup()
+    private val archivo = archivoRapido()
 
     private fun app() = AppEnMemoria()
 
@@ -159,10 +159,10 @@ class RoundTripTest {
     fun `exportar e importar en un movil nuevo deja todo identico`() =
         runTest {
             val original = app().also { it.llenar() }
-            val bytes = archivo.escribirABytes(original.aContenido())
+            val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes)).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
 
             nuevo.ajustes.obtener() shouldBe original.ajustes.obtener()
             nuevo.cuentas.observarTodas().first() shouldBe original.cuentas.observarTodas().first()
@@ -177,10 +177,10 @@ class RoundTripTest {
     fun `los importes vuelven al centavo`() =
         runTest {
             val original = app().also { it.llenar() }
-            val bytes = archivo.escribirABytes(original.aContenido())
+            val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes)).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
 
             nuevo.transacciones.obtener(TransaccionId("t1"))!!.monto shouldBe Money.deCentavos(4_275)
             nuevo.planes
@@ -196,10 +196,10 @@ class RoundTripTest {
     fun `un plan sin movimientos tambien viaja`() =
         runTest {
             val original = app().also { it.llenar() }
-            val bytes = archivo.escribirABytes(original.aContenido())
+            val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes)).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
 
             nuevo.planes.obtenerDe(Mes.de(2026, 4)) shouldBe original.planes.obtenerDe(Mes.de(2026, 4))
         }
@@ -210,10 +210,10 @@ class RoundTripTest {
     fun `una transferencia conserva sus dos cuentas`() =
         runTest {
             val original = app().also { it.llenar() }
-            val bytes = archivo.escribirABytes(original.aContenido())
+            val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes)).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
 
             val transferencia = nuevo.transacciones.obtener(TransaccionId("t3"))!!
             transferencia.tipo shouldBe TipoDeTransaccion.TRANSFERENCIA
@@ -225,10 +225,10 @@ class RoundTripTest {
     fun `las banderas de una cuenta sobreviven`() =
         runTest {
             val original = app().also { it.llenar() }
-            val bytes = archivo.escribirABytes(original.aContenido())
+            val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes)).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
 
             val visa = nuevo.cuentas.obtener(CuentaId("visa"))!!
             visa.archivada shouldBe true
@@ -240,10 +240,10 @@ class RoundTripTest {
     fun `una linea desactivada sigue desactivada`() =
         runTest {
             val original = app().also { it.llenar() }
-            val bytes = archivo.escribirABytes(original.aContenido())
+            val bytes = archivo.escribirABytes(original.aContenido(), FRASE)
 
             val nuevo = app()
-            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes)).datos)
+            nuevo.restaurador.restaurar(archivo.leer(ByteArrayInputStream(bytes), FRASE).datos)
 
             nuevo.planes
                 .obtenerDe(Mes.de(2026, 3))!!
@@ -259,7 +259,7 @@ class RoundTripTest {
 
             val manifiesto =
                 archivo
-                    .leer(ByteArrayInputStream(archivo.escribirABytes(original.aContenido())))
+                    .leer(ByteArrayInputStream(archivo.escribirABytes(original.aContenido(), FRASE)), FRASE)
                     .manifiesto
 
             manifiesto.contenido shouldBe Recuento(cuentas = 2, categorias = 2, transacciones = 3, planes = 2)

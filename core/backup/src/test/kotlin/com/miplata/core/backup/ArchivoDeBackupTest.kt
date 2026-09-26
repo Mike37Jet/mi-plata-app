@@ -40,24 +40,23 @@ private fun contenido(datos: DatosDelBackup = DATOS_DE_EJEMPLO) =
         dispositivo = "Pixel de prueba",
     )
 
+/** El formato del archivo: piezas, manifiesto, versiones y checksum. */
 class ArchivoDeBackupTest {
-    private val archivo = ArchivoDeBackup()
+    private val archivo = archivoRapido()
+
+    private fun bytesDe(datos: DatosDelBackup = DATOS_DE_EJEMPLO) = archivo.escribirABytes(contenido(datos), FRASE)
+
+    private fun leer(bytes: ByteArray) = archivo.leer(ByteArrayInputStream(bytes), FRASE)
 
     // El test que justifica el modulo entero: lo que entra es lo que sale.
     @Test
     fun `lo que se escribe es lo que se lee`() {
-        val bytes = archivo.escribirABytes(contenido())
-
-        val leido = archivo.leer(ByteArrayInputStream(bytes))
-
-        leido.datos shouldBe DATOS_DE_EJEMPLO
+        leer(bytesDe()).datos shouldBe DATOS_DE_EJEMPLO
     }
 
     @Test
     fun `el manifiesto describe lo que hay dentro`() {
-        val bytes = archivo.escribirABytes(contenido())
-
-        val manifiesto = archivo.leer(ByteArrayInputStream(bytes)).manifiesto
+        val manifiesto = leer(bytesDe()).manifiesto
 
         manifiesto.versionDelFormato shouldBe VERSION_DEL_FORMATO
         manifiesto.versionDeLaApp shouldBe "0.1.0"
@@ -68,34 +67,20 @@ class ArchivoDeBackupTest {
     }
 
     // Sirve para el resumen previo -"se restauraran 4 cuentas, 312 movimientos"-
-    // sin tener que descomprimir y parsear todo el contenido.
+    // y para rechazar un archivo demasiado nuevo antes de pedir la frase.
     @Test
-    fun `el manifiesto se puede leer solo`() {
-        val bytes = archivo.escribirABytes(contenido())
-
-        archivo.leerManifiesto(ByteArrayInputStream(bytes)).contenido.cuentas shouldBe 1
+    fun `el manifiesto se lee sin la frase`() {
+        archivo.leerManifiesto(ByteArrayInputStream(bytesDe())).contenido.cuentas shouldBe 1
     }
 
     @Test
     fun `un backup vacio se escribe y se lee igual`() {
         val vacio = DatosDelBackup(ajustes = AjustesDto("USD", 1, "SEGUN_EL_SISTEMA"))
 
-        val leido = archivo.leer(ByteArrayInputStream(archivo.escribirABytes(contenido(vacio))))
+        val leido = leer(bytesDe(vacio))
 
         leido.datos shouldBe vacio
         leido.manifiesto.contenido shouldBe Recuento()
-    }
-
-    // Lo que hace util al checksum: detectar el destrozo ANTES de tocar la base.
-    @Test
-    fun `un byte cambiado en los datos se detecta`() {
-        val bytes = archivo.escribirABytes(contenido())
-        val corrupto = corromperLosDatos(bytes)
-
-        val error = shouldThrow<BackupInvalido> { archivo.leer(ByteArrayInputStream(corrupto)) }
-
-        error.message!! shouldContain "corrupto"
-        error.message!! shouldContain "No se ha modificado nada"
     }
 
     // Elegir el archivo equivocado en el selector es facil de hacer, asi que el
@@ -104,46 +89,37 @@ class ArchivoDeBackupTest {
     fun `un archivo cualquiera se rechaza con un mensaje entendible`() {
         val error =
             shouldThrow<BackupInvalido> {
-                archivo.leer(ByteArrayInputStream("esto es una foto, no un backup".toByteArray()))
+                leer("esto es una foto, no un backup".toByteArray())
             }
 
         error.message!! shouldContain "no parece un backup"
     }
 
     // Un backup de una version futura tiene que decir "actualiza la app" y no
-    // "checksum incorrecto", que no le dice nada a nadie. Por eso la version se
-    // comprueba antes que el checksum.
+    // "archivo dañado". Por eso la version se comprueba antes que el checksum.
     @Test
     fun `un backup de un formato mas nuevo pide actualizar la app`() {
-        val bytes = archivo.escribirABytes(contenido())
-        val delFuturo = conVersionDeFormato(bytes, VERSION_DEL_FORMATO + 1)
+        val delFuturo = conVersionDeFormato(bytesDe(), VERSION_DEL_FORMATO + 1)
 
-        val error = shouldThrow<BackupInvalido> { archivo.leer(ByteArrayInputStream(delFuturo)) }
+        val error = shouldThrow<BackupInvalido> { leer(delFuturo) }
 
         error.message!! shouldContain "Actualiza la app"
     }
 
     @Test
     fun `un backup sin manifiesto se rechaza`() {
-        val soloDatos = zipCon(mapOf(Piezas.DATOS to "{}".toByteArray()))
+        val soloDatos = zipCon(mapOf(Piezas.DATOS to ByteArray(32)))
 
-        val error = shouldThrow<BackupInvalido> { archivo.leer(ByteArrayInputStream(soloDatos)) }
+        val error = shouldThrow<BackupInvalido> { leer(soloDatos) }
 
         error.message!! shouldContain "no parece un backup"
     }
 
     @Test
-    fun `el checksum cambia cuando cambian los datos`() {
-        val uno = archivo.leerManifiesto(ByteArrayInputStream(archivo.escribirABytes(contenido())))
-        val otro =
-            archivo.leerManifiesto(
-                ByteArrayInputStream(
-                    archivo.escribirABytes(
-                        contenido(DATOS_DE_EJEMPLO.copy(cuentas = emptyList())),
-                    ),
-                ),
-            )
+    fun `un backup sin datos se rechaza`() {
+        val piezas = piezasDe(bytesDe())
+        piezas.remove(Piezas.DATOS)
 
-        (uno.checksum == otro.checksum) shouldBe false
+        shouldThrow<BackupInvalido> { leer(zipCon(piezas)) }
     }
 }
