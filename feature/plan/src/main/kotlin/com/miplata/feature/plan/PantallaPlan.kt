@@ -196,9 +196,12 @@ private fun CabeceraDeSeccion(
  * Una linea editable directamente, sin dialogos.
  *
  * El texto de cada campo vive en la propia fila mientras se escribe, y solo el
- * valor ya interpretado sube al ViewModel. Si el estado fuera la unica fuente,
- * escribir "12," se convertiria en "12" al instante y el usuario no podria
- * teclear el segundo decimal.
+ * valor sube al ViewModel. Si el estado fuera la unica fuente:
+ * - escribir "12," se convertiria en "12" al instante y el usuario no podria
+ *   teclear el segundo decimal;
+ * - el nombre perderia letras. Cada tecla se guarda en la base y vuelve por el
+ *   flujo del plan milisegundos despues; la recomposicion que llega antes
+ *   devuelve el campo al texto anterior y la siguiente tecla se aplica encima.
  */
 @Composable
 private fun FilaDeLinea(
@@ -209,11 +212,15 @@ private fun FilaDeLinea(
     var montoTecleado by rememberSaveable(linea.id) {
         mutableStateOf(textoInicial(linea.montoPlanificado))
     }
+    var nombreTecleado by rememberSaveable(linea.id) { mutableStateOf(linea.nombre) }
 
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         TextField(
-            value = linea.nombre,
-            onValueChange = { alEvento(EventoDelPlan.CambiarNombre(linea, it)) },
+            value = nombreTecleado,
+            onValueChange = { texto ->
+                nombreTecleado = texto
+                alEvento(EventoDelPlan.CambiarNombre(linea, texto))
+            },
             placeholder = { Text(stringResource(R.string.plan_nombre_vacio)) },
             singleLine = true,
             colors = camposSinFondo(),

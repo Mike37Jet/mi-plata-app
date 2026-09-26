@@ -12,12 +12,16 @@ import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakePlanRepository
+import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -46,11 +50,14 @@ class PlanViewModelTest {
     private val planes = FakePlanRepository()
     private val ajustes = FakeAjustesRepository()
 
-    private fun viewModel(mes: Mes = MARZO): PlanViewModel {
+    private fun viewModel(
+        mes: Mes = MARZO,
+        repositorio: PlanRepository = planes,
+    ): PlanViewModel {
         val ids = GeneradorDeIdsSecuencial()
         return PlanViewModel(
-            planes = planes,
-            abrirPlan = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(ids)),
+            planes = repositorio,
+            abrirPlan = AbrirPlanDelMesUseCase(repositorio, MaterializarPlanDelMesUseCase(ids)),
             ids = ids,
             ajustes = ajustes,
             calendario =
@@ -273,6 +280,35 @@ class PlanViewModelTest {
             }
         }
 
+    // Escribir un nombre es una edicion por tecla, mas rapido de lo que Room
+    // tarda en guardar y devolver el plan. Si cada edicion partiera del plan en
+    // pantalla, o si los guardados corrieran en paralelo, la base acabaria con
+    // una version a medias: en el emulador, "Transporte" quedo como "Trapotr".
+    @Test
+    fun `las ediciones seguidas se guardan en orden y sin pisarse aunque la base tarde`() =
+        runTest {
+            planes.guardar(PlanMensual(id = PlanId("p"), mes = MARZO))
+            val vm = viewModel(repositorio = BaseQueTarda(planes))
+            backgroundScope.launch { vm.uiState.collect {} }
+            advanceUntilIdle()
+
+            vm.alEvento(EventoDelPlan.AnadirLinea(TipoDeLinea.INGRESO))
+            advanceUntilIdle()
+            val linea = planes.obtenerDe(MARZO)!!.lineas.single()
+
+            // Todo seguido, sin dar tiempo a que vuelva ninguna escritura.
+            val nombre = "Sueldo"
+            for (fin in 1..nombre.length) {
+                vm.alEvento(EventoDelPlan.CambiarNombre(linea, nombre.take(fin)))
+            }
+            vm.alEvento(EventoDelPlan.CambiarMonto(linea, Money.deUnidades(2000)))
+            advanceUntilIdle()
+
+            val guardada = planes.obtenerDe(MARZO)!!.lineas.single()
+            guardada.nombre shouldBe "Sueldo"
+            guardada.montoPlanificado shouldBe Money.deUnidades(2000)
+        }
+
     @Test
     fun `navegar cambia de mes`() =
         runTest {
@@ -300,5 +336,28 @@ private suspend fun app.cash.turbine.TurbineTestContext<PlanUiState>.esperarHast
     while (true) {
         val estado = awaitItem()
         if (condicion(estado)) return estado
+    }
+}
+
+/**
+ * Una base que tarda en escribir, y no siempre lo mismo, como Room: cada
+ * guardado es una transaccion en otro hilo.
+ *
+ * Cada escritura tarda menos que la anterior, asi que si se lanzan en paralelo
+ * la primera es la ultima en terminar y pisa a todas las demas.
+ */
+private class BaseQueTarda(
+    private val real: FakePlanRepository,
+) : PlanRepository by real {
+    private var escrituras = 0
+
+    override suspend fun guardar(plan: PlanMensual) {
+        delay((LATENCIA_INICIAL - PASO * escrituras++).coerceAtLeast(0))
+        real.guardar(plan)
+    }
+
+    private companion object {
+        const val LATENCIA_INICIAL = 100L
+        const val PASO = 10L
     }
 }
