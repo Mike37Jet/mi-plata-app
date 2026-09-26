@@ -9,6 +9,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -40,10 +41,21 @@ import com.miplata.feature.transacciones.navigation.pantallaTransacciones
 @Composable
 fun NavegacionPrincipal(
     modifier: Modifier = Modifier,
+    abrirCopiaAlEmpezar: Boolean = false,
     navController: NavHostController = rememberNavController(),
 ) {
     val entradaActual by navController.currentBackStackEntryAsState()
     val destinoActual = entradaActual?.destination
+
+    // Al tocar el recordatorio: a Cuentas y, encima, la copia. Asi "atras" lleva
+    // a Cuentas, que es de donde se llega a la copia normalmente, y no fuera de
+    // la app.
+    LaunchedEffect(abrirCopiaAlEmpezar) {
+        if (abrirCopiaAlEmpezar) {
+            navController.irA(DestinoPrincipal.CUENTAS)
+            navController.navigate(RutaCopia)
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

@@ -14,6 +14,7 @@ import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Tema
 import com.miplata.core.domain.repository.AjustesRepository
+import com.miplata.feature.backup.recordatorio.EXTRA_ABRIR_COPIA_DE_SEGURIDAD
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -35,14 +36,22 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
+        // Solo en un arranque nuevo: al girar la pantalla la Activity se recrea
+        // con el mismo intent, y volveria a saltar a la copia.
+        val abrirCopia =
+            savedInstanceState == null && intent.getBooleanExtra(EXTRA_ABRIR_COPIA_DE_SEGURIDAD, false)
+
         setContent {
-            AplicacionMiPlata(ajustes.observar())
+            AplicacionMiPlata(ajustes.observar(), abrirCopia)
         }
     }
 }
 
 @Composable
-private fun AplicacionMiPlata(ajustes: Flow<Ajustes>) {
+private fun AplicacionMiPlata(
+    ajustes: Flow<Ajustes>,
+    abrirCopia: Boolean,
+) {
     val configuracion by ajustes.collectAsStateWithLifecycle(initialValue = Ajustes())
 
     // El tema del usuario manda; si no ha elegido, el del sistema.
@@ -54,6 +63,6 @@ private fun AplicacionMiPlata(ajustes: Flow<Ajustes>) {
         }
 
     MiPlataTheme(temaOscuro = oscuro) {
-        NavegacionPrincipal()
+        NavegacionPrincipal(abrirCopiaAlEmpezar = abrirCopia)
     }
 }

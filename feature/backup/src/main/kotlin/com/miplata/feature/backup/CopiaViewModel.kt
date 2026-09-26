@@ -7,6 +7,7 @@ import com.miplata.core.backup.ContenidoDelBackup
 import com.miplata.core.backup.FraseDeRespaldo
 import com.miplata.core.backup.RecolectorDeDatos
 import com.miplata.core.common.DespachadorBloqueante
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.core.domain.repository.AjustesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -54,6 +55,7 @@ class CopiaViewModel
                 CopiaUiState(
                     ultimaCopiaEnMillis = configuracion.ultimoBackupEnMillis,
                     exportacion = enCurso,
+                    frecuencia = configuracion.frecuenciaDeRecordatorio,
                 )
             }.stateIn(
                 scope = viewModelScope,
@@ -111,6 +113,13 @@ class CopiaViewModel
                     } finally {
                         clave.olvidar()
                     }
+            }
+        }
+
+        /** Cada cuanto se quiere el recordatorio. El trabajo diario lo lee de aqui. */
+        fun cambiarFrecuencia(frecuencia: FrecuenciaDeRecordatorio) {
+            viewModelScope.launch {
+                ajustes.guardar(ajustes.obtener().copy(frecuenciaDeRecordatorio = frecuencia))
             }
         }
 

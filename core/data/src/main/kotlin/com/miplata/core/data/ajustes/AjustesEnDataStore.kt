@@ -4,6 +4,7 @@ import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.Serializer
 import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Tema
 import com.miplata.core.domain.repository.AjustesRepository
@@ -32,6 +33,7 @@ data class AjustesGuardados(
     val primerDiaDelMesFinanciero: Int = 1,
     val tema: String = Tema.SEGUN_EL_SISTEMA.name,
     val ultimoBackupEnMillis: Long? = null,
+    val frecuenciaDeRecordatorio: String = FrecuenciaDeRecordatorio.MENSUAL.name,
 )
 
 object SerializadorDeAjustes : Serializer<AjustesGuardados> {
@@ -98,6 +100,11 @@ fun AjustesGuardados.aDominio(): Ajustes =
         primerDiaDelMesFinanciero = primerDiaDelMesFinanciero,
         tema = Tema.entries.firstOrNull { it.name == tema } ?: Tema.SEGUN_EL_SISTEMA,
         ultimoBackupEnMillis = ultimoBackupEnMillis,
+        // Como con el tema: un valor desconocido vuelve al de por defecto en vez
+        // de impedir arrancar la app. Son preferencias, no dinero.
+        frecuenciaDeRecordatorio =
+            FrecuenciaDeRecordatorio.entries.firstOrNull { it.name == frecuenciaDeRecordatorio }
+                ?: FrecuenciaDeRecordatorio.MENSUAL,
     )
 
 fun Ajustes.aGuardados(): AjustesGuardados =
@@ -106,4 +113,5 @@ fun Ajustes.aGuardados(): AjustesGuardados =
         primerDiaDelMesFinanciero = primerDiaDelMesFinanciero,
         tema = tema.name,
         ultimoBackupEnMillis = ultimoBackupEnMillis,
+        frecuenciaDeRecordatorio = frecuenciaDeRecordatorio.name,
     )

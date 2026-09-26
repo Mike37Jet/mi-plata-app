@@ -1,5 +1,7 @@
 package com.miplata.feature.backup
 
+import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
+
 /** En que punto esta la exportacion. */
 sealed interface Exportacion {
     data object Inactiva : Exportacion
@@ -29,4 +31,5 @@ data class CopiaUiState(
     /** Cuando se hizo la ultima copia, o nulo si nunca. */
     val ultimaCopiaEnMillis: Long? = null,
     val exportacion: Exportacion = Exportacion.Inactiva,
+    val frecuencia: FrecuenciaDeRecordatorio = FrecuenciaDeRecordatorio.MENSUAL,
 )

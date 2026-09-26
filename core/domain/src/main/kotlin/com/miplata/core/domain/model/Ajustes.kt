@@ -9,6 +9,22 @@ enum class Tema {
 }
 
 /**
+ * Cada cuanto se quiere que la app recuerde hacer una copia de seguridad.
+ *
+ * @param dias a partir de cuantos dias sin copia se considera vencida.
+ */
+enum class FrecuenciaDeRecordatorio(
+    val dias: Int?,
+) {
+    SEMANAL(dias = 7),
+
+    /** El valor por defecto: suficiente para no perder mucho, sin agobiar. */
+    MENSUAL(dias = 30),
+
+    NUNCA(dias = null),
+}
+
+/**
  * Lo que el usuario ha configurado.
  *
  * Vive en el dominio porque dos de estos campos **son reglas de negocio**:
@@ -29,6 +45,7 @@ data class Ajustes(
     val tema: Tema = Tema.SEGUN_EL_SISTEMA,
     /** Cuando se exporto el ultimo backup, o `null` si no se ha hecho ninguno. */
     val ultimoBackupEnMillis: Long? = null,
+    val frecuenciaDeRecordatorio: FrecuenciaDeRecordatorio = FrecuenciaDeRecordatorio.MENSUAL,
 ) {
     init {
         require(primerDiaDelMesFinanciero in 1..DIA_MAXIMO) {
