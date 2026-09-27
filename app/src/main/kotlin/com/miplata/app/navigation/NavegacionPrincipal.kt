@@ -1,5 +1,6 @@
 package com.miplata.app.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -95,7 +97,11 @@ fun NavegacionPrincipal(
     // tiene que pasar por DETRAS de ella, o no habria nada que desenfocar. La
     // altura de la barra se mide en vez de suponerla, porque cambia con la letra
     // del sistema y con la barra de navegacion de cada movil.
-    Box(modifier = modifier.fillMaxSize()) {
+    // El fondo del tema, pintado aqui: sin el, detras de la barra de estado se
+    // veia el fondo de la ventana, que es el blanco del tema XML de arranque, y
+    // en el tema oscuro la franja de arriba salia blanca con la hora invisible.
+    // El Scaffold de antes lo pintaba solo; un Box no pinta nada.
+    Box(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         CompositionLocalProvider(LocalEspacioDeLaBarraInferior provides alturaDeLaBarra) {
             NavHost(
                 navController = navController,
