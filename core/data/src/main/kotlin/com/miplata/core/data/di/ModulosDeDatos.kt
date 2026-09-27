@@ -207,6 +207,27 @@ object ModuloDeCasosDeUso {
     fun proveerAgruparPorDia(): AgruparMovimientosPorDiaUseCase = AgruparMovimientosPorDiaUseCase()
 
     @Provides
+    fun proveerHayQueDarLaBienvenida(cuentas: CuentaRepository): HayQueDarLaBienvenidaUseCase =
+        HayQueDarLaBienvenidaUseCase(cuentas)
+
+    @Provides
+    fun proveerCompletarPrimerosPasos(
+        ajustes: AjustesRepository,
+        cuentas: CuentaRepository,
+        planes: PlanRepository,
+        ids: GeneradorDeIds,
+        calendario: Calendario,
+    ): CompletarPrimerosPasosUseCase = CompletarPrimerosPasosUseCase(ajustes, cuentas, planes, ids, calendario)
+}
+
+/**
+ * Los casos de uso del presupuesto por cuentas (docs/adr/0007), aparte de los
+ * demas: son una pieza que se entiende sola.
+ */
+@Module
+@InstallIn(SingletonComponent::class)
+object ModuloDelPresupuestoPorCuentas {
+    @Provides
     fun proveerCalcularPlanPorCuentas(): CalcularPlanPorCuentasUseCase = CalcularPlanPorCuentasUseCase()
 
     @Provides
@@ -232,17 +253,4 @@ object ModuloDeCasosDeUso {
         ids: GeneradorDeIds,
         calendario: Calendario,
     ): RegistrarRepartoUseCase = RegistrarRepartoUseCase(transacciones, ids, calendario)
-
-    @Provides
-    fun proveerHayQueDarLaBienvenida(cuentas: CuentaRepository): HayQueDarLaBienvenidaUseCase =
-        HayQueDarLaBienvenidaUseCase(cuentas)
-
-    @Provides
-    fun proveerCompletarPrimerosPasos(
-        ajustes: AjustesRepository,
-        cuentas: CuentaRepository,
-        planes: PlanRepository,
-        ids: GeneradorDeIds,
-        calendario: Calendario,
-    ): CompletarPrimerosPasosUseCase = CompletarPrimerosPasosUseCase(ajustes, cuentas, planes, ids, calendario)
 }

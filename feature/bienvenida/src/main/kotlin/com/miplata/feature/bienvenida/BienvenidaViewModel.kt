@@ -40,39 +40,34 @@ class BienvenidaViewModel
             when (evento) {
                 EventoDeBienvenida.Siguiente -> moverse(+1)
                 EventoDeBienvenida.Atras -> moverse(-1)
-                is EventoDeBienvenida.ElegirMoneda -> estado.update { it.copy(moneda = evento.moneda) }
-                is EventoDeBienvenida.CambiarPrimerDia ->
-                    estado.update { it.copy(primerDiaDelMes = evento.dia.coerceIn(1, ULTIMO_DIA)) }
-                is EventoDeBienvenida.CambiarNombreDeLaCuenta ->
-                    estado.update { it.copy(nombreDeLaCuenta = evento.nombre) }
-                is EventoDeBienvenida.ElegirTipoDeCuenta -> estado.update { it.copy(tipoDeCuenta = evento.tipo) }
-                is EventoDeBienvenida.CambiarSaldo -> estado.update { it.copy(saldoActual = evento.saldo) }
-                is EventoDeBienvenida.CambiarIngreso -> estado.update { it.copy(ingresoMensual = evento.ingreso) }
-                is EventoDeBienvenida.AlternarSobre ->
-                    estado.update {
-                        val sobres =
-                            if (evento.sobre in
-                                it.sobres
-                            ) {
-                                it.sobres - evento.sobre
-                            } else {
-                                it.sobres + (evento.sobre to Money.ZERO)
-                            }
-                        it.copy(sobres = sobres)
-                    }
-                is EventoDeBienvenida.CambiarSaldoDeSobre ->
-                    estado.update {
-                        if (evento.sobre in
-                            it.sobres
-                        ) {
-                            it.copy(sobres = it.sobres + (evento.sobre to evento.saldo))
-                        } else {
-                            it
-                        }
-                    }
+                is EventoDeBienvenida.CambioDeCampo -> estado.update { it.con(evento) }
                 is EventoDeBienvenida.Terminar -> terminar(evento)
             }
         }
+
+        private fun BienvenidaUiState.con(cambio: EventoDeBienvenida.CambioDeCampo): BienvenidaUiState =
+            when (cambio) {
+                is EventoDeBienvenida.ElegirMoneda -> copy(moneda = cambio.moneda)
+                is EventoDeBienvenida.CambiarPrimerDia -> copy(primerDiaDelMes = cambio.dia.coerceIn(1, ULTIMO_DIA))
+                is EventoDeBienvenida.CambiarNombreDeLaCuenta -> copy(nombreDeLaCuenta = cambio.nombre)
+                is EventoDeBienvenida.ElegirTipoDeCuenta -> copy(tipoDeCuenta = cambio.tipo)
+                is EventoDeBienvenida.CambiarSaldo -> copy(saldoActual = cambio.saldo)
+                is EventoDeBienvenida.CambiarIngreso -> copy(ingresoMensual = cambio.ingreso)
+                is EventoDeBienvenida.AlternarSobre ->
+                    copy(
+                        sobres =
+                            if (cambio.sobre in
+                                sobres
+                            ) {
+                                sobres - cambio.sobre
+                            } else {
+                                sobres + (cambio.sobre to Money.ZERO)
+                            },
+                    )
+                // Solo el saldo de un sobre marcado: uno desmarcado no tiene saldo.
+                is EventoDeBienvenida.CambiarSaldoDeSobre ->
+                    if (cambio.sobre in sobres) copy(sobres = sobres + (cambio.sobre to cambio.saldo)) else this
+            }
 
         private fun moverse(pasos: Int) {
             estado.update { actual ->

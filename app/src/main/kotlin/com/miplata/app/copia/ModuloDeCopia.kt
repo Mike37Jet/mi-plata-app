@@ -37,6 +37,9 @@ import java.io.OutputStream
 @Module
 @InstallIn(SingletonComponent::class)
 object ModuloDeCopia {
+    // Un repositorio por cada cosa que viaja en la copia: agruparlos solo para
+    // que la lista sea mas corta moveria el problema a otra clase.
+    @Suppress("LongParameterList")
     @Provides
     fun proveerRecolector(
         cuentas: CuentaRepository,
