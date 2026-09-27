@@ -32,6 +32,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -450,6 +451,33 @@ class TransaccionesViewModelTest {
                 estado.dias
                     .single()
                     .movimientos.size shouldBe 1
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    /** Si perdiera la marca, reabrir el mes ya no lo encontraria para borrarlo (ADR 0007). */
+    @Test
+    fun `editar un ajuste del cierre conserva su marca`() =
+        runTest {
+            cuentas.guardar(cuenta(BANCO))
+            transacciones.guardar(movimiento("a", dia = 31, monto = 30).copy(ajusteDeCierre = Mes.de(2026, 3)))
+            val vm = viewModel()
+
+            vm.uiState.test {
+                val fila =
+                    esperarHasta { it.dias.isNotEmpty() }
+                        .dias
+                        .single()
+                        .movimientos
+                        .single()
+                vm.alEvento(EventoDeMovimientos.EditarMovimiento(fila.transaccion))
+                esperarHasta { it.editor != null }
+                vm.alEvento(EventoDeMovimientos.CambioDeCampo.Nota("Regalo de cumpleanos"))
+                vm.alEvento(EventoDeMovimientos.Guardar)
+
+                esperarHasta { it.editor == null }
+                advanceUntilIdle()
+                transacciones.obtener(fila.id)!!.ajusteDeCierre shouldBe Mes.de(2026, 3)
                 cancelAndIgnoreRemainingEvents()
             }
         }
