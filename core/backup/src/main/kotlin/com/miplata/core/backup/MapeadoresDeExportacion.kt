@@ -2,9 +2,12 @@ package com.miplata.core.backup
 
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.model.Transaccion
 
 // Del dominio al formato del archivo.
@@ -31,6 +34,15 @@ internal fun Cuenta.aDto() =
         moneda = moneda.codigo,
         incluirEnTotal = incluirEnTotal,
         archivada = archivada,
+        rol =
+            when (rol) {
+                RolDeCuenta.Independiente -> ROL_INDEPENDIENTE
+                RolDeCuenta.Principal -> ROL_PRINCIPAL
+                is RolDeCuenta.Sobre -> ROL_SOBRE
+            },
+        repartoPorcentaje = (sobre?.reparto as? Reparto.Porcentaje)?.valor,
+        repartoMontoEnCentavos = (sobre?.reparto as? Reparto.Monto)?.monto?.centavos,
+        intocable = esIntocable,
     )
 
 internal fun Categoria.aDto() =
@@ -53,6 +65,7 @@ internal fun Transaccion.aDto() =
         categoriaId = categoriaId?.valor,
         lineaDePlanId = lineaDePlanId?.valor,
         nota = nota,
+        ajusteDeCierre = ajusteDeCierre?.toString(),
     )
 
 internal fun PlanMensual.aDto() =
@@ -73,3 +86,20 @@ internal fun LineaDePlan.aDto() =
         diaDelMes = diaDelMes,
         activa = activa,
     )
+
+internal fun CierreDeMes.aDto() =
+    CierreDto(
+        mes = mes.toString(),
+        saldos =
+            saldos.map {
+                SaldoDeCierreDto(
+                    cuentaId = it.cuentaId.valor,
+                    esperadoEnCentavos = it.esperado.centavos,
+                    realEnCentavos = it.real.centavos,
+                )
+            },
+    )
+
+internal const val ROL_INDEPENDIENTE = "INDEPENDIENTE"
+internal const val ROL_PRINCIPAL = "PRINCIPAL"
+internal const val ROL_SOBRE = "SOBRE"

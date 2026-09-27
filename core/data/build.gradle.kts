@@ -7,6 +7,10 @@ plugins {
 
 android {
     namespace = "com.miplata.core.data"
+
+    // Los esquemas commiteados, como assets de los tests: MigracionesTest crea
+    // con ellos una base de la version vieja y la migra (docs/02).
+    sourceSets["test"].assets.srcDir("$projectDir/schemas")
 }
 
 dependencies {

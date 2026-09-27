@@ -1,17 +1,21 @@
 package com.miplata.core.data.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.miplata.core.data.database.dao.CargaDeRestauracionDao
 import com.miplata.core.data.database.dao.CategoriaDao
+import com.miplata.core.data.database.dao.CierreDao
 import com.miplata.core.data.database.dao.CuentaDao
 import com.miplata.core.data.database.dao.PlanDao
 import com.miplata.core.data.database.dao.TransaccionDao
 import com.miplata.core.data.database.dao.VaciadoDeRestauracionDao
 import com.miplata.core.data.database.entity.CategoriaEntity
+import com.miplata.core.data.database.entity.CierreEntity
 import com.miplata.core.data.database.entity.CuentaEntity
 import com.miplata.core.data.database.entity.LineaDePlanEntity
 import com.miplata.core.data.database.entity.PlanEntity
+import com.miplata.core.data.database.entity.SaldoDeCierreEntity
 import com.miplata.core.data.database.entity.TransaccionEntity
 
 /**
@@ -35,9 +39,15 @@ import com.miplata.core.data.database.entity.TransaccionEntity
         TransaccionEntity::class,
         PlanEntity::class,
         LineaDePlanEntity::class,
+        CierreEntity::class,
+        SaldoDeCierreEntity::class,
     ],
     version = MiPlataDatabase.VERSION,
     exportSchema = true,
+    // Solo columnas con valor por defecto y tablas nuevas: Room escribe la
+    // migracion desde los esquemas commiteados, y `MigracionesTest` la
+    // comprueba con una base de la version 1 con datos.
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 abstract class MiPlataDatabase : RoomDatabase() {
     abstract fun cuentaDao(): CuentaDao
@@ -47,6 +57,8 @@ abstract class MiPlataDatabase : RoomDatabase() {
     abstract fun transaccionDao(): TransaccionDao
 
     abstract fun planDao(): PlanDao
+
+    abstract fun cierreDao(): CierreDao
 
     internal abstract fun vaciadoDeRestauracionDao(): VaciadoDeRestauracionDao
 
@@ -64,6 +76,6 @@ abstract class MiPlataDatabase : RoomDatabase() {
          * escrito dos veces, el dia que se suba uno y se olvide el otro, el
          * backup mentiria sobre su origen.
          */
-        const val VERSION = 1
+        const val VERSION = 2
     }
 }

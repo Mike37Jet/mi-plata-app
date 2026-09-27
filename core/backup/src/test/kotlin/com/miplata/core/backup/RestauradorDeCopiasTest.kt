@@ -9,6 +9,7 @@ import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakeCategoriaRepository
+import com.miplata.core.domain.repository.FakeCierreRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeRepositorioDeRestauracion
@@ -60,12 +61,13 @@ class RestauradorDeCopiasTest {
     private val categorias = FakeCategoriaRepository()
     private val transacciones = FakeTransaccionRepository()
     private val planes = FakePlanRepository()
+    private val cierres = FakeCierreRepository()
     private val ajustesReales = FakeAjustesRepository(Ajustes(moneda = Moneda("USD"), primerDiaDelMesFinanciero = 1))
     private val ajustes = AjustesQueFallan(ajustesReales)
-    private val repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes)
+    private val repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes, cierres)
     private val almacen = AlmacenEnMemoria()
     private val archivo = archivoRapido()
-    private val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes)
+    private val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes, cierres)
 
     private val restaurador = RestauradorDeCopias(recolector, archivo, repositorio, ajustes, almacen)
 

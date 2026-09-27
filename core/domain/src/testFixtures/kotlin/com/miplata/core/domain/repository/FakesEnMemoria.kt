@@ -3,6 +3,7 @@ package com.miplata.core.domain.repository
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
@@ -159,6 +160,28 @@ class FakePlanRepository(
     }
 }
 
+class FakeCierreRepository(
+    iniciales: List<CierreDeMes> = emptyList(),
+) : CierreRepository {
+    private val estado = MutableStateFlow(iniciales.associateBy { it.mes })
+
+    override fun observarTodos(): Flow<List<CierreDeMes>> = estado.map { it.values.sortedBy { cierre -> cierre.mes } }
+
+    override suspend fun obtenerDe(mes: Mes): CierreDeMes? = estado.value[mes]
+
+    override suspend fun guardar(cierre: CierreDeMes) {
+        estado.update { it + (cierre.mes to cierre) }
+    }
+
+    override suspend fun eliminar(mes: Mes) {
+        estado.update { it - mes }
+    }
+
+    fun sustituirTodo(nuevos: List<CierreDeMes>) {
+        estado.value = nuevos.associateBy { it.mes }
+    }
+}
+
 /**
  * Restauracion sobre los fakes: sustituye su contenido de una vez.
  *
@@ -171,6 +194,7 @@ class FakeRepositorioDeRestauracion(
     private val categorias: FakeCategoriaRepository,
     private val transacciones: FakeTransaccionRepository,
     private val planes: FakePlanRepository,
+    private val cierres: FakeCierreRepository = FakeCierreRepository(),
 ) : RepositorioDeRestauracion {
     var fallarLaProximaVez: Boolean = false
     var vecesReemplazado: Int = 0
@@ -185,6 +209,7 @@ class FakeRepositorioDeRestauracion(
         categorias.sustituirTodo(contenido.categorias)
         transacciones.sustituirTodo(contenido.transacciones)
         planes.sustituirTodo(contenido.planes)
+        cierres.sustituirTodo(contenido.cierres)
         vecesReemplazado++
     }
 }

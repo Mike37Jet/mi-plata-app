@@ -2,6 +2,7 @@ package com.miplata.core.backup
 
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
+import com.miplata.core.domain.repository.CierreRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
@@ -25,6 +26,7 @@ class RecolectorDeDatos(
     private val transacciones: TransaccionRepository,
     private val planes: PlanRepository,
     private val ajustes: AjustesRepository,
+    private val cierres: CierreRepository,
 ) {
     suspend fun recolectar(): DatosDelBackup =
         DatosDelBackup(
@@ -33,5 +35,6 @@ class RecolectorDeDatos(
             categorias = categorias.observarTodas().first().map { it.aDto() },
             transacciones = transacciones.observarTodas().first().map { it.aDto() },
             planes = planes.observarTodos().first().map { it.aDto() },
+            cierres = cierres.observarTodos().first().map { it.aDto() },
         )
 }

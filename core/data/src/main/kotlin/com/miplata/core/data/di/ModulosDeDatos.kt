@@ -11,12 +11,14 @@ import com.miplata.core.data.categorias.SembradorDeCategorias
 import com.miplata.core.data.database.FabricaDeBaseDeDatos
 import com.miplata.core.data.database.MiPlataDatabase
 import com.miplata.core.data.database.dao.CategoriaDao
+import com.miplata.core.data.database.dao.CierreDao
 import com.miplata.core.data.database.dao.CuentaDao
 import com.miplata.core.data.database.dao.PlanDao
 import com.miplata.core.data.database.dao.TransaccionDao
 import com.miplata.core.data.repository.GeneradorDeIdsUuid
 import com.miplata.core.data.repository.Reloj
 import com.miplata.core.data.repository.RoomCategoriaRepository
+import com.miplata.core.data.repository.RoomCierreRepository
 import com.miplata.core.data.repository.RoomCuentaRepository
 import com.miplata.core.data.repository.RoomPlanRepository
 import com.miplata.core.data.repository.RoomRepositorioDeRestauracion
@@ -25,17 +27,23 @@ import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
+import com.miplata.core.domain.repository.CierreRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.RepositorioDeRestauracion
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.AgruparMovimientosPorDiaUseCase
+import com.miplata.core.domain.usecase.CalcularCierreDeMesUseCase
+import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
+import com.miplata.core.domain.usecase.CerrarMesUseCase
 import com.miplata.core.domain.usecase.CompletarPrimerosPasosUseCase
 import com.miplata.core.domain.usecase.HayQueDarLaBienvenidaUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
+import com.miplata.core.domain.usecase.ReabrirMesUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
 import com.miplata.core.domain.usecase.SembrarCategoriasPorDefectoUseCase
 import dagger.Module
 import dagger.Provides
@@ -71,6 +79,9 @@ object ModuloDeBaseDeDatos {
 
     @Provides
     fun proveerPlanDao(db: MiPlataDatabase): PlanDao = db.planDao()
+
+    @Provides
+    fun proveerCierreDao(db: MiPlataDatabase): CierreDao = db.cierreDao()
 
     @Provides
     @Singleton
@@ -133,6 +144,13 @@ object ModuloDeRepositorios {
 
     @Provides
     @Singleton
+    fun proveerCierreRepository(
+        dao: CierreDao,
+        reloj: Reloj,
+    ): CierreRepository = RoomCierreRepository(dao, reloj)
+
+    @Provides
+    @Singleton
     fun proveerRepositorioDeRestauracion(
         db: MiPlataDatabase,
         reloj: Reloj,
@@ -186,6 +204,30 @@ object ModuloDeCasosDeUso {
 
     @Provides
     fun proveerAgruparPorDia(): AgruparMovimientosPorDiaUseCase = AgruparMovimientosPorDiaUseCase()
+
+    @Provides
+    fun proveerCalcularPlanPorCuentas(): CalcularPlanPorCuentasUseCase = CalcularPlanPorCuentasUseCase()
+
+    @Provides
+    fun proveerCerrarMes(
+        transacciones: TransaccionRepository,
+        cierres: CierreRepository,
+        ids: GeneradorDeIds,
+        calendario: Calendario,
+    ): CerrarMesUseCase = CerrarMesUseCase(transacciones, cierres, CalcularCierreDeMesUseCase(ids), calendario)
+
+    @Provides
+    fun proveerReabrirMes(
+        transacciones: TransaccionRepository,
+        cierres: CierreRepository,
+    ): ReabrirMesUseCase = ReabrirMesUseCase(transacciones, cierres)
+
+    @Provides
+    fun proveerRegistrarReparto(
+        transacciones: TransaccionRepository,
+        ids: GeneradorDeIds,
+        calendario: Calendario,
+    ): RegistrarRepartoUseCase = RegistrarRepartoUseCase(transacciones, ids, calendario)
 
     @Provides
     fun proveerHayQueDarLaBienvenida(cuentas: CuentaRepository): HayQueDarLaBienvenidaUseCase =

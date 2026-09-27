@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.miplata.core.data.database.MiPlataDatabase
 import com.miplata.core.data.mapper.aEntidad
 import com.miplata.core.data.mapper.lineasAEntidades
+import com.miplata.core.data.mapper.saldosAEntidades
 import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.repository.RepositorioDeRestauracion
 
@@ -33,6 +34,8 @@ class RoomRepositorioDeRestauracion(
         val carga = db.cargaDeRestauracionDao()
 
         db.withTransaction {
+            vaciado.borrarSaldosDeCierre()
+            vaciado.borrarCierres()
             vaciado.borrarTransacciones()
             vaciado.borrarLineasDePlan()
             vaciado.borrarPlanes()
@@ -51,6 +54,8 @@ class RoomRepositorioDeRestauracion(
             carga.insertarTransacciones(
                 contenido.transacciones.map { it.aEntidad(creadaEn = ahora, actualizadaEn = ahora) },
             )
+            carga.insertarCierres(contenido.cierres.map { it.aEntidad(creadoEn = ahora) })
+            carga.insertarSaldosDeCierre(contenido.cierres.flatMap { it.saldosAEntidades() })
         }
     }
 

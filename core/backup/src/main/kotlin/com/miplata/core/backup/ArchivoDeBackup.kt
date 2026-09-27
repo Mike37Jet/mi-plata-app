@@ -202,6 +202,7 @@ class ArchivoDeBackup(
             categorias = datos.categorias.size,
             transacciones = datos.transacciones.size,
             planes = datos.planes.size,
+            cierres = datos.cierres.size,
         )
 
     private companion object {
