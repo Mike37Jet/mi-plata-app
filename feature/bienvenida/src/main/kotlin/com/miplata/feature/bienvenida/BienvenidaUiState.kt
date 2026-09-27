@@ -16,8 +16,24 @@ enum class PasoDeBienvenida {
 
     PRIMERA_CUENTA,
 
+    /** Si separa su dinero en sobres, cuales (docs/adr/0007). Ninguno es valido. */
+    SOBRES,
+
     /** Lo unico que se puede saltar. */
     PRIMER_INGRESO,
+}
+
+/**
+ * Los sobres que se proponen, los del metodo con el que se penso la app. El
+ * nombre lo pone la pantalla; aqui solo esta que es cada uno.
+ */
+enum class SobreSugerido(
+    val intocable: Boolean = false,
+) {
+    LIBERTAD_FINANCIERA(intocable = true),
+    AHORROS,
+    DIVERSION,
+    ENTRENAMIENTO,
 }
 
 data class BienvenidaUiState(
@@ -29,6 +45,8 @@ data class BienvenidaUiState(
     val tipoDeCuenta: TipoDeCuenta = TipoDeCuenta.BANCARIA,
     val saldoActual: Money = Money.ZERO,
     val ingresoMensual: Money = Money.ZERO,
+    /** Los sobres elegidos, con lo que tiene cada uno hoy. */
+    val sobres: Map<SobreSugerido, Money> = emptyMap(),
     /** Mientras se guarda: los botones se desactivan para no guardar dos veces. */
     val guardando: Boolean = false,
     /**
@@ -77,16 +95,27 @@ sealed interface EventoDeBienvenida {
         val ingreso: Money,
     ) : EventoDeBienvenida
 
+    data class AlternarSobre(
+        val sobre: SobreSugerido,
+    ) : EventoDeBienvenida
+
+    data class CambiarSaldoDeSobre(
+        val sobre: SobreSugerido,
+        val saldo: Money,
+    ) : EventoDeBienvenida
+
     /**
      * El ultimo paso.
      *
      * @param conIngreso `false` si el usuario eligio dejar el ingreso para
      *   despues: lo que haya tecleado no se guarda.
      * @param nombreDelIngreso ya traducido; el ViewModel no conoce los recursos.
+     * @param nombresDeLosSobres tambien traducidos, por lo mismo.
      */
     data class Terminar(
         val conIngreso: Boolean,
         val nombreDelIngreso: String,
+        val nombresDeLosSobres: Map<SobreSugerido, String> = emptyMap(),
     ) : EventoDeBienvenida
 }
 

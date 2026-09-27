@@ -6,13 +6,16 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -30,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -216,6 +220,98 @@ internal fun PasoPrimeraCuenta(
     Navegacion(estado, alEvento)
 }
 
+/**
+ * Los sobres: cuentas aparte que reciben su parte del ingreso cada mes
+ * (docs/adr/0007).
+ *
+ * Se proponen los del metodo con el que se penso la app, desmarcados: quien no
+ * separa su dinero sigue sin marcar nada y la app funciona como siempre.
+ */
+@Composable
+internal fun PasoSobres(
+    estado: BienvenidaUiState,
+    alEvento: (EventoDeBienvenida) -> Unit,
+) {
+    Titulo(stringResource(R.string.bienvenida_sobres_titulo))
+    Explicacion(stringResource(R.string.bienvenida_sobres_texto, estado.nombreDeLaCuenta.trim()))
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        SobreSugerido.entries.forEach { sobre ->
+            SobreParaElegir(sobre, estado.sobres[sobre], alEvento)
+        }
+    }
+
+    Navegacion(estado, alEvento)
+}
+
+@Composable
+private fun SobreParaElegir(
+    sobre: SobreSugerido,
+    saldo: Money?,
+    alEvento: (EventoDeBienvenida) -> Unit,
+) {
+    val analizador = recordarAnalizadorDeDinero()
+    var tecleado by rememberSaveable(sobre.name) { mutableStateOf(saldo?.let(::textoDe).orEmpty()) }
+
+    Column {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(
+                        value = saldo != null,
+                        role = Role.Checkbox,
+                        onValueChange = { alEvento(EventoDeBienvenida.AlternarSobre(sobre)) },
+                    ),
+        ) {
+            Checkbox(checked = saldo != null, onCheckedChange = null)
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Text(stringResource(sobre.nombre()), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = stringResource(sobre.detalle()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (saldo != null) {
+            OutlinedTextField(
+                value = tecleado,
+                onValueChange = { texto ->
+                    tecleado = texto
+                    importeDe(
+                        texto,
+                        analizador::parsear,
+                    )?.let { alEvento(EventoDeBienvenida.CambiarSaldoDeSobre(sobre, it)) }
+                },
+                label = { Text(stringResource(R.string.bienvenida_cuenta_saldo)) },
+                placeholder = { Text("0", style = EstilosDeDinero.enLista) },
+                textStyle = EstilosDeDinero.enLista,
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                modifier = Modifier.fillMaxWidth().padding(start = 48.dp),
+            )
+        }
+    }
+}
+
+private fun SobreSugerido.nombre(): Int =
+    when (this) {
+        SobreSugerido.LIBERTAD_FINANCIERA -> R.string.bienvenida_sobre_libertad
+        SobreSugerido.AHORROS -> R.string.bienvenida_sobre_ahorros
+        SobreSugerido.DIVERSION -> R.string.bienvenida_sobre_diversion
+        SobreSugerido.ENTRENAMIENTO -> R.string.bienvenida_sobre_entrenamiento
+    }
+
+private fun SobreSugerido.detalle(): Int =
+    when (this) {
+        SobreSugerido.LIBERTAD_FINANCIERA -> R.string.bienvenida_sobre_libertad_detalle
+        SobreSugerido.AHORROS -> R.string.bienvenida_sobre_ahorros_detalle
+        SobreSugerido.DIVERSION -> R.string.bienvenida_sobre_diversion_detalle
+        SobreSugerido.ENTRENAMIENTO -> R.string.bienvenida_sobre_entrenamiento_detalle
+    }
+
 @Composable
 internal fun PasoPrimerIngreso(
     estado: BienvenidaUiState,
@@ -225,10 +321,11 @@ internal fun PasoPrimerIngreso(
     var ingreso by rememberSaveable { mutableStateOf(textoDe(estado.ingresoMensual)) }
     val analizador = recordarAnalizadorDeDinero()
     val nombreDelIngreso = stringResource(R.string.bienvenida_ingreso_nombre)
+    val nombresDeLosSobres = SobreSugerido.entries.associateWith { stringResource(it.nombre()) }
 
     fun terminar(conIngreso: Boolean) {
         alTerminar()
-        alEvento(EventoDeBienvenida.Terminar(conIngreso, nombreDelIngreso))
+        alEvento(EventoDeBienvenida.Terminar(conIngreso, nombreDelIngreso, nombresDeLosSobres))
     }
 
     Titulo(stringResource(R.string.bienvenida_ingreso_titulo))
