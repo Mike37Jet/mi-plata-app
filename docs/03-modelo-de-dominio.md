@@ -129,7 +129,13 @@ data class Cuenta(
     val moneda: Moneda,
     val incluirEnTotal: Boolean,   // p.ej. excluir una cuenta de inversión del "disponible"
     val archivada: Boolean = false,
+    val rol: RolDeCuenta = Independiente, // Independiente | Principal | Sobre(reparto, intocable)
 )
+
+sealed interface Reparto {        // lo que recibe un sobre cada mes: una cosa o la otra
+    data class Porcentaje(val valor: Int)   // del ingreso planeado, 1..100
+    data class Monto(val monto: Money)      // fijo, mayor que cero
+}
 
 data class Categoria(
     val id: CategoriaId,
@@ -148,6 +154,36 @@ Room lo calcula con una query agregada y lo emite como `Flow`.
 Si el rendimiento lo exigiera (no lo hará con datos de una persona), la
 optimización sería una tabla de saldos precalculados como **caché derivada**,
 nunca como fuente de verdad.
+
+### Presupuesto por cuentas y cierre de mes (ADR 0007)
+
+El método es el de la hoja de cálculo con la que empezó la app: una cuenta
+**principal** recibe el ingreso y reparte a los **sobres** su porcentaje o su
+monto fijo. Un sobre **intocable** (Libertad financiera) solo debería subir.
+Solo hay una principal: elegir otra deja la anterior como independiente
+(`GuardarCuentaUseCase`).
+
+- `CalcularPlanPorCuentasUseCase` reparte el plan del mes: por cuenta, con
+  cuánto empieza (el saldo al cerrar el mes anterior), lo que recibe o reparte,
+  lo que sale de ella y con cuánto **debería terminar**. Una línea sin cuenta
+  sale de la principal. Sin principal devuelve `null` y la app sigue con el
+  plan por tipos.
+- **El reparto no se guarda como líneas del plan**: se calcula de la regla de
+  cada sobre y del ingreso planeado. Así no hay dos cosas que mantener
+  sincronizadas al cambiar el sueldo o el porcentaje. Lo que sí se congela es el
+  cierre: guarda lo esperado junto a lo real.
+- `CierreDeMes(mes, saldos: SaldoDeCierre(cuenta, esperado, real))`. Cerrar
+  (`CalcularCierreDeMesUseCase`) escribe movimientos marcados con
+  `Transaccion.ajusteDeCierre = mes`, en este orden:
+  1. el reparto que no se anotó, como transferencia de la principal al sobre;
+  2. las coberturas que el usuario marca: transferencia del sobre que bajó a la
+     principal, para que el gasto de más se le atribuya a quien lo hizo;
+  3. un ingreso o gasto **"Sin detalle"** por lo que siga sin cuadrar.
+- Después del cierre el saldo derivado **es** el del banco, con la misma
+  fórmula de siempre. El mes siguiente arranca de ahí: el arrastre no es un
+  campo, es el saldo.
+- `ReabrirMesUseCase` borra los movimientos del cierre y el cierre, y los de
+  los meses posteriores, porque partieron de él.
 
 ## 5. Nunca borrar: `SoftDelete` + auditoría
 

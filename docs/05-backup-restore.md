@@ -270,6 +270,20 @@ El backup de la app es explícito o no es.
 
 ## Migraciones de formato
 
+**Cuándo no hace falta subir la versión.** Un campo nuevo con valor por defecto
+se lee igual en las copias que no lo traen. Así llegaron, sin cambiar de
+formato:
+
+- `frecuenciaDeRecordatorio` en los ajustes;
+- el presupuesto por cuentas (ADR 0007): `rol`, `repartoPorcentaje`,
+  `repartoMontoEnCentavos` e `intocable` en cada cuenta, `ajusteDeCierre` en
+  cada movimiento y la lista `cierres`. Una copia de antes trae cuentas
+  independientes y ningún cierre, que es lo que tenía.
+
+Un sobre con porcentaje **y** monto, o sin ninguno, no se puede escribir desde
+la app; si llega en un archivo, la restauración falla con `BackupInvalido` en
+vez de elegir uno.
+
 Un round-trip no protege las copias viejas. Escribe y lee con el mismo código,
 así que un cambio que rompe el formato rompe los dos lados a la vez y el test
 sigue en verde. Solo un archivo generado hoy y congelado en el repositorio
