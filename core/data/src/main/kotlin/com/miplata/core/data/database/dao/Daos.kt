@@ -192,12 +192,25 @@ interface PlanDao {
     @Query("DELETE FROM lineas_de_plan WHERE planMes = :mes")
     suspend fun borrarLineasDe(mes: String)
 
+    @Query("DELETE FROM lineas_de_plan WHERE planMes = :mes AND id NOT IN (:quedan)")
+    suspend fun borrarLineasSalvo(
+        mes: String,
+        quedan: List<String>,
+    )
+
     /**
-     * Guarda el plan y reemplaza sus lineas de una sola vez.
+     * Guarda el plan y deja sus lineas como vienen, de una sola vez.
      *
-     * Es `@Transaction` porque borrar las lineas viejas y escribir las nuevas
-     * tienen que ser una sola operacion: si fallara en medio, el usuario se
-     * quedaria con un plan sin lineas, que es peor que no haber guardado nada.
+     * **Solo se borran las lineas que ya no estan**; las demas se actualizan en
+     * su sitio con `@Upsert`, que no borra la fila. Antes se borraban todas y se
+     * volvian a insertar, y eso soltaba los movimientos: la clave foranea del
+     * movimiento es `ON DELETE SET NULL`, y cada edicion del plan dejaba sin
+     * linea a todo lo anotado ese mes, aunque la linea volviera a existir un
+     * instante despues con el mismo id. El resumen dejaba de saber que gasto
+     * era de que linea.
+     *
+     * Es `@Transaction` porque borrar y escribir tienen que ser una sola
+     * operacion: si fallara en medio, el plan quedaria a medias.
      */
     @Transaction
     suspend fun guardarPlanConLineas(
@@ -205,7 +218,11 @@ interface PlanDao {
         lineas: List<LineaDePlanEntity>,
     ) {
         guardarPlan(plan)
-        borrarLineasDe(plan.mes)
+        if (lineas.isEmpty()) {
+            borrarLineasDe(plan.mes)
+        } else {
+            borrarLineasSalvo(plan.mes, lineas.map { it.id })
+        }
         guardarLineas(lineas)
     }
 
