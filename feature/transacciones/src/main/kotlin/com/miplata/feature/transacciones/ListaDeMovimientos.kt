@@ -125,7 +125,10 @@ private fun IconoDelTipo(tipo: TipoDeTransaccion) {
 @Composable
 private fun tituloDe(movimiento: MovimientoEnLista): String =
     movimiento.nota
-        ?: if (movimiento.tipo == TipoDeTransaccion.TRANSFERENCIA) {
+        // Lo que no se anoto y salio al cerrar el mes (docs/adr/0007).
+        ?: if (movimiento.transaccion.esSinDetalle) {
+            stringResource(R.string.transacciones_sin_detalle)
+        } else if (movimiento.tipo == TipoDeTransaccion.TRANSFERENCIA) {
             // Una transferencia no tiene categoria, y por eso salia como "Sin
             // categoria". Lo que la identifica es de donde a donde fue.
             entreCuentas(movimiento)

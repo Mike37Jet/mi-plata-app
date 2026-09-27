@@ -71,6 +71,11 @@ data class EditorDeMovimiento(
     val categoriaId: CategoriaId? = null,
     val lineaDePlanId: LineaId? = null,
     val nota: String = "",
+    /**
+     * Si lo creo el cierre de un mes, cual. No se edita: se conserva para que
+     * reabrir ese mes lo siga encontrando y lo borre (docs/adr/0007).
+     */
+    val ajusteDeCierre: Mes? = null,
 ) {
     val esNuevo: Boolean get() = id == null
 
