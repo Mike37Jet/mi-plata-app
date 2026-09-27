@@ -54,6 +54,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.backup.FraseDeRespaldo
+import com.miplata.core.designsystem.componentes.LocalEspacioDeLaBarraInferior
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.feature.backup.recordatorio.NotificadorEnAndroid
@@ -184,7 +185,10 @@ internal fun PantallaCopia(
                 // por detras del teclado. Asi termina justo encima.
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(16.dp)
+                // Lo que tapa la barra inferior de cristal: el final de la
+                // pantalla tiene que poder subir por encima de ella.
+                .padding(bottom = LocalEspacioDeLaBarraInferior.current),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Cabecera(alVolver)

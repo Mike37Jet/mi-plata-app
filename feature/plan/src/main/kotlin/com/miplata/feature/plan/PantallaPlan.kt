@@ -2,18 +2,16 @@ package com.miplata.feature.plan
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material3.HorizontalDivider
@@ -44,9 +42,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.componentes.CifraPrincipal
+import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
+import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
+import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.LineaDePlan
@@ -78,12 +79,22 @@ internal fun PantallaPlan(
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
+    PantallaConTituloGrande(titulo = stringResource(R.string.plan_titulo), modifier = modifier) { relleno ->
+        ContenidoDelPlan(estado, dinero, alEvento, relleno)
+    }
+}
+
+@Composable
+private fun ContenidoDelPlan(
+    estado: PlanUiState,
+    dinero: FormateadorDeDinero,
+    alEvento: (EventoDelPlan) -> Unit,
+    relleno: PaddingValues,
+) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding =
-            androidx.compose.foundation.layout
-                .PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = relleno,
+        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
     ) {
         item {
             Cabecera(estado, dinero, alEvento)
@@ -116,26 +127,11 @@ private fun Cabecera(
     alEvento: (EventoDelPlan) -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { alEvento(EventoDelPlan.MesAnterior) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = stringResource(R.string.plan_mes_anterior),
-                )
-            }
-            Text(
-                text = estado.mes.toString(),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.widthIn(min = 120.dp),
-                textAlign = TextAlign.Center,
-            )
-            IconButton(onClick = { alEvento(EventoDelPlan.MesSiguiente) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = stringResource(R.string.plan_mes_siguiente),
-                )
-            }
-        }
+        SelectorDeMes(
+            mes = estado.mes,
+            alAnterior = { alEvento(EventoDelPlan.MesAnterior) },
+            alSiguiente = { alEvento(EventoDelPlan.MesSiguiente) },
+        )
 
         Text(
             text =

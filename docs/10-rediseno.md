@@ -80,12 +80,36 @@ foto clara desenfocada sigue siendo clara.
 
 | PR | Qué | Estado |
 |---|---|---|
-| 1 | **Base**: escala áurea, Inter, paleta, formas, color dinámico apagado, `GrupoDeLista`/`FilaDeLista`, `CifraPrincipal`, cristal | este |
-| 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "marzo 2026" | |
+| 1 | **Base**: escala áurea, Inter, paleta, formas, color dinámico apagado, `GrupoDeLista`/`FilaDeLista`, `CifraPrincipal`, cristal | ✅ |
+| 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "Marzo 2026" | este |
 | 3 | **Movimientos**: lista agrupada por día ("Jueves 26 de marzo"), transferencias como "Nómina → Visa" | |
 | 4 | **Cuentas**: lista agrupada, archivadas plegadas y la copia de seguridad fuera de esta pestaña | |
 | 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | |
 | 6 | **Resumen**: cifra principal con su barra de progreso, "Comida · €42 de €400" con minibarras | |
+
+## El esqueleto (PR 2)
+
+- **`PantallaConTituloGrande`** es el armazón de las cuatro pestañas. Tiene un
+  título grande que se encoge al hacer scroll. Mide 55 dp plegado y 110 dp
+  desplegado, en lugar de los 152 dp de Material, que dejaban casi un quinto de
+  pantalla vacío encima.
+- **La barra inferior flota sobre el contenido** en `:app`: un `Box`, no un
+  `Scaffold`. Su altura se mide y llega a las pantallas como
+  `LocalEspacioDeLaBarraInferior`. Con ese valor, cada lista deja al final el
+  hueco que tapa la barra y el botón "+" sube por encima.
+  `PantallaConTituloGrandeTest` lo comprueba. Al principio usaba una barra de
+  80 dp, pero el margen extra del final (89 dp) ya la cubría solo y el test no
+  veía si faltaba el hueco. Ahora usa 120 dp, que es lo que mide de verdad.
+- **Comprobar el cristal tiene truco.** Detrás de la barra solo hay contenido si
+  la lista es más larga que la pantalla y no se ha llegado al final: al final,
+  lo que queda debajo es el hueco vacío. Además, el dump de accesibilidad no
+  sirve para verlo, porque Compose recorta los límites de cada nodo por lo que
+  tiene dibujado encima. Se comprobó alargando el Plan con líneas vacías y
+  bajando el velo al 30 %: el verde de un interruptor que pasa por detrás se ve
+  difuminado a través de la barra.
+- **Meses y fechas en palabras** (`nombreDelMes`, `fechaLarga`), siempre en
+  español, como la app. Un solo `SelectorDeMes` sustituye a las tres copias que
+  había.
 
 ## Plano por pantalla
 

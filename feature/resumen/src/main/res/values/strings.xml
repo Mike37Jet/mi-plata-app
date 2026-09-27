@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="resumen_titulo">Resumen</string>
 
-    <string name="resumen_mes_anterior">Mes anterior</string>
-    <string name="resumen_mes_siguiente">Mes siguiente</string>
 
     <string name="resumen_disponible">Te queda</string>
     <string name="resumen_sobregiro">Te faltan</string>

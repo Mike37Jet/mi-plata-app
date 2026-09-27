@@ -202,10 +202,8 @@ class FlujoDelResumenTest {
         anotarGasto(320, lineaId = "f")
         abrirPantalla(hoy = 2)
 
-        compose.onNodeWithText("Ritmo del mes").assertIsDisplayed()
-        compose
-            .onNodeWithText("Estás gastando más deprisa de lo que pasa el mes.")
-            .assertIsDisplayed()
+        verDesplazando("Ritmo del mes")
+        verDesplazando("Estás gastando más deprisa de lo que pasa el mes.")
     }
 
     @Test
@@ -214,7 +212,7 @@ class FlujoDelResumenTest {
         anotarGasto(520, lineaId = "f")
         abrirPantalla()
 
-        compose.onNodeWithText("Donde te has desviado").assertIsDisplayed()
+        verDesplazando("Donde te has desviado")
         // La ventana de Robolectric es pequena y la fila cae por debajo del
         // borde; como la lista es perezosa, ni siquiera se compone hasta que se
         // llega a ella. Se desplaza hasta alli. Lo que se comprueba es que la
@@ -230,15 +228,27 @@ class FlujoDelResumenTest {
         planDeMarzo(linea("i", "Sueldo", TipoDeLinea.INGRESO, 2000))
         abrirPantalla()
 
-        compose.onNodeWithText("2026-03").assertIsDisplayed()
+        compose.onNodeWithText("Marzo 2026").assertIsDisplayed()
 
         compose.onNodeWithContentDescription("Mes anterior").performClick()
 
-        compose.onNodeWithText("2026-02").assertIsDisplayed()
+        compose.onNodeWithText("Febrero 2026").assertIsDisplayed()
         // Febrero no tiene plan, asi que vuelve el aviso de siempre.
         compose
             .onNodeWithText("Aún no has planificado este mes. Ve a Plan y anota tus ingresos y gastos.")
             .assertIsDisplayed()
+    }
+
+    /**
+     * Desplaza la lista hasta [texto] y comprueba que se ve.
+     *
+     * El titulo grande y la escala aurea dejan esas filas por debajo de la
+     * ventana de Robolectric, que es pequeña; en un movil tambien pueden quedar
+     * por debajo, y se llega a ellas igual: desplazando.
+     */
+    private fun verDesplazando(texto: String) {
+        compose.onNode(hasScrollAction()).performScrollToNode(hasText(texto))
+        compose.onNodeWithText(texto).assertIsDisplayed()
     }
 
     private companion object {

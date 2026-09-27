@@ -1,25 +1,19 @@
 package com.miplata.feature.transacciones
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material3.Card
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,8 +27,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
+import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
+import com.miplata.core.designsystem.formato.fechaLarga
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
+import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.CuentaId
@@ -69,11 +67,26 @@ internal fun PantallaTransacciones(
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
-    Box(modifier = modifier.fillMaxSize()) {
+    PantallaConTituloGrande(
+        titulo = stringResource(R.string.transacciones_titulo),
+        modifier = modifier,
+        botonFlotante = {
+            // Sin cuentas no hay nada que anotar, asi que el boton no se ofrece:
+            // un formulario que no se puede guardar es peor que no tener boton.
+            if (!estado.faltanCuentas) {
+                FloatingActionButton(onClick = { alEvento(EventoDeMovimientos.AnotarMovimiento) }) {
+                    Icon(
+                        Icons.Outlined.Add,
+                        contentDescription = stringResource(R.string.transacciones_anotar),
+                    )
+                }
+            }
+        },
+    ) { relleno ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = relleno,
+            verticalArrangement = Arrangement.spacedBy(Espacio.xs),
         ) {
             item { Cabecera(estado, dinero, alEvento) }
 
@@ -93,24 +106,6 @@ internal fun PantallaTransacciones(
                 }
             }
         }
-
-        // Sin cuentas no hay nada que anotar, asi que el boton no se ofrece: un
-        // formulario que no se puede guardar es peor que no tener boton.
-        if (!estado.faltanCuentas) {
-            androidx.compose.material3.FloatingActionButton(
-                onClick = { alEvento(EventoDeMovimientos.AnotarMovimiento) },
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .navigationBarsPadding()
-                        .padding(16.dp),
-            ) {
-                Icon(
-                    Icons.Outlined.Add,
-                    contentDescription = stringResource(R.string.transacciones_anotar),
-                )
-            }
-        }
     }
 
     estado.editor?.let { EditorDeMovimientoUi(it, estado, alEvento) }
@@ -123,26 +118,11 @@ private fun Cabecera(
     alEvento: (EventoDeMovimientos) -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { alEvento(EventoDeMovimientos.MesAnterior) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = stringResource(R.string.transacciones_mes_anterior),
-                )
-            }
-            Text(
-                text = estado.mes.toString(),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.widthIn(min = 120.dp),
-                textAlign = TextAlign.Center,
-            )
-            IconButton(onClick = { alEvento(EventoDeMovimientos.MesSiguiente) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = stringResource(R.string.transacciones_mes_siguiente),
-                )
-            }
-        }
+        SelectorDeMes(
+            mes = estado.mes,
+            alAnterior = { alEvento(EventoDeMovimientos.MesAnterior) },
+            alSiguiente = { alEvento(EventoDeMovimientos.MesSiguiente) },
+        )
 
         Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
             TotalDelMes(
@@ -196,7 +176,7 @@ private fun CabeceraDelDia(
             modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         ) {
             Text(
-                text = dia.fecha.toString(),
+                text = fechaLarga(dia.fecha),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
