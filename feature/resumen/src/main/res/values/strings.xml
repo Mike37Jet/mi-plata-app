@@ -24,4 +24,35 @@
     <string name="resumen_desviaciones">Dónde te has desviado</string>
     <string name="resumen_desviacion_detalle">%1$s de %2$s</string>
     <string name="resumen_sin_desviaciones">Ninguna línea se te ha ido del plan.</string>
+
+    <string name="resumen_cerrar_mes">Cerrar %1$s</string>
+    <string name="resumen_cerrar_detalle">Copia los saldos del banco y compáralos con tu plan.</string>
+    <string name="resumen_mes_cerrado">%1$s cerrado</string>
+    <string name="resumen_ver_cierre">Ver cómo quedó cada cuenta</string>
+    <string name="resumen_por_cuenta">Por cuenta</string>
+    <string name="resumen_deberia_terminar">debería terminar con %1$s</string>
+    <string name="resumen_termino_esperado">esperabas %1$s</string>
+
+    <string name="cierre_titulo">Cierre de %1$s</string>
+    <string name="cierre_instrucciones">Abre la app de tu banco y copia el saldo de cada cuenta. Lo que no cuadre con lo que anotaste quedará como «Sin detalle».</string>
+    <string name="cierre_sin_metodo">Para cerrar el mes, marca en Cuentas cuál es tu cuenta principal y cuáles son tus sobres.</string>
+    <string name="cierre_esperado">Esperado</string>
+    <string name="cierre_saldo_banco">Saldo en el banco</string>
+    <string name="cierre_real">En el banco</string>
+    <string name="cierre_sobro">Sobró %1$s</string>
+    <string name="cierre_falto">Gastaste %1$s de más</string>
+    <string name="cierre_cuadra">Cuadra con el plan</string>
+    <string name="cierre_cubre">Bajó por cubrir %1$s</string>
+    <string name="cierre_cubre_detalle">Lo gastado de más se apunta a %1$s, que es quien lo gastó.</string>
+    <string name="cierre_intocable_bajo">Es intocable y terminó con %1$s menos de lo que empezó.</string>
+    <string name="cierre_cerrar">Cerrar el mes</string>
+    <string name="cierre_cerrado">Mes cerrado. El siguiente empieza con estos saldos.</string>
+    <string name="cierre_reabrir">Reabrir el mes</string>
+    <string name="cierre_reabrir_titulo">¿Reabrir %1$s?</string>
+    <string name="cierre_reabrir_aviso">Se borrarán los movimientos del cierre y podrás volver a escribir los saldos.</string>
+    <plurals name="cierre_reabrir_posteriores">
+        <item quantity="one">También se reabrirá %1$d mes posterior, porque parte de este.</item>
+        <item quantity="other">También se reabrirán %1$d meses posteriores, porque parten de este.</item>
+    </plurals>
+    <string name="cierre_cancelar">Cancelar</string>
 </resources>

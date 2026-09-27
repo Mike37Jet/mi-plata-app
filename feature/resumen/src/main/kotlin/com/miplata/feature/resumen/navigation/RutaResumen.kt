@@ -2,6 +2,7 @@ package com.miplata.feature.resumen.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.miplata.core.domain.model.Mes
 import com.miplata.feature.resumen.PantallaResumen
 import kotlinx.serialization.Serializable
 
@@ -20,8 +21,11 @@ data object RutaResumen
  *
  * @param alAbrirAjustes a donde se va lo decide `:app` (docs/04).
  */
-fun NavGraphBuilder.pantallaResumen(alAbrirAjustes: () -> Unit = {}) {
+fun NavGraphBuilder.pantallaResumen(
+    alAbrirAjustes: () -> Unit = {},
+    alAbrirCierre: (Mes) -> Unit = {},
+) {
     composable<RutaResumen> {
-        PantallaResumen(alAbrirAjustes = alAbrirAjustes)
+        PantallaResumen(alAbrirAjustes = alAbrirAjustes, alAbrirCierre = alAbrirCierre)
     }
 }
