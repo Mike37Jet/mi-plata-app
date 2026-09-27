@@ -15,19 +15,20 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 
 /**
- * Cuanto tapa el velo de una barra translucida: el 92%.
+ * Cuanto tapa el velo de una barra translucida: el 70%.
  *
- * Es lo minimo que deja leer el texto secundario de la barra -las pestañas no
- * seleccionadas- por encima de cualquier cosa que pase por debajo.
- * `ContrasteTest` lo comprueba con el peor caso: contenido blanco puro detras
- * del tema oscuro, o negro puro detras del claro. Con el 80%, que es lo que se
- * probo primero, ese texto bajaba a 3.1:1 en oscuro y 3.7:1 en claro.
+ * **Sobre el cristal solo va texto principal** (`onSurface`). Es lo que permite
+ * un velo tan fino. `ContrasteTest` lo comprueba con el peor caso: blanco puro
+ * pasando por detras del tema oscuro, o negro puro detras del claro. El texto
+ * principal pasa con 5.6:1 y 8.1:1.
  *
- * El 8% que queda deja ver el color y el movimiento de lo que pasa por
- * detras, desenfocado. Es sutil a proposito: el cristal es un detalle, y la
- * barra existe para leerse.
+ * Con el gris secundario, que es como iOS pinta las pestañas no seleccionadas,
+ * el velo tenia que tapar el 92% para llegar a 4.5:1, y la barra se veia
+ * opaca: el cristal no se notaba. El acento tampoco va directamente sobre el
+ * cristal (necesitaria el 86%): el icono de la pestaña activa va sobre su
+ * pastilla, que es opaca.
  */
-const val OPACIDAD_DEL_VELO = 0.92f
+const val OPACIDAD_DEL_VELO = 0.7f
 
 private val RADIO_DEL_DESENFOQUE = 21.dp
 

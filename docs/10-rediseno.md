@@ -71,10 +71,19 @@ se queda en 3,08:1 sobre el fondo agrupado y no llega al 4,5:1 de WCAG AA
 (docs/09). Se usan #636366 en claro y #98989F en oscuro, los más claros que
 pasan en todos los fondos.
 
-**El cristal tapa el 92 %.** Con el 80 % que se probó primero, el texto
-secundario de la barra bajaba a 3,1:1 si pasaba contenido muy opuesto al tema
-por detrás. `ContrasteTest` comprueba ese peor caso. El desenfoque no ayuda: una
-foto clara desenfocada sigue siendo clara.
+**El cristal tapa el 70 %, y sobre él solo va texto principal.** Al principio
+tapaba el 92 %, porque las pestañas no seleccionadas iban en el gris
+secundario, como en iOS. Ese gris necesita un velo del 92 % para llegar a 4,5:1
+cuando pasa contenido muy opuesto al tema por detrás, y con eso la barra se veía
+opaca. Con todas las etiquetas en el color principal, el 70 % basta incluso en
+ese peor caso (5,6:1 en oscuro y 8,1:1 en claro). La pestaña activa se distingue
+por la pastilla, el color del icono y la seminegrita. El acento tampoco va
+directamente sobre el cristal, porque necesitaría el 86 %. `ContrasteTest`
+comprueba el peor caso. El desenfoque no ayuda: una foto clara desenfocada sigue
+siendo clara.
+
+En el tema oscuro el cristal siempre será sutil: lo que pasa por detrás es casi
+todo negro, como en la barra oscura de iOS.
 
 ## Los PRs
 

@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -27,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -166,7 +170,26 @@ private fun BarraInferior(
                 // Cada pestaña tiene un cuarto del ancho y no se puede apilar. Con
                 // letra grande, un Text normal partia "Movimientos" en dos lineas
                 // a mitad de palabra; este se reduce lo justo para caber entero.
-                label = { TextoQueCabe(stringResource(destino.etiqueta)) },
+                label = {
+                    // La activa, en seminegrita: con todas las etiquetas del mismo
+                    // color, la pastilla y el peso son lo que dice donde estas.
+                    ProvideTextStyle(
+                        LocalTextStyle.current.copy(
+                            fontWeight = if (seleccionado) FontWeight.SemiBold else FontWeight.Normal,
+                        ),
+                    ) {
+                        TextoQueCabe(stringResource(destino.etiqueta))
+                    }
+                },
+                // Todo en el color del texto principal, tambien lo no seleccionado:
+                // es lo unico que se lee sobre el cristal fino (OPACIDAD_DEL_VELO).
+                // Con el gris habitual de las pestañas inactivas, el velo tenia que
+                // tapar el 92% y el cristal no se notaba.
+                colors =
+                    NavigationBarItemDefaults.colors(
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         }
     }

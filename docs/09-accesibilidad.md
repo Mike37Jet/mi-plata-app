@@ -72,8 +72,9 @@ sobre cada fondo en el que puede aparecer, en los dos temas. Cubre:
 
 Desde el rediseño (docs/10) cubre también el **texto sobre el cristal** de las
 barras translúcidas. Lo mide en el peor caso: el velo sobre contenido blanco puro
-bajo el tema oscuro, o negro puro bajo el claro. Por eso el velo tapa el 92 %. Con
-el 80 %, el texto secundario bajaba a 3,1:1.
+bajo el tema oscuro, o negro puro bajo el claro. Sobre el cristal solo va texto
+principal. Así, un velo del 70 % basta. Con el gris secundario hacía falta el 92 %,
+y la barra se veía opaca.
 
 Hoy todo pasa. El par más justo es `onPrimaryContainer` sobre
 `primaryContainer` en oscuro, con 4.56. Saboteado con un rojo de sobregiro más
