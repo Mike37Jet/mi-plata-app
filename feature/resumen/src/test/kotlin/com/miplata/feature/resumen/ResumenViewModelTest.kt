@@ -15,8 +15,11 @@ import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.FakeAjustesRepository
+import com.miplata.core.domain.repository.FakeCierreRepository
+import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
+import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.doubles.shouldBeGreaterThan
@@ -68,6 +71,8 @@ class ResumenViewModelTest {
     private val planes = FakePlanRepository()
     private val transacciones = FakeTransaccionRepository()
     private val ajustes = FakeAjustesRepository()
+    private val cuentas = FakeCuentaRepository()
+    private val cierres = FakeCierreRepository()
 
     /** @param hoy el dia del mes en el que se situa el calendario, para el progreso. */
     private fun viewModel(
@@ -77,11 +82,14 @@ class ResumenViewModelTest {
         planes = planes,
         transacciones = transacciones,
         ajustes = ajustes,
+        cuentas = cuentas,
+        cierres = cierres,
         calendario =
             object : Calendario {
                 override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, hoy)
             },
         calcular = CalcularResumenMensualUseCase(),
+        calcularPorCuentas = CalcularPlanPorCuentasUseCase(),
     )
 
     @Before

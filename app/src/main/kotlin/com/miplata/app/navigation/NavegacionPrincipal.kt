@@ -55,7 +55,9 @@ import com.miplata.feature.bienvenida.navigation.RutaBienvenida
 import com.miplata.feature.bienvenida.navigation.pantallaBienvenida
 import com.miplata.feature.cuentas.navigation.pantallaCuentas
 import com.miplata.feature.plan.navigation.pantallaPlan
+import com.miplata.feature.resumen.navigation.RutaCierre
 import com.miplata.feature.resumen.navigation.RutaResumen
+import com.miplata.feature.resumen.navigation.pantallaCierre
 import com.miplata.feature.resumen.navigation.pantallaResumen
 import com.miplata.feature.transacciones.navigation.pantallaTransacciones
 import dev.chrisbanes.haze.HazeState
@@ -135,7 +137,10 @@ fun NavegacionPrincipal(
                         .consumeWindowInsets(WindowInsets.navigationBars),
             ) {
                 val abrirAjustes = { navController.navigate(RutaAjustes) }
-                pantallaResumen(alAbrirAjustes = abrirAjustes)
+                pantallaResumen(
+                    alAbrirAjustes = abrirAjustes,
+                    alAbrirCierre = { mes -> navController.navigate(RutaCierre(mes)) },
+                )
                 pantallaPlan(alAbrirAjustes = abrirAjustes)
                 pantallaTransacciones(alAbrirAjustes = abrirAjustes)
                 pantallaCuentas(alAbrirAjustes = abrirAjustes)
@@ -148,6 +153,7 @@ fun NavegacionPrincipal(
                     alAbrirRestaurar = { navController.navigate(RutaRestaurar) },
                 )
                 pantallaRestaurar(alVolver = navController::popBackStack)
+                pantallaCierre(alVolver = navController::popBackStack)
             }
         }
 

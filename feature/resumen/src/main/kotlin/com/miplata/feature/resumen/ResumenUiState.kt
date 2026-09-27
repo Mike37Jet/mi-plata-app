@@ -41,6 +41,13 @@ data class ResumenUiState(
     val progresoDelGasto: Double? = null,
     /** Las lineas que se desviaron para mal, de la peor a la menos mala. */
     val desviaciones: List<DesviacionLinea> = emptyList(),
+    /**
+     * Cada cuenta del metodo: con cuanto deberia terminar y con cuanto va, o
+     * termino si el mes esta cerrado (docs/adr/0007). Vacio sin cuenta principal.
+     */
+    val porCuenta: List<CuentaDelResumen> = emptyList(),
+    /** Si el mes esta cerrado, o nulo si no hay metodo con el que cerrarlo. */
+    val cerrado: Boolean? = null,
 ) {
     /**
      * Se esta gastando mas deprisa de lo que pasa el mes.
@@ -53,6 +60,16 @@ data class ResumenUiState(
 
     private val mesTerminado: Boolean get() = progresoDelMes >= 1.0
 }
+
+/**
+ * @property esperado con cuanto deberia terminar el mes segun el plan.
+ * @property actual con cuanto va hoy o, en un mes cerrado, con cuanto termino.
+ */
+data class CuentaDelResumen(
+    val nombre: String,
+    val esperado: Money,
+    val actual: Money,
+)
 
 sealed interface EventoDelResumen {
     data object MesAnterior : EventoDelResumen
