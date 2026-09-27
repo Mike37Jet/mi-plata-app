@@ -91,17 +91,21 @@ class FlujoDeBienvenidaTest {
         abrir()
 
         pulsar("Empezar")
-        compose.onNodeWithText("Paso 1 de 3").assertIsDisplayed()
+        compose.onNodeWithText("Paso 1 de 4").assertIsDisplayed()
         pulsar("Siguiente")
 
-        compose.onNodeWithText("Paso 2 de 3").assertIsDisplayed()
+        compose.onNodeWithText("Paso 2 de 4").assertIsDisplayed()
         // Sin nombre, la cuenta no se puede crear: se ve antes de pulsar.
         compose.onNodeWithText("Siguiente").assertIsNotEnabled()
         compose.onNode(hasSetTextAction() and hasText("Nombre")).performTextInput("Cartera")
         compose.onNodeWithText("Siguiente").assertIsEnabled()
         pulsar("Siguiente")
 
-        compose.onNodeWithText("Paso 3 de 3").assertIsDisplayed()
+        // Sin marcar ningun sobre se sigue igual: la app funciona sin ellos.
+        compose.onNodeWithText("Paso 3 de 4").assertIsDisplayed()
+        pulsar("Siguiente")
+
+        compose.onNodeWithText("Paso 4 de 4").assertIsDisplayed()
         compose.onNode(hasSetTextAction() and hasText("Ingreso mensual")).performTextInput("1200")
         pulsar("Empezar a planear")
 
@@ -125,10 +129,34 @@ class FlujoDeBienvenidaTest {
         pulsar("Siguiente")
         compose.onNode(hasSetTextAction() and hasText("Nombre")).performTextInput("Cartera")
         pulsar("Siguiente")
+        pulsar("Siguiente")
 
         pulsar("Lo haré después")
 
         cuentasAlTerminar shouldBe 0
+    }
+
+    @Test
+    fun `marcar sobres crea la principal y los sobres con su saldo`() {
+        abrir()
+        pulsar("Empezar")
+        pulsar("Siguiente")
+        compose.onNode(hasSetTextAction() and hasText("Nombre")).performTextInput("Normal")
+        pulsar("Siguiente")
+
+        pulsar("Libertad financiera")
+        compose.onNode(hasSetTextAction() and hasText("¿Cuánto tiene hoy?")).performScrollTo().performTextInput("300")
+        pulsar("Diversión")
+        pulsar("Siguiente")
+        pulsar("Lo haré después")
+
+        compose.waitUntil(ESPERA) { runBlocking { cuentas.observarTodas().first() }.size == 3 }
+        val guardadas = runBlocking { cuentas.observarTodas().first() }
+        guardadas.single { it.nombre == "Normal" }.esPrincipal shouldBe true
+        val libertad = guardadas.single { it.nombre == "Libertad financiera" }
+        libertad.esIntocable shouldBe true
+        libertad.saldoInicial shouldBe Money.deUnidades(300)
+        guardadas.single { it.nombre == "Diversión" }.sobre.shouldNotBeNull()
     }
 
     @Test

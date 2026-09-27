@@ -7,6 +7,8 @@ import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.repository.AjustesRepository
@@ -56,6 +58,19 @@ data class PrimerosPasos(
      * pone la estructura y quien llama pone las palabras.
      */
     val nombreDelIngreso: String = "",
+    /**
+     * Los sobres que el usuario quiere crear desde el principio (docs/adr/0007).
+     * Si hay alguno, la primera cuenta pasa a ser la principal.
+     */
+    val sobres: List<SobreInicial> = emptyList(),
+)
+
+/** Un sobre creado en la bienvenida, con el nombre ya traducido. */
+data class SobreInicial(
+    val nombre: String,
+    val saldoActual: Money,
+    val reparto: Reparto = Reparto.PorDefecto,
+    val intocable: Boolean = false,
 )
 
 /**
@@ -66,7 +81,9 @@ data class PrimerosPasos(
  *
  * 1. Ajustes. Sin cuenta, la bienvenida sigue en pie y los volvera a pedir.
  * 2. Cuenta. Una app con una cuenta y sin plan es una app normal.
- * 3. Plan. Su linea de ingreso apunta a la cuenta, que ya existe.
+ * 3. Sobres. Si la app muere antes, la principal queda sin sobres, que es
+ *    como queda quien no los usa; se anaden luego en Cuentas.
+ * 4. Plan. Su linea de ingreso apunta a la cuenta, que ya existe.
  *
  * El orden al reves -plan antes que cuenta- dejaria una linea apuntando a una
  * cuenta que no existe, y la base la rechaza por su clave foranea. Si la app
@@ -99,8 +116,22 @@ class CompletarPrimerosPasosUseCase(
                 tipo = pasos.tipoDeCuenta,
                 saldoInicial = pasos.saldoActual,
                 moneda = pasos.moneda,
+                rol = if (pasos.sobres.isEmpty()) RolDeCuenta.Independiente else RolDeCuenta.Principal,
             ),
         )
+
+        pasos.sobres.forEach { sobre ->
+            cuentas.guardar(
+                Cuenta(
+                    id = ids.nuevaCuentaId(),
+                    nombre = sobre.nombre.trim(),
+                    tipo = TipoDeCuenta.AHORRO,
+                    saldoInicial = sobre.saldoActual,
+                    moneda = pasos.moneda,
+                    rol = RolDeCuenta.Sobre(sobre.reparto, sobre.intocable),
+                ),
+            )
+        }
 
         // Quien borro todas sus cuentas vuelve a pasar por aqui con su plan del
         // mes intacto. Ese plan es suyo: no se pisa.
