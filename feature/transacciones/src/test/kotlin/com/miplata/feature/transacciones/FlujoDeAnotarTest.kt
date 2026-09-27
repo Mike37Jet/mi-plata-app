@@ -119,9 +119,9 @@ class FlujoDeAnotarTest {
 
         anotar(importe = "42")
 
-        // Agrupado bajo su dia, y con signo: en una lista de movimientos el
-        // signo es la informacion.
-        compose.onAllNodesWithText("Martes, 10 de marzo")[0].assertIsDisplayed()
+        // Agrupado bajo su dia -que es hoy, y se dice asi-, y con signo: en una
+        // lista de movimientos el signo es la informacion.
+        compose.onNodeWithText("Hoy").assertIsDisplayed()
         compose.onAllNodesWithText("-$42.00")[0].assertIsDisplayed()
     }
 

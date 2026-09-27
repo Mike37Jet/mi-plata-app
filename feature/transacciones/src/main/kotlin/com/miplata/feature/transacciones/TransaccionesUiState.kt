@@ -40,7 +40,16 @@ data class DiaEnLista(
     val fecha: LocalDate,
     val movimientos: List<MovimientoEnLista>,
     val neto: Money,
-)
+) {
+    /**
+     * Si el dia tiene total que enseñar.
+     *
+     * Un dia con solo transferencias no gano ni perdio nada: el dinero cambio de
+     * cuenta. Enseñar "€0.00" ahi -y en verde, como se hacia- lo hacia parecer
+     * un dia de ingresos.
+     */
+    val tieneTotal: Boolean get() = movimientos.any { it.tipo != TipoDeTransaccion.TRANSFERENCIA }
+}
 
 /**
  * El movimiento que se esta anotando, mientras se anota.
@@ -89,6 +98,8 @@ data class TransaccionesUiState(
     val mes: Mes,
     val moneda: Moneda = Moneda("USD"),
     val cargando: Boolean = true,
+    /** Para decir "Hoy" y "Ayer" en vez de la fecha. */
+    val hoy: LocalDate? = null,
     val dias: List<DiaEnLista> = emptyList(),
     val ingresos: Money = Money.ZERO,
     val gastos: Money = Money.ZERO,

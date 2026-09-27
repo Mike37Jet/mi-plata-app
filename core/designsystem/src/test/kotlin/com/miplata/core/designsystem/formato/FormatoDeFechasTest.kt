@@ -19,6 +19,21 @@ class FormatoDeFechasTest {
         fechaLarga(LocalDate(2026, 3, 1)) shouldBe "Domingo, 1 de marzo"
     }
 
+    @Test
+    fun `lo reciente se dice como hablando`() {
+        val hoy = LocalDate(2026, 3, 26)
+
+        fechaRelativa(hoy, hoy) shouldBe "Hoy"
+        fechaRelativa(LocalDate(2026, 3, 25), hoy) shouldBe "Ayer"
+        fechaRelativa(LocalDate(2026, 3, 24), hoy) shouldBe "Martes, 24 de marzo"
+    }
+
+    /** El primero de mes, "ayer" es el ultimo dia del mes anterior. */
+    @Test
+    fun `ayer cruza el cambio de mes`() {
+        fechaRelativa(LocalDate(2026, 2, 28), LocalDate(2026, 3, 1)) shouldBe "Ayer"
+    }
+
     /** Con el telefono en ingles, las fechas siguen en el idioma de la app. */
     @Test
     fun `no depende del idioma del telefono`() {

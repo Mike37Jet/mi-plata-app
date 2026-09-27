@@ -10,9 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,7 +29,6 @@ import com.miplata.core.designsystem.componentes.BotonDeAjustes
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
-import com.miplata.core.designsystem.formato.fechaLarga
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
 import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
@@ -100,13 +97,9 @@ internal fun PantallaTransacciones(
                 item { Aviso(stringResource(R.string.transacciones_vacio)) }
             }
 
-            estado.dias.forEach { dia ->
-                item(key = "dia-${dia.fecha}") { CabeceraDelDia(dia, dinero) }
-
-                items(dia.movimientos, key = { it.id.valor }) { movimiento ->
-                    FilaDeMovimiento(movimiento, dinero) {
-                        alEvento(EventoDeMovimientos.EditarMovimiento(movimiento.transaccion))
-                    }
+            items(estado.dias, key = { "dia-${it.fecha}" }) { dia ->
+                GrupoDelDia(dia, estado.hoy, dinero) { movimiento ->
+                    alEvento(EventoDeMovimientos.EditarMovimiento(movimiento.transaccion))
                 }
             }
         }
@@ -161,118 +154,6 @@ private fun TotalDelMes(
         Text(monto, style = EstilosDeDinero.enLista, color = color)
     }
 }
-
-/**
- * La cabecera de cada dia, con lo que sumo entre todo.
- *
- * Un dia es la unidad en la que la gente recuerda lo que gasto -"el sabado se me
- * fue la mano"-, y el total responde a "¿que tal fue?" sin sumar la columna.
- */
-@Composable
-private fun CabeceraDelDia(
-    dia: DiaEnLista,
-    dinero: FormateadorDeDinero,
-) {
-    Column(modifier = Modifier.padding(top = 16.dp)) {
-        HorizontalDivider()
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        ) {
-            Text(
-                text = fechaLarga(dia.fecha),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = dinero.formatearConSigno(dia.neto),
-                style = EstilosDeDinero.secundario,
-                color =
-                    if (dia.neto.esNegativo) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MiPlataTheme.dinero.ingreso
-                    },
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilaDeMovimiento(
-    movimiento: MovimientoEnLista,
-    dinero: FormateadorDeDinero,
-    alPulsar: () -> Unit,
-) {
-    Card(onClick = alPulsar, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(tituloDe(movimiento), style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    text = detalleDe(movimiento),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            // Con signo: en una lista de movimientos el signo ES la informacion.
-            Text(
-                text = dinero.formatearConSigno(conSigno(movimiento)),
-                style = EstilosDeDinero.enLista,
-                color = colorDe(movimiento.tipo),
-            )
-        }
-    }
-}
-
-/**
- * Lo que mejor identifica el movimiento, de lo mas concreto a lo mas generico.
- *
- * La nota gana porque es lo que el usuario escribio a mano: si se molesto en
- * poner "cena con Ana", eso es lo que quiere leer, no "Comida".
- */
-@Composable
-private fun tituloDe(movimiento: MovimientoEnLista): String =
-    movimiento.nota
-        ?: movimiento.lineaDePlan
-        ?: movimiento.categoria
-        ?: stringResource(R.string.transacciones_sin_categoria)
-
-@Composable
-private fun detalleDe(movimiento: MovimientoEnLista): String =
-    if (movimiento.tipo == TipoDeTransaccion.TRANSFERENCIA) {
-        // "Banco · Hacia Cartera". Sin el destino, una transferencia no cuenta
-        // lo unico que importa de ella: a donde fue el dinero.
-        listOfNotNull(
-            movimiento.cuenta.takeIf { it.isNotBlank() },
-            movimiento.cuentaDestino?.let { stringResource(R.string.transacciones_hacia, it) },
-        ).joinToString(" · ")
-    } else {
-        buildList {
-            add(movimiento.cuenta)
-            movimiento.categoria?.takeIf { it != tituloDe(movimiento) }?.let { add(it) }
-        }.filter { it.isNotBlank() }
-            .joinToString(" · ")
-    }
-
-/** El monto con el signo que le toca; el modelo lo guarda siempre positivo. */
-private fun conSigno(movimiento: MovimientoEnLista): Money =
-    when (movimiento.tipo) {
-        TipoDeTransaccion.INGRESO -> movimiento.monto
-        else -> -movimiento.monto
-    }
-
-@Composable
-private fun colorDe(tipo: TipoDeTransaccion): Color =
-    when (tipo) {
-        TipoDeTransaccion.INGRESO -> MiPlataTheme.dinero.ingreso
-        // Una transferencia no es un gasto: no deberia leerse como dinero
-        // perdido, solo como dinero movido.
-        TipoDeTransaccion.TRANSFERENCIA -> MaterialTheme.colorScheme.onSurfaceVariant
-        TipoDeTransaccion.GASTO -> MiPlataTheme.dinero.gasto
-    }
 
 @Composable
 private fun Aviso(texto: String) {

@@ -37,13 +37,26 @@ import javax.inject.Inject
 private data class DatosDelMes(
     val periodo: PeriodoMensual,
     val movimientos: List<Transaccion>,
+    /** Las activas: las que se ofrecen para enganchar un movimiento nuevo. */
     val lineasDelPlan: List<LineaDePlan>,
+    /**
+     * Todas, activas o no: para poner nombre a lo ya anotado. Un movimiento
+     * enganchado a una linea que este mes esta desactivada salia como "Sin
+     * categoria".
+     */
+    val todasLasLineas: List<LineaDePlan>,
 )
 
 /** Los catalogos con los que se rellenan los selectores del editor. */
 private data class Catalogos(
+    /** Las que se ofrecen para anotar: sin las archivadas. */
     val cuentas: List<Cuenta>,
     val categorias: List<Categoria>,
+    /**
+     * Todas, archivadas incluidas: para poner nombre a lo ya anotado. Una
+     * transferencia a una cuenta archivada salia sin destino ("Nomina → ").
+     */
+    val todasLasCuentas: List<Cuenta>,
 )
 
 /**
@@ -87,7 +100,7 @@ class TransaccionesViewModel
             combine(cuentas.observarTodas(), categorias.observarTodas()) { lista, cats ->
                 // Las cuentas archivadas no se ofrecen para anotar algo nuevo:
                 // archivar es justamente decir "ya no uso esta".
-                Catalogos(lista.filterNot { it.archivada }, cats)
+                Catalogos(lista.filterNot { it.archivada }, cats, todasLasCuentas = lista)
             }
 
         /**
@@ -113,7 +126,7 @@ class TransaccionesViewModel
                     transacciones.observarDelPeriodo(periodo),
                     planes.observarDe(periodo.mes),
                 ) { movimientos, plan ->
-                    DatosDelMes(periodo, movimientos, plan?.lineasActivas.orEmpty())
+                    DatosDelMes(periodo, movimientos, plan?.lineasActivas.orEmpty(), plan?.lineas.orEmpty())
                 }
             }
 
@@ -129,7 +142,8 @@ class TransaccionesViewModel
                     mes = mes,
                     moneda = configuracion.moneda,
                     cargando = false,
-                    dias = diasDe(delMes.movimientos, catalogo, delMes.lineasDelPlan),
+                    hoy = calendario.hoy(),
+                    dias = diasDe(delMes.movimientos, catalogo, delMes.todasLasLineas),
                     ingresos = totalDe(delMes.movimientos, TipoDeTransaccion.INGRESO),
                     gastos = totalDe(delMes.movimientos, TipoDeTransaccion.GASTO),
                     cuentas = catalogo.cuentas,
@@ -278,7 +292,7 @@ class TransaccionesViewModel
             catalogo: Catalogos,
             lineas: List<LineaDePlan>,
         ): List<DiaEnLista> {
-            val cuentaPorId = catalogo.cuentas.associateBy { it.id }
+            val cuentaPorId = catalogo.todasLasCuentas.associateBy { it.id }
             val categoriaPorId = catalogo.categorias.associateBy { it.id }
             val lineaPorId = lineas.associateBy { it.id }
 

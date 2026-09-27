@@ -501,6 +501,96 @@ class TransaccionesViewModelTest {
             }
         }
 
+    /**
+     * Archivar una cuenta la quita del editor, no de lo ya anotado: una
+     * transferencia a una cuenta archivada salia como "banco → " sin destino.
+     */
+    @Test
+    fun `una transferencia a una cuenta archivada conserva el nombre del destino`() =
+        runTest {
+            cuentas.guardar(cuenta(BANCO, "Banco"))
+            cuentas.guardar(cuenta(CARTERA, "Visa", archivada = true))
+            transacciones.guardar(
+                movimiento("t", dia = 10, monto = 100, tipo = TipoDeTransaccion.TRANSFERENCIA, destino = CARTERA),
+            )
+
+            viewModel().uiState.test {
+                esperarHasta { it.dias.isNotEmpty() }
+                    .dias
+                    .single()
+                    .movimientos
+                    .single()
+                    .cuentaDestino shouldBe "Visa"
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    /** Desactivar una linea este mes no puede dejar sin nombre lo ya anotado en ella. */
+    @Test
+    fun `un movimiento de una linea desactivada conserva el nombre de la linea`() =
+        runTest {
+            cuentas.guardar(cuenta(BANCO))
+            planes.guardar(
+                PlanMensual(
+                    id = PlanId("p"),
+                    mes = MARZO,
+                    lineas =
+                        listOf(
+                            LineaDePlan(
+                                id = LineaId("seguro"),
+                                nombre = "Seguro",
+                                tipo = TipoDeLinea.GASTO_FIJO,
+                                montoPlanificado = Money.deUnidades(90),
+                                activa = false,
+                            ),
+                        ),
+                ),
+            )
+            transacciones.guardar(movimiento("a", dia = 10, monto = 90).copy(lineaDePlanId = LineaId("seguro")))
+
+            viewModel().uiState.test {
+                val estado = esperarHasta { it.dias.isNotEmpty() }
+                estado.dias
+                    .single()
+                    .movimientos
+                    .single()
+                    .lineaDePlan shouldBe "Seguro"
+                // Pero no se ofrece para enganchar algo nuevo: este mes no toca.
+                estado.lineasDelPlan shouldBe emptyList()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    /** Un dia de solo transferencias no gano ni perdio nada: no enseña total. */
+    @Test
+    fun `un dia con solo transferencias no tiene total`() =
+        runTest {
+            cuentas.guardar(cuenta(BANCO))
+            cuentas.guardar(cuenta(CARTERA))
+            transacciones.guardar(
+                movimiento("t", dia = 12, monto = 100, tipo = TipoDeTransaccion.TRANSFERENCIA, destino = CARTERA),
+            )
+            transacciones.guardar(movimiento("g", dia = 10, monto = 30))
+
+            viewModel().uiState.test {
+                val dias = esperarHasta { it.dias.size == 2 }.dias
+                dias.first { it.fecha.dayOfMonth == 12 }.tieneTotal shouldBe false
+                dias.first { it.fecha.dayOfMonth == 10 }.tieneTotal shouldBe true
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `la pantalla sabe que dia es hoy para decir hoy y ayer`() =
+        runTest {
+            cuentas.guardar(cuenta(BANCO))
+
+            viewModel(hoy = 14).uiState.test {
+                esperarCargado().hoy shouldBe LocalDate(2026, 3, 14)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
     @Test
     fun `navegar cambia de mes`() =
         runTest {
