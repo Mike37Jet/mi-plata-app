@@ -66,15 +66,14 @@ private fun mezcla(
  * de lo mas opuesto al tema que pueda pasar por detras (blanco puro bajo el
  * tema oscuro, negro puro bajo el claro). El desenfoque no ayuda aqui: una
  * foto grande y clara detras de la barra se desenfoca, pero sigue siendo clara.
+ *
+ * Solo el texto principal: es el unico que puede ir sobre el cristal (ver
+ * OPACIDAD_DEL_VELO). El secundario y el acento van sobre superficies opacas.
  */
 private fun textoSobreCristal(esquema: ColorScheme): List<Par> {
     val peorDetras = if (esquema.surface.luminance() < 0.5f) Color.White else Color.Black
     val cristal = mezcla(esquema.surfaceContainer, peorDetras, OPACIDAD_DEL_VELO)
-    return listOf(
-        Par("onSurface sobre cristal", esquema.onSurface, cristal),
-        Par("onSurfaceVariant sobre cristal", esquema.onSurfaceVariant, cristal),
-        Par("primary sobre cristal", esquema.primary, cristal),
-    )
+    return listOf(Par("onSurface sobre cristal", esquema.onSurface, cristal))
 }
 
 private data class Par(
