@@ -78,21 +78,26 @@ class CuentasViewModel
                 is EventoDeCuentas.EditarCuenta -> editor.value = editorDe(evento.cuenta)
                 EventoDeCuentas.CerrarEditor -> editor.value = null
 
-                is EventoDeCuentas.CambiarNombre -> editar { it.copy(nombre = evento.nombre) }
-                is EventoDeCuentas.CambiarTipo -> editar { it.copy(tipo = evento.tipo) }
-                is EventoDeCuentas.CambiarSaldoInicial -> editar { it.copy(saldoInicial = evento.saldo) }
-                is EventoDeCuentas.CambiarIncluirEnTotal -> editar { it.copy(incluirEnTotal = evento.incluir) }
-                is EventoDeCuentas.CambiarArchivada -> editar { it.copy(archivada = evento.archivada) }
-                is EventoDeCuentas.CambiarRol -> editar { it.copy(rol = evento.rol) }
-                is EventoDeCuentas.CambiarModoDeReparto -> editar { it.copy(repartoEnPorcentaje = evento.enPorcentaje) }
-                is EventoDeCuentas.CambiarPorcentaje -> editar { it.copy(porcentaje = evento.porcentaje) }
-                is EventoDeCuentas.CambiarMontoFijo -> editar { it.copy(montoFijo = evento.monto) }
-                is EventoDeCuentas.CambiarIntocable -> editar { it.copy(intocable = evento.intocable) }
+                is EventoDeCuentas.CambioEnEditor -> editar { it.con(evento) }
 
                 EventoDeCuentas.Guardar -> guardar()
                 EventoDeCuentas.Eliminar -> eliminar()
             }
         }
+
+        private fun EditorDeCuenta.con(cambio: EventoDeCuentas.CambioEnEditor): EditorDeCuenta =
+            when (cambio) {
+                is EventoDeCuentas.CambiarNombre -> copy(nombre = cambio.nombre)
+                is EventoDeCuentas.CambiarTipo -> copy(tipo = cambio.tipo)
+                is EventoDeCuentas.CambiarSaldoInicial -> copy(saldoInicial = cambio.saldo)
+                is EventoDeCuentas.CambiarIncluirEnTotal -> copy(incluirEnTotal = cambio.incluir)
+                is EventoDeCuentas.CambiarArchivada -> copy(archivada = cambio.archivada)
+                is EventoDeCuentas.CambiarRol -> copy(rol = cambio.rol)
+                is EventoDeCuentas.CambiarModoDeReparto -> copy(repartoEnPorcentaje = cambio.enPorcentaje)
+                is EventoDeCuentas.CambiarPorcentaje -> copy(porcentaje = cambio.porcentaje)
+                is EventoDeCuentas.CambiarMontoFijo -> copy(montoFijo = cambio.monto)
+                is EventoDeCuentas.CambiarIntocable -> copy(intocable = cambio.intocable)
+            }
 
         private fun editorDe(cuenta: Cuenta): EditorDeCuenta {
             val reparto = cuenta.sobre?.reparto

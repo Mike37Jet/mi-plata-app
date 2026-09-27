@@ -3,6 +3,7 @@ package com.miplata.core.domain.usecase
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
 import com.miplata.core.domain.model.Cuenta
+import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
@@ -106,9 +107,6 @@ class CompletarPrimerosPasosUseCase(
         )
 
         val idDeLaCuenta = ids.nuevaCuentaId()
-        val ingreso = pasos.ingresoMensual?.takeUnless { it.esCero }
-        val mes = calendario.mesActual()
-
         cuentas.guardar(
             Cuenta(
                 id = idDeLaCuenta,
@@ -119,7 +117,11 @@ class CompletarPrimerosPasosUseCase(
                 rol = if (pasos.sobres.isEmpty()) RolDeCuenta.Independiente else RolDeCuenta.Principal,
             ),
         )
+        guardarSobres(pasos)
+        guardarPlan(pasos, idDeLaCuenta)
+    }
 
+    private suspend fun guardarSobres(pasos: PrimerosPasos) {
         pasos.sobres.forEach { sobre ->
             cuentas.guardar(
                 Cuenta(
@@ -132,29 +134,35 @@ class CompletarPrimerosPasosUseCase(
                 ),
             )
         }
+    }
 
+    private suspend fun guardarPlan(
+        pasos: PrimerosPasos,
+        idDeLaCuenta: CuentaId,
+    ) {
+        val ingreso = pasos.ingresoMensual?.takeUnless { it.esCero } ?: return
+        val mes = calendario.mesActual()
         // Quien borro todas sus cuentas vuelve a pasar por aqui con su plan del
         // mes intacto. Ese plan es suyo: no se pisa.
-        if (ingreso != null && planes.obtenerDe(mes) == null) {
-            planes.guardar(
-                PlanMensual(
-                    id = ids.nuevoPlanId(),
-                    mes = mes,
-                    lineas =
-                        listOf(
-                            LineaDePlan(
-                                id = ids.nuevaLineaId(),
-                                nombre = pasos.nombreDelIngreso,
-                                tipo = TipoDeLinea.INGRESO,
-                                montoPlanificado = ingreso,
-                                cuentaId = idDeLaCuenta,
-                                // Quien dice que su mes empieza el 25 es porque
-                                // cobra el 25.
-                                diaDelMes = pasos.primerDiaDelMes,
-                            ),
+        if (planes.obtenerDe(mes) != null) return
+        planes.guardar(
+            PlanMensual(
+                id = ids.nuevoPlanId(),
+                mes = mes,
+                lineas =
+                    listOf(
+                        LineaDePlan(
+                            id = ids.nuevaLineaId(),
+                            nombre = pasos.nombreDelIngreso,
+                            tipo = TipoDeLinea.INGRESO,
+                            montoPlanificado = ingreso,
+                            cuentaId = idDeLaCuenta,
+                            // Quien dice que su mes empieza el 25 es porque
+                            // cobra el 25.
+                            diaDelMes = pasos.primerDiaDelMes,
                         ),
-                ),
-            )
-        }
+                    ),
+            ),
+        )
     }
 }

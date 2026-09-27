@@ -67,42 +67,49 @@ data class BienvenidaUiState(
 }
 
 sealed interface EventoDeBienvenida {
+    /**
+     * Cambiar lo que se esta respondiendo. Un subtipo aparte para que el
+     * ViewModel los trate todos de golpe sin un `else` que se trague eventos
+     * nuevos, como en el plan.
+     */
+    sealed interface CambioDeCampo : EventoDeBienvenida
+
     data object Siguiente : EventoDeBienvenida
 
     data object Atras : EventoDeBienvenida
 
     data class ElegirMoneda(
         val moneda: Moneda,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class CambiarPrimerDia(
         val dia: Int,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class CambiarNombreDeLaCuenta(
         val nombre: String,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class ElegirTipoDeCuenta(
         val tipo: TipoDeCuenta,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class CambiarSaldo(
         val saldo: Money,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class CambiarIngreso(
         val ingreso: Money,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class AlternarSobre(
         val sobre: SobreSugerido,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     data class CambiarSaldoDeSobre(
         val sobre: SobreSugerido,
         val saldo: Money,
-    ) : EventoDeBienvenida
+    ) : CambioDeCampo
 
     /**
      * El ultimo paso.
