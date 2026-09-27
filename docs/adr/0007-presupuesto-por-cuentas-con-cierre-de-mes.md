@@ -1,6 +1,6 @@
 # 0007 — Presupuesto por cuentas, con cierre de mes contra el saldo del banco
 
-- **Estado:** Propuesto
+- **Estado:** Aceptado
 - **Fecha:** 2026-09-27
 
 ## Contexto
@@ -58,10 +58,15 @@ En concreto:
      salida de esa cuenta se señala aparte y nunca se sugiere para cubrir a
      otra.
 2. **Reparto.**
-   - Del ingreso planeado, la app calcula lo que va a cada sobre. Son líneas de
-     plan de un tipo nuevo, **reparto**, que representan una transferencia de la
-     principal al sobre: no son gasto.
-   - La app dice cuánto hay que transferir en el banco.
+   - Del ingreso planeado, la app calcula lo que va a cada sobre con la regla
+     de cada uno. **No se guarda como líneas del plan**: calcularlo evita tener
+     que resincronizar líneas cada vez que cambia el sueldo o un porcentaje.
+     No es gasto, es una transferencia de la principal al sobre.
+   - La app dice cuánto hay que transferir en el banco, y un botón ("Ya
+     transferí el reparto") anota esas transferencias de una vez.
+   - Si al cerrar el mes falta alguna, el cierre la da por hecha. Si no, cada
+     reparto sin anotar saldría como un gasto "Sin detalle" en la principal y
+     un ingreso en el sobre, e inflaría el resumen por los dos lados.
 3. **Plan por cuenta.** Cada línea de gasto pertenece a una cuenta
    (`LineaDePlan.cuentaId`, que ya existe). Por cuenta, la app muestra:
    - con cuánto empieza el mes;
@@ -75,12 +80,17 @@ En concreto:
      siendo derivado, con la misma fórmula, y ahora cuadra con el banco.
    - El resumen compara, por cuenta, el saldo esperado con el real.
 5. **Cobertura.**
-   - Si en el cierre la principal quedó por encima de lo esperado y un sobre
-     por debajo, la app pregunta si fue una cobertura, por ejemplo "¿moviste 30
-     de Diversión a Normal?". Si la respuesta es sí, se registra como
-     transferencia, no como dos ajustes.
-   - Durante el mes, cubrir la principal es una transferencia normal. La app
-     propone los sobres que no son intocables.
+   - En el cierre, cada sobre que terminó por debajo de lo esperado ofrece
+     "Bajó por cubrir Normal". Marcado, se registra una transferencia del sobre
+     a la principal por lo que bajó de más, y el gasto "Sin detalle" queda en la
+     principal, que es quien lo gastó. Sin marcar, queda en el sobre.
+   - No se detecta sola: si Normal gastó 30 de más y se cubrió con 30 de
+     Diversión sin anotarlo, Normal cuadra y es Diversión la que baja. Con los
+     saldos no se distingue eso de un gasto de Diversión, y solo el usuario lo
+     sabe.
+   - Durante el mes, cubrir la principal es una transferencia normal. El plan
+     avisa cuando una cuenta quedaría en negativo, y anotar una salida desde una
+     intocable lo señala.
 6. **Arrastre.** El mes siguiente parte del saldo real del cierre, en cada
    cuenta. Lo que sobró o faltó ya está en ese saldo; el plan nuevo lo muestra
    como "vienes con…" junto al reparto del mes.
@@ -104,15 +114,18 @@ En concreto:
   obligación.
 - **El modelo crece.**
   - `Cuenta`: rol (principal / sobre), reparto (porcentaje o monto) e intocable.
-  - `TipoDeLinea`: reparto, con cuenta de destino.
-  - `Transaccion`: una marca de ajuste de cierre.
-  - Hay que registrar qué meses están cerrados.
-  - El formato de la copia de seguridad sube de versión, con su migración y su
-    test (docs/05).
+  - `Transaccion`: una marca de ajuste de cierre (`ajusteDeCierre`).
+  - `CierreDeMes` registra qué meses están cerrados y cómo quedó cada cuenta.
+  - La base pasa a la versión 2, con una migración automática probada con
+    datos de la versión 1.
+  - La copia de seguridad lleva todo esto en campos con valor por defecto, así
+    que **no** sube la versión del formato: las copias de antes se siguen
+    leyendo tal cual (docs/05).
 - **El cierre es deshacible.** Reabrir un mes borra sus ajustes y, si ya se
   cerraron, los de los meses posteriores, porque parten de él.
-- **La bienvenida cambia.** Propone crear las cuentas del método (principal +
-  sobres) en lugar de una sola cuenta.
+- **La bienvenida cambia.** Tras la primera cuenta, un paso propone los sobres
+  del método. Marcar alguno convierte la primera cuenta en la principal; no
+  marcar ninguno deja la app como antes.
 - **Lo que ya existe sigue sirviendo.**
   - La desviación por línea sigue funcionando para quien anote.
   - El resumen gana una vista por cuenta.
