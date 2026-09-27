@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!--
       No se declara android.permission.INTERNET, y es deliberado.
@@ -20,6 +21,15 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MiPlata.Starting">
+
+        <!--
+          Deja medir la app con Macrobenchmark sin hacerla depurable (7.3). Solo
+          el shell de adb puede usarlo, no otras apps; y no expone los datos: una
+          app depurable si dejaria leerlos con run-as.
+        -->
+        <profileable
+            android:shell="true"
+            tools:targetApi="29" />
 
         <activity
             android:name=".MainActivity"

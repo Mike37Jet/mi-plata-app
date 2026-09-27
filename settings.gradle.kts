@@ -91,3 +91,5 @@ include(":feature:cuentas")
 include(":feature:backup")
 include(":feature:bienvenida")
 include(":feature:ajustes")
+
+include(":baselineprofile")

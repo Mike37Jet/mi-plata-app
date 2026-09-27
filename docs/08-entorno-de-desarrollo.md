@@ -129,6 +129,41 @@ Comprobar que quedó firmado:
 > Ni el keystore (`*.jks`) ni `keystore.properties` pueden entrar al repositorio:
 > los tres patrones están en `.gitignore`.
 
+## Baseline Profile
+
+El Baseline Profile es la lista de clases y métodos que la app usa al arrancar y
+al moverse por las pestañas. Con esa lista, Android los compila a código máquina
+al instalar el APK, en lugar de interpretarlos hasta que el JIT los detecta.
+`profileinstaller` lo instala con el APK, sin pasar por Play.
+
+El perfil generado **se commitea**, en
+`app/src/release/generated/baselineProfiles/`. Generarlo necesita un dispositivo
+y el CI no tiene; en el CI solo se compila el módulo `:baselineprofile`.
+
+**Cuándo regenerarlo:** tras cambios grandes en lo que se ejecuta al arrancar o
+al moverse por las pestañas, como una pantalla nueva o un cambio de librería de
+UI. Un perfil viejo no rompe nada; solo compila de antemano menos de lo que
+debería.
+
+```bash
+# Con un emulador o teléfono conectado (Android 13+, o con root en versiones anteriores).
+./gradlew :app:generateReleaseBaselineProfile
+
+# Medir el arranque en frío: sin compilar frente a con el perfil.
+./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest
+```
+
+**Cómo lo generan:**
+- El generador (`GeneradorDelPerfil`) instala la variante de release y la
+  recorre con UiAutomator: completa la bienvenida si aparece y pasa por las
+  cuatro pestañas.
+- Las variantes de benchmark se firman con la clave de depuración, porque el
+  release sin `keystore.properties` sale sin firmar y no se puede instalar para
+  medir.
+- En un emulador, Macrobenchmark se niega a medir salvo que se le diga
+  (`androidx.benchmark.suppressErrors=EMULATOR`). Esos números sirven para
+  comparar, no como tiempos reales.
+
 ## Hooks de git
 
 Los hooks viven en `.githooks/` y están versionados. Git no los activa solo al

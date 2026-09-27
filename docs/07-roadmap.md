@@ -91,8 +91,23 @@ fecha de corte · exportación a CSV.
 |---|---|---|
 | 7.1 | ✅ **Accesibilidad**: que nada se rompa al subir el tamaño de letra del sistema, y contraste suficiente en ambos temas | `feat/accessibility` |
 | 7.2 | ✅ **Onboarding**: la primera ejecución guía a crear la primera cuenta y el primer plan, en vez de dejar una pantalla vacía | `feat/onboarding` |
-| 7.3 | **Baseline Profiles** con Macrobenchmark, para que el arranque no dependa del JIT | `perf/baseline-profiles` |
+| 7.3 | ✅ **Baseline Profiles** con Macrobenchmark, para que el arranque no dependa del JIT | `perf/baseline-profiles` |
 | 7.4 | APK de release firmado y reproducible desde un `./gradlew assembleRelease` | `chore/release-apk` |
+
+**Resultado de la 7.3.** Arranque en frío hasta el primer fotograma, 10 veces
+cada uno, en el emulador Pixel 10a (Android 17):
+
+| | Mediana | Mínimo | Máximo |
+|---|---|---|---|
+| Sin compilar | 6.039 ms | 3.059 ms | 10.821 ms |
+| Con el Baseline Profile | 929 ms | 814 ms | 6.575 ms |
+
+Es un emulador: la proporción está inflada y los números absolutos no son los
+de un teléfono. Lo fiable es el sentido. Los cuatro primeros arranques con
+perfil fueron lentos (5,3 a 6,6 s) antes de estabilizarse en unos 900 ms,
+probablemente porque el emulador se estaba calentando. El perfil cubre la
+bienvenida y las cuatro pestañas: 24.750 reglas, 2.118 de ellas de la app.
+Cómo regenerarlo, en docs/08.
 
 La accesibilidad entra aquí por orden, pero **se tiene en cuenta desde la Etapa 3**:
 respetar el tamaño de fuente del sistema es casi gratis mientras escribes una
