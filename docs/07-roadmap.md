@@ -92,7 +92,7 @@ fecha de corte · exportación a CSV.
 | 7.1 | ✅ **Accesibilidad**: que nada se rompa al subir el tamaño de letra del sistema, y contraste suficiente en ambos temas | `feat/accessibility` |
 | 7.2 | ✅ **Onboarding**: la primera ejecución guía a crear la primera cuenta y el primer plan, en vez de dejar una pantalla vacía | `feat/onboarding` |
 | 7.3 | ✅ **Baseline Profiles** con Macrobenchmark, para que el arranque no dependa del JIT | `perf/baseline-profiles` |
-| 7.4 | APK de release firmado y reproducible desde un `./gradlew assembleRelease` | `chore/release-apk` |
+| 7.4 | ✅ APK de release firmado y reproducible desde un `./gradlew assembleRelease` | `chore/release-apk` |
 
 **Resultado de la 7.3.** Arranque en frío hasta el primer fotograma, 10 veces
 cada uno, en el emulador Pixel 10a (Android 17):

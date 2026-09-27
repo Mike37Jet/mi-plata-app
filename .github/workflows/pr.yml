@@ -68,6 +68,12 @@ jobs:
       - name: Build
         run: ./gradlew assembleDebug
 
+      # El release pasa por R8, que el debug no: un cambio que lo rompa (una
+      # clase que R8 renombra y alguien busca por nombre) solo se veria al
+      # sacar el APK. Sale sin firmar, porque CI no tiene la clave (docs/06).
+      - name: Build de release
+        run: ./gradlew :app:assembleRelease
+
       # Los tests instrumentados no se EJECUTAN en CI -necesitan un emulador,
       # que es la parte mas fragil de cualquier CI de Android- pero si se
       # compilan, para que no se pudran en silencio mientras el codigo avanza.

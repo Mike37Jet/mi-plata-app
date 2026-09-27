@@ -170,6 +170,36 @@ cp keystore.properties.example keystore.properties   # y rellénalo
 Si no existe `keystore.properties`, el build de release **sigue funcionando**
 pero sale sin firmar: así CI puede compilarlo sin tener acceso a ninguna clave.
 
+**Comprobar el APK antes de instalarlo:**
+
+```bash
+# Que está firmado, y con qué certificado.
+$ANDROID_HOME/build-tools/<versión>/apksigner verify --print-certs \
+  app/build/outputs/apk/release/app-release.apk
+```
+
+**Es reproducible.** Dos builds limpios del mismo código dan el mismo APK byte a
+byte. Se comprobó en la 7.4: tras `./gradlew :app:clean` y un
+`assembleRelease --rerun-tasks`, el APK sin firmar salió con el mismo SHA-256.
+Así se puede demostrar que un APK instalado sale exactamente de un commit.
+
+**Cada versión nueva sube `versionCode`** (en `AndroidApplicationConventionPlugin`).
+Android no deja instalar encima un APK con un número menor o igual. La versión
+publicada se marca con un tag: `git tag v1.0.0 && git push origin v1.0.0`.
+
+**Pasar de la app de desarrollo a la de release.** Son dos apps distintas
+(`com.miplata.app.debug` y `com.miplata.app`), y cada una tiene su propia base
+de datos. Para llevarse los datos: en la de desarrollo, Ajustes → Copia de
+seguridad → Guardar copia; en la de release, la bienvenida → "Ya tengo una
+copia de seguridad".
+
+**Antes de dar un release por bueno,** hay que recorrerlo instalado, porque es el
+único build que pasa por R8. En la 7.4 se probó la variante `benchmarkRelease`
+(el mismo release con R8, firmado con la clave de depuración) y todo funcionó:
+restaurar una copia, exportar otra, leer esa copia desde la JVM con el formato
+intacto, y el worker del recordatorio terminó con `SUCCESS`. El CI compila el
+release en cada PR para que R8 no se rompa en silencio, pero no lo ejecuta.
+
 **El keystore no se pierde ni se sube al repositorio.** Si lo pierdes no puedes
 actualizar la app instalada sin desinstalarla antes, y desinstalar borra la base
 de datos. Ahí es donde tu backup (docs/05) deja de ser teórico.
