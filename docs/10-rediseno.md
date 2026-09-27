@@ -90,9 +90,10 @@ todo negro, como en la barra oscura de iOS.
 | PR | Qué | Estado |
 |---|---|---|
 | 1 | **Base**: escala áurea, Inter, paleta, formas, color dinámico apagado, `GrupoDeLista`/`FilaDeLista`, `CifraPrincipal`, cristal | ✅ |
-| 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "Marzo 2026" | este |
+| 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "Marzo 2026" | ✅ |
 | 3 | **Movimientos**: lista agrupada por día ("Jueves 26 de marzo"), transferencias como "Nómina → Visa" | |
-| 4 | **Cuentas**: lista agrupada, archivadas plegadas y la copia de seguridad fuera de esta pestaña | |
+| — | **Ajustes**: tema (según el teléfono, claro u oscuro) y la copia de seguridad, que sale de Cuentas; engranaje en las cuatro pestañas | este |
+| 4 | **Cuentas**: lista agrupada y archivadas plegadas | |
 | 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | |
 | 6 | **Resumen**: cifra principal con su barra de progreso, "Comida · €42 de €400" con minibarras | |
 
@@ -119,6 +120,29 @@ todo negro, como en la barra oscura de iOS.
 - **Meses y fechas en palabras** (`nombreDelMes`, `fechaLarga`), siempre en
   español, como la app. Un solo `SelectorDeMes` sustituye a las tres copias que
   había.
+
+## Ajustes
+
+- **Acceso:** un engranaje arriba a la derecha en las cuatro pestañas, siempre en
+  el mismo sitio. Si solo estuviera en una pestaña, sería igual de difícil de
+  encontrar que lo era la copia en Cuentas.
+- **Apariencia:** según el teléfono (por defecto), claro u oscuro, como las apps
+  modernas. El cambio se aplica al momento. El tema viaja en el backup como
+  cualquier otro ajuste, y si una copia trae uno que no gusta, se cambia aquí.
+  Antes el campo existía, pero no había pantalla para cambiarlo: una copia con
+  el tema oscuro dejaba la app atrapada en oscuro.
+- **Copia de seguridad:** una fila con la fecha de la última copia, o "Aún no has
+  hecho ninguna".
+- **Pantallas internas** (Ajustes, Copia y Restaurar): usan el mismo armazón con
+  título grande y una flecha para volver **fija** arriba. Antes, en Copia y
+  Restaurar, la flecha iba dentro de lo que se desplaza, y al bajar por el
+  formulario no quedaba ninguna forma visible de volver.
+- **Pestañas desde una pantalla interna.** La barra marca la pestaña desde la que
+  se entró, y tocarla lleva a su raíz. Antes, desde la copia, tocar "Resumen"
+  devolvía a la copia: al salir se guardaba la pila de pantallas internas, y al
+  volver a la pestaña se restauraba. Ahora esa pila no se guarda al salir.
+- La moneda y el día de inicio del mes siguen fuera. Cambiar la moneda con
+  cuentas ya creadas pide decidir qué pasa con ellas, y eso merece su propio ADR.
 
 ## Plano por pantalla
 

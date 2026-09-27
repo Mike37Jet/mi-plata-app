@@ -2,7 +2,6 @@
 <resources>
 
     <string name="copia_titulo">Copia de seguridad</string>
-    <string name="copia_volver">Volver</string>
 
     <string name="copia_ultima">Última copia: %1$s</string>
     <string name="copia_nunca">Todavía no has hecho ninguna copia.</string>
@@ -71,7 +70,6 @@
     <string name="restaurar_deshacer_explicacion">Lo que tienes ahora se guarda antes, así que siempre podrás volver a ello.</string>
     <string name="restaurar_deshaciendo">Deshaciendo…</string>
     <string name="restaurar_deshecha">Hecho. Lo que tenías justo antes se ha guardado: puedes volver a ello desde esta pantalla.</string>
-    <string name="restaurar_volver">Volver</string>
 
     <!-- Recordatorio -->
     <string name="recordatorio_titulo">Haz una copia de seguridad</string>

@@ -18,11 +18,11 @@ data object RutaCuentas
 /**
  * El feature declara como se entra en el; `:app` solo lo ensambla.
  *
- * @param alAbrirCopiaDeSeguridad a donde se va lo decide `:app`: este feature no
- *   puede depender del de la copia (docs/04).
+ * @param alAbrirAjustes a donde se va lo decide `:app`: este feature no puede
+ *   depender de otro (docs/04).
  */
-fun NavGraphBuilder.pantallaCuentas(alAbrirCopiaDeSeguridad: () -> Unit) {
+fun NavGraphBuilder.pantallaCuentas(alAbrirAjustes: () -> Unit = {}) {
     composable<RutaCuentas> {
-        PantallaCuentas(alAbrirCopiaDeSeguridad = alAbrirCopiaDeSeguridad)
+        PantallaCuentas(alAbrirAjustes = alAbrirAjustes)
     }
 }

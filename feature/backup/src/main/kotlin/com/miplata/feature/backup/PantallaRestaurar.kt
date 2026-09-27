@@ -4,7 +4,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
@@ -12,12 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -29,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -39,7 +33,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.backup.Recuento
-import com.miplata.core.designsystem.componentes.LocalEspacioDeLaBarraInferior
+import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
+import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import kotlinx.datetime.TimeZone
 
@@ -100,45 +95,44 @@ internal fun PantallaRestaurar(
 ) {
     var confirmando by remember { mutableStateOf(false) }
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-                // Lo que tapa la barra inferior de cristal: el final de la
-                // pantalla tiene que poder subir por encima de ella.
-                .padding(bottom = LocalEspacioDeLaBarraInferior.current),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = alVolver) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.restaurar_volver),
-                )
+    // Con el titulo y la flecha fijos arriba, como Ajustes: antes la flecha iba
+    // dentro de lo que se desplaza, y al bajar por el formulario desaparecia sin
+    // dejar ninguna forma visible de volver.
+    PantallaConTituloGrande(
+        titulo = stringResource(R.string.restaurar_titulo),
+        modifier = modifier,
+        alVolver = alVolver,
+    ) { relleno ->
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    // Margenes de la escala aurea, y al final el hueco de la barra
+                    // inferior de cristal.
+                    .padding(relleno),
+            verticalArrangement = Arrangement.spacedBy(Espacio.m),
+        ) {
+            when (val paso = estado.paso) {
+                PasoDeRestauracion.Inicio -> Inicio(estado.copiaPreviaEnMillis, alElegirArchivo, alDeshacer)
+                PasoDeRestauracion.LeyendoArchivo -> EnCurso(stringResource(R.string.restaurar_leyendo))
+                is PasoDeRestauracion.Resumen ->
+                    Resumen(
+                        paso = paso,
+                        frase = frase,
+                        alCambiarFrase = alCambiarFrase,
+                        alRestaurar = { confirmando = true },
+                        alElegirOtro = alVolverAlInicio,
+                    )
+
+                PasoDeRestauracion.Restaurando -> EnCurso(stringResource(R.string.restaurar_restaurando))
+                is PasoDeRestauracion.Restaurada ->
+                    Restaurada(paso.aviso, estado.copiaPreviaEnMillis != null, alDeshacer)
+                PasoDeRestauracion.Deshaciendo -> EnCurso(stringResource(R.string.restaurar_deshaciendo))
+                PasoDeRestauracion.Deshecha -> Mensaje(stringResource(R.string.restaurar_deshecha), alVolverAlInicio)
+                is PasoDeRestauracion.Fallida -> Mensaje(paso.mensaje, alVolverAlInicio, esError = true)
             }
-            Text(stringResource(R.string.restaurar_titulo), style = MaterialTheme.typography.titleLarge)
-        }
-
-        when (val paso = estado.paso) {
-            PasoDeRestauracion.Inicio -> Inicio(estado.copiaPreviaEnMillis, alElegirArchivo, alDeshacer)
-            PasoDeRestauracion.LeyendoArchivo -> EnCurso(stringResource(R.string.restaurar_leyendo))
-            is PasoDeRestauracion.Resumen ->
-                Resumen(
-                    paso = paso,
-                    frase = frase,
-                    alCambiarFrase = alCambiarFrase,
-                    alRestaurar = { confirmando = true },
-                    alElegirOtro = alVolverAlInicio,
-                )
-
-            PasoDeRestauracion.Restaurando -> EnCurso(stringResource(R.string.restaurar_restaurando))
-            is PasoDeRestauracion.Restaurada -> Restaurada(paso.aviso, estado.copiaPreviaEnMillis != null, alDeshacer)
-            PasoDeRestauracion.Deshaciendo -> EnCurso(stringResource(R.string.restaurar_deshaciendo))
-            PasoDeRestauracion.Deshecha -> Mensaje(stringResource(R.string.restaurar_deshecha), alVolverAlInicio)
-            is PasoDeRestauracion.Fallida -> Mensaje(paso.mensaje, alVolverAlInicio, esError = true)
         }
     }
 

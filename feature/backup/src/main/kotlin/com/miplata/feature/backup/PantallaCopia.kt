@@ -20,7 +20,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
@@ -54,7 +53,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.backup.FraseDeRespaldo
-import com.miplata.core.designsystem.componentes.LocalEspacioDeLaBarraInferior
+import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
+import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
 import com.miplata.feature.backup.recordatorio.NotificadorEnAndroid
@@ -175,92 +175,99 @@ internal fun PantallaCopia(
     val problema = problemaCon(frase, confirmacion, riesgoAsumido)
     val enCurso = estado.exportacion == Exportacion.EnCurso
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxSize()
-                // Sin esto, con el teclado abierto el boton de guardar queda
-                // debajo de el y ni siquiera se puede alcanzar desplazando: la
-                // zona desplazable seguia llegando hasta el borde de la pantalla,
-                // por detras del teclado. Asi termina justo encima.
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
-                // Lo que tapa la barra inferior de cristal: el final de la
-                // pantalla tiene que poder subir por encima de ella.
-                .padding(bottom = LocalEspacioDeLaBarraInferior.current),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Cabecera(alVolver)
-        UltimaCopia(estado.ultimaCopiaEnMillis)
-
-        // El resultado va ARRIBA, junto a "Ultima copia", y no debajo del boton.
-        // Al pie de un formulario largo quedaba fuera de la pantalla en cuanto la
-        // letra del sistema es grande: se guardaba la copia y el usuario no veia
-        // ni la confirmacion ni el error. Aqui ademas cambia a la vez que la fecha
-        // de la ultima copia, que es lo que acaba de pasar.
-        Resultado(estado.exportacion, alDescartarAviso)
-
-        Text(stringResource(R.string.copia_explicacion), style = MaterialTheme.typography.bodyMedium)
-        // Primera de las dos veces que se avisa (docs/05). La segunda es la
-        // casilla, que hay que marcar a mano.
-        Text(
-            text = stringResource(R.string.copia_advertencia),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MiPlataTheme.dinero.sobregiro,
-        )
-
-        CampoDeFrase(
-            valor = frase,
-            alCambiar = alCambiarFrase,
-            etiqueta = stringResource(R.string.copia_frase),
-            ayuda =
-                pluralStringResource(
-                    R.plurals.copia_frase_ayuda,
-                    FraseDeRespaldo.LONGITUD_MINIMA,
-                    FraseDeRespaldo.LONGITUD_MINIMA,
-                ),
-            activo = !enCurso,
-        )
-        CampoDeFrase(
-            valor = confirmacion,
-            alCambiar = alCambiarConfirmacion,
-            etiqueta = stringResource(R.string.copia_confirmacion),
-            ayuda = null,
-            activo = !enCurso,
-        )
-
-        CasillaDeRiesgo(riesgoAsumido, alCambiarRiesgo, activa = !enCurso)
-
-        // El problema solo se enseña cuando ya se ha empezado a escribir: gritar
-        // "demasiado corta" sobre un campo vacio es regañar antes de tiempo.
-        if (frase.isNotEmpty() && problema != null) {
-            Text(
-                text = stringResource(problema.mensaje()),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-
-        Button(
-            onClick = alGuardar,
-            enabled = problema == null && !enCurso,
-            modifier = Modifier.fillMaxWidth(),
+    // Con el titulo y la flecha fijos arriba, como Ajustes: antes la flecha iba
+    // dentro de lo que se desplaza, y al bajar por el formulario desaparecia sin
+    // dejar ninguna forma visible de volver.
+    PantallaConTituloGrande(
+        titulo = stringResource(R.string.copia_titulo),
+        modifier = modifier,
+        alVolver = alVolver,
+    ) { relleno ->
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    // Sin esto, con el teclado abierto el boton de guardar queda
+                    // debajo de el y ni siquiera se puede alcanzar desplazando: la
+                    // zona desplazable seguia llegando hasta el borde de la pantalla,
+                    // por detras del teclado. Asi termina justo encima.
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    // Margenes de la escala aurea, y al final el hueco de la barra
+                    // inferior de cristal.
+                    .padding(relleno),
+            verticalArrangement = Arrangement.spacedBy(Espacio.m),
         ) {
-            Text(stringResource(R.string.copia_guardar))
-        }
+            UltimaCopia(estado.ultimaCopiaEnMillis)
 
-        Recordatorio(
-            frecuencia = estado.frecuencia,
-            notificacionesActivas = notificacionesActivas,
-            alCambiar = alCambiarFrecuencia,
-            alActivarNotificaciones = alActivarNotificaciones,
-        )
+            // El resultado va ARRIBA, junto a "Ultima copia", y no debajo del boton.
+            // Al pie de un formulario largo quedaba fuera de la pantalla en cuanto la
+            // letra del sistema es grande: se guardaba la copia y el usuario no veia
+            // ni la confirmacion ni el error. Aqui ademas cambia a la vez que la fecha
+            // de la ultima copia, que es lo que acaba de pasar.
+            Resultado(estado.exportacion, alDescartarAviso)
 
-        // Restaurar va al final y con menos peso visual: es lo que se hace una
-        // vez, al cambiar de movil, y no lo que se viene a hacer cada mes.
-        OutlinedButton(onClick = alAbrirRestaurar, enabled = !enCurso, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.restaurar_abrir))
+            Text(stringResource(R.string.copia_explicacion), style = MaterialTheme.typography.bodyMedium)
+            // Primera de las dos veces que se avisa (docs/05). La segunda es la
+            // casilla, que hay que marcar a mano.
+            Text(
+                text = stringResource(R.string.copia_advertencia),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MiPlataTheme.dinero.sobregiro,
+            )
+
+            CampoDeFrase(
+                valor = frase,
+                alCambiar = alCambiarFrase,
+                etiqueta = stringResource(R.string.copia_frase),
+                ayuda =
+                    pluralStringResource(
+                        R.plurals.copia_frase_ayuda,
+                        FraseDeRespaldo.LONGITUD_MINIMA,
+                        FraseDeRespaldo.LONGITUD_MINIMA,
+                    ),
+                activo = !enCurso,
+            )
+            CampoDeFrase(
+                valor = confirmacion,
+                alCambiar = alCambiarConfirmacion,
+                etiqueta = stringResource(R.string.copia_confirmacion),
+                ayuda = null,
+                activo = !enCurso,
+            )
+
+            CasillaDeRiesgo(riesgoAsumido, alCambiarRiesgo, activa = !enCurso)
+
+            // El problema solo se enseña cuando ya se ha empezado a escribir: gritar
+            // "demasiado corta" sobre un campo vacio es regañar antes de tiempo.
+            if (frase.isNotEmpty() && problema != null) {
+                Text(
+                    text = stringResource(problema.mensaje()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+
+            Button(
+                onClick = alGuardar,
+                enabled = problema == null && !enCurso,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.copia_guardar))
+            }
+
+            Recordatorio(
+                frecuencia = estado.frecuencia,
+                notificacionesActivas = notificacionesActivas,
+                alCambiar = alCambiarFrecuencia,
+                alActivarNotificaciones = alActivarNotificaciones,
+            )
+
+            // Restaurar va al final y con menos peso visual: es lo que se hace una
+            // vez, al cambiar de movil, y no lo que se viene a hacer cada mes.
+            OutlinedButton(onClick = alAbrirRestaurar, enabled = !enCurso, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.restaurar_abrir))
+            }
         }
     }
 }
@@ -306,19 +313,6 @@ private fun FrecuenciaDeRecordatorio.etiqueta(): Int =
         FrecuenciaDeRecordatorio.MENSUAL -> R.string.recordatorio_mensual
         FrecuenciaDeRecordatorio.NUNCA -> R.string.recordatorio_nunca_opcion
     }
-
-@Composable
-private fun Cabecera(alVolver: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = alVolver) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = stringResource(R.string.copia_volver),
-            )
-        }
-        Text(stringResource(R.string.copia_titulo), style = MaterialTheme.typography.titleLarge)
-    }
-}
 
 @Composable
 private fun UltimaCopia(millis: Long?) {

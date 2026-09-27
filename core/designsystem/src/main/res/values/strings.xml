@@ -2,4 +2,6 @@
 <resources>
     <string name="designsystem_mes_anterior">Mes anterior</string>
     <string name="designsystem_mes_siguiente">Mes siguiente</string>
+    <string name="designsystem_volver">Volver</string>
+    <string name="designsystem_ajustes">Ajustes</string>
 </resources>
