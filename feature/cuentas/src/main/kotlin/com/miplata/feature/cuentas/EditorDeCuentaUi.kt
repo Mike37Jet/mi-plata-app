@@ -18,6 +18,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -95,6 +98,8 @@ internal fun Editor(
                 )
 
                 SelectorDeTipo(editor.tipo) { alEvento(EventoDeCuentas.CambiarTipo(it)) }
+
+                SelectorDeRol(editor, alEvento)
 
                 OutlinedTextField(
                     value = saldoTecleado,
@@ -237,6 +242,137 @@ private fun Interruptor(
         Switch(checked = activo, onCheckedChange = alCambiar)
     }
 }
+
+/**
+ * El rol en el presupuesto por cuentas (docs/adr/0007) y, si es un sobre, su
+ * reparto.
+ *
+ * El reparto es un porcentaje o un monto, con un solo campo que cambia segun el
+ * selector: con dos campos cabria escribir los dos, y habria que explicar cual
+ * gana.
+ */
+@Composable
+private fun SelectorDeRol(
+    editor: EditorDeCuenta,
+    alEvento: (EventoDeCuentas) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.cuentas_rol),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+        ) {
+            PapelDeLaCuenta.entries.forEach { rol ->
+                FilterChip(
+                    selected = rol == editor.rol,
+                    onClick = { alEvento(EventoDeCuentas.CambiarRol(rol)) },
+                    label = { Text(stringResource(rol.etiqueta())) },
+                )
+            }
+        }
+        Text(
+            text = stringResource(editor.rol.detalle()),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (editor.rol == PapelDeLaCuenta.SOBRE) {
+            RepartoDelSobre(editor, alEvento)
+            Interruptor(
+                titulo = stringResource(R.string.cuentas_intocable),
+                detalle = stringResource(R.string.cuentas_intocable_detalle),
+                activo = editor.intocable,
+            ) { alEvento(EventoDeCuentas.CambiarIntocable(it)) }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun RepartoDelSobre(
+    editor: EditorDeCuenta,
+    alEvento: (EventoDeCuentas) -> Unit,
+) {
+    val analizador = recordarAnalizadorDeDinero()
+    var porcentajeTecleado by rememberSaveable { mutableStateOf(editor.porcentaje?.toString().orEmpty()) }
+    var montoTecleado by rememberSaveable { mutableStateOf(textoInicial(editor.montoFijo)) }
+    val opciones = listOf(true to R.string.cuentas_reparto_porcentaje, false to R.string.cuentas_reparto_monto)
+
+    Text(
+        text = stringResource(R.string.cuentas_reparto),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        opciones.forEachIndexed { i, (enPorcentaje, etiqueta) ->
+            SegmentedButton(
+                selected = editor.repartoEnPorcentaje == enPorcentaje,
+                onClick = { alEvento(EventoDeCuentas.CambiarModoDeReparto(enPorcentaje)) },
+                shape = SegmentedButtonDefaults.itemShape(index = i, count = opciones.size),
+            ) {
+                Text(stringResource(etiqueta))
+            }
+        }
+    }
+    if (editor.repartoEnPorcentaje) {
+        val invalido = editor.porcentaje?.let { it !in 1..PORCENTAJE_MAXIMO } ?: porcentajeTecleado.isNotEmpty()
+        OutlinedTextField(
+            value = porcentajeTecleado,
+            onValueChange = { texto ->
+                val digitos = texto.filter { it.isDigit() }.take(DIGITOS_DEL_PORCENTAJE)
+                porcentajeTecleado = digitos
+                alEvento(EventoDeCuentas.CambiarPorcentaje(digitos.toIntOrNull()))
+            },
+            label = { Text(stringResource(R.string.cuentas_reparto_porcentaje_campo)) },
+            suffix = { Text("%") },
+            isError = invalido,
+            supportingText =
+                if (invalido) {
+                    { Text(stringResource(R.string.cuentas_reparto_porcentaje_invalido)) }
+                } else {
+                    null
+                },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    } else {
+        OutlinedTextField(
+            value = montoTecleado,
+            onValueChange = { texto ->
+                montoTecleado = texto
+                val monto = if (texto.isBlank()) Money.ZERO else analizador.parsear(texto)
+                monto?.let { alEvento(EventoDeCuentas.CambiarMontoFijo(it)) }
+            },
+            label = { Text(stringResource(R.string.cuentas_reparto_monto_campo)) },
+            placeholder = { Text("0") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            textStyle = EstilosDeDinero.enLista,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+private const val PORCENTAJE_MAXIMO = 100
+private const val DIGITOS_DEL_PORCENTAJE = 3
+
+private fun PapelDeLaCuenta.etiqueta(): Int =
+    when (this) {
+        PapelDeLaCuenta.APARTE -> R.string.cuentas_rol_aparte
+        PapelDeLaCuenta.PRINCIPAL -> R.string.cuentas_rol_principal
+        PapelDeLaCuenta.SOBRE -> R.string.cuentas_rol_sobre
+    }
+
+private fun PapelDeLaCuenta.detalle(): Int =
+    when (this) {
+        PapelDeLaCuenta.APARTE -> R.string.cuentas_rol_aparte_detalle
+        PapelDeLaCuenta.PRINCIPAL -> R.string.cuentas_rol_principal_detalle
+        PapelDeLaCuenta.SOBRE -> R.string.cuentas_rol_sobre_detalle
+    }
 
 internal fun TipoDeCuenta.etiqueta(): Int =
     when (this) {
