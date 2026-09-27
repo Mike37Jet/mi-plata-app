@@ -1,11 +1,14 @@
 package com.miplata.feature.plan
 
+import com.miplata.core.domain.model.Cuenta
+import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeLinea
+import com.miplata.core.domain.usecase.PlanPorCuentas
 
 /**
  * Un bloque de la pantalla: todas las lineas de un tipo, con su total.
@@ -46,8 +49,24 @@ data class PlanUiState(
      * La pantalla la anuncia con "Deshacer" y la olvida cuando el aviso se va.
      */
     val eliminada: LineaDePlan? = null,
+    /**
+     * El plan visto por cuentas, si hay cuenta principal (docs/adr/0007).
+     *
+     * Con el, la pantalla agrupa por cuenta en vez de por tipo y la cifra de
+     * arriba pasa a ser lo que queda sin repartir.
+     */
+    val porCuentas: PlanPorCuentas? = null,
+    /** Lo que falta transferir a los sobres este mes, para "Ya transferi el reparto". */
+    val repartoPendiente: Money = Money.ZERO,
+    /** Las cuentas vigentes, para elegir de cual sale una linea. */
+    val cuentas: List<Cuenta> = emptyList(),
 ) {
-    val disponible: Money get() = ingresos - salidas
+    /**
+     * La cifra de arriba: lo disponible del plan de siempre o, con el metodo,
+     * lo que queda del ingreso despues de repartir y de pagar lo de la
+     * principal.
+     */
+    val disponible: Money get() = porCuentas?.sinRepartir ?: (ingresos - salidas)
 
     val enSobregiro: Boolean get() = disponible.esNegativo
 
@@ -68,6 +87,8 @@ data class EditorDeLinea(
     val tipo: TipoDeLinea = TipoDeLinea.GASTO_VARIABLE,
     val monto: Money = Money.ZERO,
     val activa: Boolean = true,
+    /** De que cuenta sale; nulo es la principal, o ninguna sin el metodo. */
+    val cuentaId: CuentaId? = null,
 ) {
     val esNueva: Boolean get() = id == null
 }
@@ -99,6 +120,9 @@ sealed interface EventoDelPlan {
     /** El aviso de "Deshacer" se fue sin que se pulsara. */
     data object OlvidarEliminacion : EventoDelPlan
 
+    /** "Ya transferi el reparto": anota las transferencias que faltan a los sobres. */
+    data object RegistrarReparto : EventoDelPlan
+
     /**
      * Cambiar un campo de la hoja. Un subtipo aparte para que el ViewModel los
      * trate todos de golpe sin un `else` que se trague eventos nuevos.
@@ -118,6 +142,10 @@ sealed interface EventoDelPlan {
 
         data class Activa(
             val activa: Boolean,
+        ) : CambioEnEditor
+
+        data class Cuenta(
+            val cuentaId: CuentaId?,
         ) : CambioEnEditor
     }
 }
