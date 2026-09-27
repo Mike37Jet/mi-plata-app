@@ -1,12 +1,10 @@
 package com.miplata.feature.plan
 
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.filterToOne
-import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
 import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.unit.dp
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
@@ -14,6 +12,7 @@ import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeLinea
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
+import io.kotest.matchers.shouldBe
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,12 +23,13 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * El plan con la letra del sistema al 200%, el maximo de Android 14.
  *
- * Con el importe en un ancho fijo, al 200% de "2000.00" solo asomaba el primer
- * digito: la pantalla que responde "¿me alcanza?" dejaba de decir cuanto.
+ * Cuando el importe iba en un campo de ancho fijo dentro de la fila, al 200% de
+ * "2000.00" solo asomaba el primer digito. Ahora la fila es una fila de lista,
+ * que con letra grande baja el importe a su propia linea: tiene que verse
+ * entero, sin cortarse.
  *
- * Corre con los graficos nativos de Robolectric porque lo que se comprueba es
- * cuanto mide el texto de verdad. Con los graficos de mentira, cada letra mide
- * lo mismo y el test no distinguiria un importe que cabe de uno que no.
+ * Graficos nativos de Robolectric: lo que se comprueba es cuanto mide el texto
+ * de verdad. Con los de mentira, cada letra mide lo mismo.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -38,21 +38,31 @@ class LetraGrandeEnElPlanTest {
     @get:Rule
     val compose = createComposeRule()
 
+    /**
+     * Si [texto] se ve entero: en una sola linea y sin pasarse del sitio que
+     * tiene su nodo. `hasVisualOverflow` no sirve aqui: con la letra escalada,
+     * los graficos nativos de Robolectric lo marcan incluso en "Sueldo", que mide
+     * 95px con 276 disponibles.
+     */
+    private fun seVeEntero(texto: String) {
+        val nodo = compose.onAllNodesWithText(texto).onLast().fetchSemanticsNode()
+        val medidas = mutableListOf<TextLayoutResult>()
+        nodo.config[SemanticsActions.GetTextLayoutResult].action?.invoke(medidas)
+        val medida = medidas.single()
+
+        medida.lineCount shouldBe 1
+        medida.size.width shouldBeLessThanOrEqual nodo.size.width
+    }
+
     @Test
     fun `el importe de una linea se ve entero`() {
         compose.setContent {
             MiPlataTheme(colorDinamico = false) {
-                PantallaPlan(estado = planConUnSueldoDe("2000"), alEvento = {})
+                PantallaPlan(estado = planConUnSueldoDe("123456"), alEvento = {})
             }
         }
 
-        val campo = compose.onAllNodesWithText("2000.00").filterToOne(hasSetTextAction()).fetchSemanticsNode()
-        val medidas = mutableListOf<TextLayoutResult>()
-        campo.config[SemanticsActions.GetTextLayoutResult].action?.invoke(medidas)
-
-        // Lo que mide el texto contra el sitio que tiene. Un campo de una linea
-        // no parte el texto: si no cabe, lo desplaza y esconde lo que sobra.
-        medidas.single().size.width shouldBeLessThanOrEqual campo.size.width - relleno() * 2
+        seVeEntero("$123,456.00")
     }
 
     @Test
@@ -63,11 +73,7 @@ class LetraGrandeEnElPlanTest {
             }
         }
 
-        val campo = compose.onAllNodesWithText("Sueldo").filterToOne(hasSetTextAction()).fetchSemanticsNode()
-        val medidas = mutableListOf<TextLayoutResult>()
-        campo.config[SemanticsActions.GetTextLayoutResult].action?.invoke(medidas)
-
-        medidas.single().size.width shouldBeLessThanOrEqual campo.size.width - relleno() * 2
+        seVeEntero("Sueldo")
     }
 
     private fun planConUnSueldoDe(monto: String): PlanUiState {
@@ -85,7 +91,4 @@ class LetraGrandeEnElPlanTest {
             cargando = false,
         )
     }
-
-    /** El relleno horizontal de un TextField de Material, en pixeles. */
-    private fun relleno() = with(compose.density) { 16.dp.roundToPx() }
 }

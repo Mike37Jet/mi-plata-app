@@ -3,6 +3,8 @@ package com.miplata.feature.plan
 import app.cash.turbine.test
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
+import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
@@ -10,15 +12,21 @@ import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.TipoDeLinea
+import com.miplata.core.domain.model.TipoDeTransaccion
+import com.miplata.core.domain.model.Transaccion
+import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakePlanRepository
+import com.miplata.core.domain.repository.FakeTransaccionRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -48,6 +56,7 @@ private fun linea(
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlanViewModelTest {
     private val planes = FakePlanRepository()
+    private val transacciones = FakeTransaccionRepository()
     private val ajustes = FakeAjustesRepository()
 
     private fun viewModel(
@@ -57,6 +66,7 @@ class PlanViewModelTest {
         val ids = GeneradorDeIdsSecuencial()
         return PlanViewModel(
             planes = repositorio,
+            transacciones = transacciones,
             abrirPlan = AbrirPlanDelMesUseCase(repositorio, MaterializarPlanDelMesUseCase(ids)),
             ids = ids,
             ajustes = ajustes,
@@ -161,41 +171,110 @@ class PlanViewModelTest {
                 val inicial = esperarCargado()
                 inicial.esBorrador shouldBe true
 
-                val arriendo =
-                    inicial.secciones
-                        .first { it.tipo == TipoDeLinea.GASTO_FIJO }
-                        .lineas
-                        .single()
-                vm.alEvento(EventoDelPlan.CambiarMonto(arriendo, Money.deUnidades(500)))
+                vm.alEvento(EventoDelPlan.EditarLinea(inicial.lineaDe(TipoDeLinea.GASTO_FIJO)))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(500)))
+                vm.alEvento(EventoDelPlan.GuardarLinea)
 
                 val despues = esperarHasta { !it.esBorrador }
                 despues.salidas shouldBe Money.deUnidades(500)
                 cancelAndIgnoreRemainingEvents()
             }
-
-            planes.obtenerDe(MARZO) shouldBe planes.obtenerDe(MARZO)!!.copy()
         }
 
+    /** Lo que hay en la hoja no es de nadie hasta pulsar Guardar. */
     @Test
-    fun `anadir una linea la deja vacia y lista para escribir`() =
+    fun `una linea nueva se guarda al pulsar guardar y no antes`() =
         runTest {
             planes.guardar(PlanMensual(id = PlanId("p"), mes = MARZO))
             val vm = viewModel()
 
             vm.uiState.test {
                 esperarCargado()
-                vm.alEvento(EventoDelPlan.AnadirLinea(TipoDeLinea.INGRESO))
+                vm.alEvento(EventoDelPlan.NuevaLinea)
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Nombre("  Sueldo  "))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(2000)))
+                esperarHasta { it.editor?.nombre == "  Sueldo  " }
+                planes.obtenerDe(MARZO)!!.lineas shouldBe emptyList()
 
-                val estado = esperarHasta { it.secciones.any { s -> s.lineas.isNotEmpty() } }
-                val nueva =
-                    estado.secciones
-                        .first { it.tipo == TipoDeLinea.INGRESO }
-                        .lineas
-                        .single()
-                nueva.nombre shouldBe ""
-                nueva.montoPlanificado shouldBe Money.ZERO
+                vm.alEvento(EventoDelPlan.GuardarLinea)
+
+                val estado = esperarHasta { !it.estaVacio }
+                estado.editor.shouldBeNull()
+                val nueva = estado.lineaDe(TipoDeLinea.INGRESO)
+                nueva.nombre shouldBe "Sueldo"
+                nueva.montoPlanificado shouldBe Money.deUnidades(2000)
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+
+    /** Con el plan vacio se empieza por los ingresos, como dice el aviso. */
+    @Test
+    fun `con el plan vacio la hoja propone un ingreso`() =
+        runTest {
+            planes.guardar(PlanMensual(id = PlanId("p"), mes = MARZO))
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarCargado()
+                vm.alEvento(EventoDelPlan.NuevaLinea)
+
+                esperarHasta { it.editor != null }.editor?.tipo shouldBe TipoDeLinea.INGRESO
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `cancelar no toca el plan`() =
+        runTest {
+            planes.guardar(
+                PlanMensual(
+                    id = PlanId("p"),
+                    mes = MARZO,
+                    lineas = listOf(linea("f", "Gimnasio", TipoDeLinea.GASTO_FIJO, 60)),
+                ),
+            )
+            val vm = viewModel()
+
+            vm.uiState.test {
+                val inicial = esperarCargado()
+                vm.alEvento(EventoDelPlan.EditarLinea(inicial.lineaDe(TipoDeLinea.GASTO_FIJO)))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(999)))
+                esperarHasta { it.editor?.monto == Money.deUnidades(999) }
+                vm.alEvento(EventoDelPlan.CerrarEditor)
+
+                esperarHasta { it.editor == null }
+                cancelAndIgnoreRemainingEvents()
+            }
+            planes
+                .obtenerDe(MARZO)!!
+                .lineas
+                .single()
+                .montoPlanificado shouldBe Money.deUnidades(60)
+        }
+
+    /**
+     * La hoja no enseña la categoria, la cuenta ni el dia de una linea. Editar su
+     * nombre o su importe no puede borrarlos: la linea del sueldo que crea la
+     * bienvenida viene enganchada a una cuenta y a un dia de cobro.
+     */
+    @Test
+    fun `editar una linea conserva lo que la hoja no enseña`() =
+        runTest {
+            val sueldo =
+                linea("i", "Sueldo", TipoDeLinea.INGRESO, 2000)
+                    .copy(cuentaId = CuentaId("banco"), categoriaId = CategoriaId("sueldo"), diaDelMes = 25)
+            planes.guardar(PlanMensual(id = PlanId("p"), mes = MARZO, lineas = listOf(sueldo)))
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarCargado()
+                vm.alEvento(EventoDelPlan.EditarLinea(sueldo))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(2100)))
+                vm.alEvento(EventoDelPlan.GuardarLinea)
+                esperarHasta { it.ingresos == Money.deUnidades(2100) }
+                cancelAndIgnoreRemainingEvents()
+            }
+            planes.obtenerDe(MARZO)!!.lineas.single() shouldBe sueldo.copy(montoPlanificado = Money.deUnidades(2100))
         }
 
     // Desactivar no es borrar: la linea sigue ahi pero deja de contar.
@@ -213,13 +292,9 @@ class PlanViewModelTest {
 
             vm.uiState.test {
                 val inicial = esperarCargado()
-                val gimnasio =
-                    inicial.secciones
-                        .first { it.tipo == TipoDeLinea.GASTO_FIJO }
-                        .lineas
-                        .single()
-
-                vm.alEvento(EventoDelPlan.CambiarActiva(gimnasio, false))
+                vm.alEvento(EventoDelPlan.EditarLinea(inicial.lineaDe(TipoDeLinea.GASTO_FIJO)))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Activa(false))
+                vm.alEvento(EventoDelPlan.GuardarLinea)
 
                 val estado = esperarHasta { it.salidas == Money.ZERO }
                 estado.secciones
@@ -230,7 +305,7 @@ class PlanViewModelTest {
         }
 
     @Test
-    fun `eliminar una linea la quita del plan`() =
+    fun `eliminar una linea la quita del plan y la ofrece para deshacer`() =
         runTest {
             planes.guardar(
                 PlanMensual(
@@ -242,16 +317,75 @@ class PlanViewModelTest {
             val vm = viewModel()
 
             vm.uiState.test {
-                val inicial = esperarCargado()
-                val gimnasio =
-                    inicial.secciones
-                        .first { it.tipo == TipoDeLinea.GASTO_FIJO }
-                        .lineas
-                        .single()
+                esperarCargado()
+                vm.alEvento(EventoDelPlan.EliminarLinea(LineaId("f")))
 
-                vm.alEvento(EventoDelPlan.EliminarLinea(gimnasio))
+                esperarHasta { it.estaVacio }.eliminada?.nombre shouldBe "Gimnasio"
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
 
-                esperarHasta { it.estaVacio }
+    /**
+     * Deshacer tiene que dejarlo todo como estaba, incluidos los movimientos.
+     *
+     * Al borrar la linea, la base suelta los movimientos enganchados a ella
+     * (`ON DELETE SET NULL`); volver a crearla no los engancha. Aqui el
+     * repositorio hace lo mismo que Room, y el resumen tiene que volver a saber
+     * que ese gasto era del gimnasio.
+     */
+    @Test
+    fun `deshacer una eliminacion devuelve la linea a su sitio y le engancha sus movimientos`() =
+        runTest {
+            val lineas =
+                listOf(
+                    linea("a", "Arriendo", TipoDeLinea.GASTO_FIJO, 450),
+                    linea("g", "Gimnasio", TipoDeLinea.GASTO_FIJO, 60),
+                    linea("l", "Luz", TipoDeLinea.GASTO_FIJO, 40),
+                )
+            planes.guardar(PlanMensual(id = PlanId("p"), mes = MARZO, lineas = lineas))
+            transacciones.guardar(gastoDe("t1", "g"))
+            transacciones.guardar(gastoDe("t2", "g"))
+            transacciones.guardar(gastoDe("t3", "a"))
+            val vm = viewModel(repositorio = ComoRoom(planes, transacciones))
+
+            vm.uiState.test {
+                esperarCargado()
+                vm.alEvento(EventoDelPlan.EliminarLinea(LineaId("g")))
+                esperarHasta { it.eliminada != null }
+                transacciones.obtener(TransaccionId("t1"))?.lineaDePlanId.shouldBeNull()
+
+                vm.alEvento(EventoDelPlan.DeshacerEliminacion)
+
+                esperarHasta { it.eliminada == null && it.lineaDe(TipoDeLinea.GASTO_FIJO, 1).id == LineaId("g") }
+                cancelAndIgnoreRemainingEvents()
+            }
+            planes.obtenerDe(MARZO)!!.lineas.map { it.id.valor } shouldBe listOf("a", "g", "l")
+            transacciones.obtener(TransaccionId("t1"))?.lineaDePlanId shouldBe LineaId("g")
+            transacciones.obtener(TransaccionId("t2"))?.lineaDePlanId shouldBe LineaId("g")
+            transacciones.obtener(TransaccionId("t3"))?.lineaDePlanId shouldBe LineaId("a")
+        }
+
+    /** Si el aviso se va sin pulsar Deshacer, la eliminacion se queda. */
+    @Test
+    fun `olvidar la eliminacion la deja hecha`() =
+        runTest {
+            planes.guardar(
+                PlanMensual(
+                    id = PlanId("p"),
+                    mes = MARZO,
+                    lineas = listOf(linea("g", "Gimnasio", TipoDeLinea.GASTO_FIJO, 60)),
+                ),
+            )
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarCargado()
+                vm.alEvento(EventoDelPlan.EliminarLinea(LineaId("g")))
+                esperarHasta { it.eliminada != null }
+                vm.alEvento(EventoDelPlan.OlvidarEliminacion)
+                vm.alEvento(EventoDelPlan.DeshacerEliminacion)
+
+                esperarHasta { it.eliminada == null }.estaVacio shouldBe true
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -280,33 +414,42 @@ class PlanViewModelTest {
             }
         }
 
-    // Escribir un nombre es una edicion por tecla, mas rapido de lo que Room
-    // tarda en guardar y devolver el plan. Si cada edicion partiera del plan en
-    // pantalla, o si los guardados corrieran en paralelo, la base acabaria con
-    // una version a medias: en el emulador, "Transporte" quedo como "Trapotr".
+    /**
+     * Dos guardados seguidos, con una base lenta, no se pisan: cada uno se
+     * aplica sobre lo ultimo que se guardo y no sobre lo que habia en
+     * pantalla. Con la edicion en la fila, escribir un nombre generaba una
+     * edicion por tecla y "Transporte" quedo como "Trapotr" en el emulador; la
+     * hoja guarda de una vez, pero el orden sigue importando.
+     */
     @Test
-    fun `las ediciones seguidas se guardan en orden y sin pisarse aunque la base tarde`() =
+    fun `los guardados seguidos se aplican en orden y sin pisarse aunque la base tarde`() =
         runTest {
-            planes.guardar(PlanMensual(id = PlanId("p"), mes = MARZO))
+            planes.guardar(
+                PlanMensual(
+                    id = PlanId("p"),
+                    mes = MARZO,
+                    lineas =
+                        listOf(
+                            linea("a", "Arriendo", TipoDeLinea.GASTO_FIJO, 450),
+                            linea("l", "Luz", TipoDeLinea.GASTO_FIJO, 40),
+                        ),
+                ),
+            )
             val vm = viewModel(repositorio = BaseQueTarda(planes))
             backgroundScope.launch { vm.uiState.collect {} }
             advanceUntilIdle()
 
-            vm.alEvento(EventoDelPlan.AnadirLinea(TipoDeLinea.INGRESO))
-            advanceUntilIdle()
-            val linea = planes.obtenerDe(MARZO)!!.lineas.single()
-
             // Todo seguido, sin dar tiempo a que vuelva ninguna escritura.
-            val nombre = "Sueldo"
-            for (fin in 1..nombre.length) {
-                vm.alEvento(EventoDelPlan.CambiarNombre(linea, nombre.take(fin)))
-            }
-            vm.alEvento(EventoDelPlan.CambiarMonto(linea, Money.deUnidades(2000)))
+            vm.alEvento(EventoDelPlan.EditarLinea(linea("a", "Arriendo", TipoDeLinea.GASTO_FIJO, 450)))
+            vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(500)))
+            vm.alEvento(EventoDelPlan.GuardarLinea)
+            vm.alEvento(EventoDelPlan.EditarLinea(linea("l", "Luz", TipoDeLinea.GASTO_FIJO, 40)))
+            vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(55)))
+            vm.alEvento(EventoDelPlan.GuardarLinea)
             advanceUntilIdle()
 
-            val guardada = planes.obtenerDe(MARZO)!!.lineas.single()
-            guardada.nombre shouldBe "Sueldo"
-            guardada.montoPlanificado shouldBe Money.deUnidades(2000)
+            planes.obtenerDe(MARZO)!!.lineas.map { it.montoPlanificado } shouldBe
+                listOf(Money.deUnidades(500), Money.deUnidades(55))
         }
 
     @Test
@@ -359,5 +502,48 @@ private class BaseQueTarda(
     private companion object {
         const val LATENCIA_INICIAL = 100L
         const val PASO = 10L
+    }
+}
+
+private fun PlanUiState.lineaDe(
+    tipo: TipoDeLinea,
+    posicion: Int = 0,
+): LineaDePlan = secciones.first { it.tipo == tipo }.lineas[posicion]
+
+private fun gastoDe(
+    id: String,
+    lineaId: String,
+) = Transaccion(
+    id = TransaccionId(id),
+    fecha = LocalDate(2026, 3, 10),
+    monto = Money.deUnidades(10),
+    tipo = TipoDeTransaccion.GASTO,
+    cuentaOrigenId = CuentaId("banco"),
+    lineaDePlanId = LineaId(lineaId),
+)
+
+/**
+ * Un repositorio de planes que hace lo mismo que Room al quitar una linea:
+ * soltar los movimientos enganchados a ella (`ON DELETE SET NULL`). Los
+ * repositorios en memoria no tienen claves foraneas, y sin esto un deshacer que
+ * no volviera a enganchar los movimientos pasaria el test.
+ */
+private class ComoRoom(
+    private val real: FakePlanRepository,
+    private val transacciones: FakeTransaccionRepository,
+) : PlanRepository by real {
+    override suspend fun guardar(plan: PlanMensual) {
+        val antes =
+            real
+                .obtenerDe(plan.mes)
+                ?.lineas
+                .orEmpty()
+                .map { it.id }
+                .toSet()
+        val quitadas = antes - plan.lineas.map { it.id }.toSet()
+        transacciones.observarTodas().first().filter { it.lineaDePlanId in quitadas }.forEach {
+            transacciones.guardar(it.copy(lineaDePlanId = null))
+        }
+        real.guardar(plan)
     }
 }

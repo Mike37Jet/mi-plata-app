@@ -10,10 +10,29 @@
     <string name="plan_tipo_gasto_variable">Gastos variables</string>
     <string name="plan_tipo_ahorro">Ahorro</string>
 
-    <string name="plan_anadir">Añadir</string>
+    <string name="plan_anadir">Añadir línea</string>
     <string name="plan_eliminar">Eliminar</string>
     <string name="plan_nombre_vacio">Sin nombre</string>
     <string name="plan_activa">Cuenta este mes</string>
+    <string name="plan_activa_detalle">Si la desactivas, sigue en el plan y se copia al mes siguiente, pero este mes no suma.</string>
+    <string name="plan_este_mes_no">Este mes no cuenta</string>
+
+    <string name="plan_nueva_linea">Nueva línea</string>
+    <string name="plan_editar_linea">Editar línea</string>
+    <string name="plan_nombre">Nombre</string>
+    <string name="plan_nombre_ejemplo">Arriendo, comida, sueldo…</string>
+    <string name="plan_importe">Importe</string>
+    <string name="plan_tipo">Tipo</string>
+    <string name="plan_tipo_ingreso_uno">Ingreso</string>
+    <string name="plan_tipo_gasto_fijo_uno">Gasto fijo</string>
+    <string name="plan_tipo_gasto_variable_uno">Gasto variable</string>
+    <string name="plan_tipo_ahorro_uno">Ahorro</string>
+    <string name="plan_guardar">Guardar</string>
+    <string name="plan_cancelar">Cancelar</string>
+
+    <string name="plan_eliminada">«%1$s» eliminada</string>
+    <string name="plan_eliminada_sin_nombre">Línea eliminada</string>
+    <string name="plan_deshacer">Deshacer</string>
 
     <string name="plan_borrador">Copiado de tu mes anterior. Se guardará en cuanto cambies algo.</string>
     <string name="plan_vacio">Aún no hay nada. Empieza por tus ingresos.</string>

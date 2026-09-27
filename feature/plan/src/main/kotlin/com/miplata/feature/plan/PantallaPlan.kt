@@ -1,52 +1,51 @@
 package com.miplata.feature.plan
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.DeleteOutline
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.componentes.BotonDeAjustes
 import com.miplata.core.designsystem.componentes.CifraPrincipal
+import com.miplata.core.designsystem.componentes.FilaDeLista
+import com.miplata.core.designsystem.componentes.GrupoDeLista
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
-import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
 import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
@@ -81,13 +80,61 @@ internal fun PantallaPlan(
     alAbrirAjustes: () -> Unit = {},
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
+    val avisos = remember { SnackbarHostState() }
+    AvisoDeEliminacion(estado.eliminada, avisos, alEvento)
 
     PantallaConTituloGrande(
         titulo = stringResource(R.string.plan_titulo),
         modifier = modifier,
         acciones = { BotonDeAjustes(alAbrirAjustes) },
+        // Un solo "+", en el mismo sitio que en las demas pestañas. Antes habia
+        // uno por seccion: cuatro botones iguales compitiendo en la pantalla.
+        botonFlotante = {
+            FloatingActionButton(onClick = { alEvento(EventoDelPlan.NuevaLinea) }) {
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.plan_anadir))
+            }
+        },
+        avisos = avisos,
     ) { relleno ->
         ContenidoDelPlan(estado, dinero, alEvento, relleno)
+    }
+
+    estado.editor?.let { EditorDeLineaUi(it, alEvento) }
+}
+
+/**
+ * "«Comida» eliminada · Deshacer".
+ *
+ * Deshacer y no confirmar antes: borrar una linea es algo que se hace a
+ * proposito casi siempre, y un dialogo de "¿seguro?" en cada una castiga al
+ * que sabe lo que hace para proteger al que se equivoca. Aqui el que se
+ * equivoca tiene unos segundos para arreglarlo, y el resto no espera.
+ */
+@Composable
+private fun AvisoDeEliminacion(
+    eliminada: LineaDePlan?,
+    avisos: SnackbarHostState,
+    alEvento: (EventoDelPlan) -> Unit,
+) {
+    val mensaje =
+        eliminada?.let {
+            if (it.nombre.isBlank()) {
+                stringResource(R.string.plan_eliminada_sin_nombre)
+            } else {
+                stringResource(R.string.plan_eliminada, it.nombre)
+            }
+        }
+    val deshacer = stringResource(R.string.plan_deshacer)
+    LaunchedEffect(eliminada) {
+        if (eliminada == null || mensaje == null) return@LaunchedEffect
+        val resultado = avisos.showSnackbar(mensaje, actionLabel = deshacer, duration = SnackbarDuration.Long)
+        alEvento(
+            if (resultado == SnackbarResult.ActionPerformed) {
+                EventoDelPlan.DeshacerEliminacion
+            } else {
+                EventoDelPlan.OlvidarEliminacion
+            },
+        )
     }
 }
 
@@ -101,11 +148,9 @@ private fun ContenidoDelPlan(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = relleno,
-        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
+        verticalArrangement = Arrangement.spacedBy(Espacio.m),
     ) {
-        item {
-            Cabecera(estado, dinero, alEvento)
-        }
+        item { Cabecera(estado, dinero, alEvento) }
 
         if (estado.esBorrador && !estado.estaVacio) {
             item { Aviso(stringResource(R.string.plan_borrador)) }
@@ -115,14 +160,10 @@ private fun ContenidoDelPlan(
             item { Aviso(stringResource(R.string.plan_vacio)) }
         }
 
-        estado.secciones.forEach { seccion ->
-            item(key = "cabecera-${seccion.tipo}") {
-                CabeceraDeSeccion(seccion, dinero, alEvento)
-            }
-
-            items(seccion.lineas, key = { it.id.valor }) { linea ->
-                FilaDeLinea(linea, alEvento)
-            }
+        // Solo los tipos que tienen lineas: una seccion vacia era una cabecera,
+        // un total en cero y un boton, sin nada que decir.
+        items(estado.secciones.filter { it.lineas.isNotEmpty() }, key = { it.tipo.name }) { seccion ->
+            GrupoDeTipo(seccion, dinero, alEvento)
         }
     }
 }
@@ -163,157 +204,136 @@ private fun Aviso(texto: String) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = Espacio.xs),
     )
 }
 
+/** Las lineas de un tipo en un grupo, con su total junto al titulo. */
 @Composable
-private fun CabeceraDeSeccion(
+private fun GrupoDeTipo(
     seccion: SeccionDelPlan,
     dinero: FormateadorDeDinero,
     alEvento: (EventoDelPlan) -> Unit,
 ) {
-    Column(modifier = Modifier.padding(top = 16.dp)) {
-        HorizontalDivider()
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(seccion.tipo.etiqueta()),
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.weight(1f),
-            )
+    GrupoDeLista(
+        titulo = stringResource(seccion.tipo.etiqueta()),
+        alLadoDelTitulo = {
             Text(
                 text = dinero.formatear(seccion.total),
-                style = EstilosDeDinero.enLista,
-                color = seccion.tipo.color(),
+                style = EstilosDeDinero.secundario,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = { alEvento(EventoDelPlan.AnadirLinea(seccion.tipo)) }) {
-                Icon(Icons.Outlined.Add, contentDescription = null)
-                Text(stringResource(R.string.plan_anadir))
+        },
+    ) {
+        seccion.lineas.forEachIndexed { i, linea ->
+            // La clave ata el estado del deslizamiento a SU linea. Sin ella,
+            // Compose lo reutilizaba por posicion: al borrar una linea, la
+            // siguiente ocupaba su sitio, heredaba el estado de "deslizada" y se
+            // quedaba mostrando el fondo rojo.
+            key(linea.id.valor) {
+                FilaDeLinea(linea, dinero, conSeparador = i > 0, alEvento)
             }
         }
     }
 }
 
 /**
- * Una linea editable directamente, sin dialogos.
+ * Una linea del plan: el nombre a la izquierda y el importe, con su moneda, a
+ * la derecha. Tocarla abre la hoja para editarla.
  *
- * El texto de cada campo vive en la propia fila mientras se escribe, y solo el
- * valor sube al ViewModel. Si el estado fuera la unica fuente:
- * - escribir "12," se convertiria en "12" al instante y el usuario no podria
- *   teclear el segundo decimal;
- * - el nombre perderia letras. Cada tecla se guarda en la base y vuelve por el
- *   flujo del plan milisegundos despues; la recomposicion que llega antes
- *   devuelve el campo al texto anterior y la siguiente tecla se aplica encima.
+ * Antes cada fila era un formulario -dos campos, un interruptor y una
+ * papelera-: parecia texto con una raya debajo y no decia que se pudiera
+ * tocar, y la papelera siempre a mano invitaba al toque accidental (docs/10).
+ *
+ * Se borra deslizando hacia la izquierda, con "Deshacer". Deslizar no se
+ * descubre ni se puede hacer con un lector de pantalla, asi que tambien esta
+ * como accion de accesibilidad y en la hoja.
  */
 @Composable
 private fun FilaDeLinea(
     linea: LineaDePlan,
+    dinero: FormateadorDeDinero,
+    conSeparador: Boolean,
     alEvento: (EventoDelPlan) -> Unit,
 ) {
-    val analizador = recordarAnalizadorDeDinero()
-    var montoTecleado by rememberSaveable(linea.id) {
-        mutableStateOf(textoInicial(linea.montoPlanificado))
-    }
-    var nombreTecleado by rememberSaveable(linea.id) { mutableStateOf(linea.nombre) }
-
-    val nombre: @Composable (Modifier) -> Unit = { modificador ->
-        TextField(
-            value = nombreTecleado,
-            onValueChange = { texto ->
-                nombreTecleado = texto
-                alEvento(EventoDelPlan.CambiarNombre(linea, texto))
+    val eliminar = stringResource(R.string.plan_eliminar)
+    val deslizamiento =
+        rememberSwipeToDismissBoxState(
+            confirmValueChange = { destino ->
+                if (destino == SwipeToDismissBoxValue.EndToStart) {
+                    alEvento(EventoDelPlan.EliminarLinea(linea.id))
+                    true
+                } else {
+                    false
+                }
             },
-            placeholder = { Text(stringResource(R.string.plan_nombre_vacio)) },
-            singleLine = true,
-            colors = camposSinFondo(),
-            modifier = modificador,
         )
-    }
-    val monto: @Composable (Modifier) -> Unit = { modificador ->
-        TextField(
-            value = montoTecleado,
-            onValueChange = { texto ->
-                montoTecleado = texto
-                analizador.parsear(texto)?.let { alEvento(EventoDelPlan.CambiarMonto(linea, it)) }
-            },
-            // Un cero de marcador: sin el, el campo vacio no se distingue del de
-            // al lado y no hay forma de saber donde va el importe.
-            placeholder = { Text("0", style = EstilosDeDinero.enLista) },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            singleLine = true,
-            // Alineado a la derecha como los totales de cada seccion: asi los
-            // importes forman una columna y se comparan de un vistazo.
-            textStyle = EstilosDeDinero.enLista.copy(textAlign = TextAlign.End),
-            colors = camposSinFondo(),
-            modifier = modificador,
-        )
-    }
 
-    // Con letra grande, el importe no cabe en su ancho fijo junto al nombre y
-    // los controles: al 200% de "2000.00" solo asomaba el primer digito. Se
-    // apila: el nombre ocupa su propia fila y el importe se queda con todo el
-    // ancho que dejan los controles.
-    if (conLetraGrande()) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            nombre(Modifier.fillMaxWidth())
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                monto(Modifier.weight(1f))
-                ControlesDeLinea(linea, alEvento)
-            }
-        }
-    } else {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            nombre(Modifier.weight(1f))
-            monto(Modifier.width(ANCHO_DEL_IMPORTE))
-            ControlesDeLinea(linea, alEvento)
+    SwipeToDismissBox(
+        state = deslizamiento,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = { FondoDeEliminar() },
+        modifier =
+            Modifier.semantics {
+                customActions =
+                    listOf(
+                        CustomAccessibilityAction(eliminar) {
+                            alEvento(EventoDelPlan.EliminarLinea(linea.id))
+                            true
+                        },
+                    )
+            },
+    ) {
+        // El fondo de la fila tapa el rojo de detras mientras no se desliza.
+        Box(modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainer)) {
+            FilaDeLista(
+                titulo = linea.nombre.ifBlank { stringResource(R.string.plan_nombre_vacio) },
+                // Una linea desactivada sigue en el plan pero no cuenta este mes:
+                // se dice, en vez de un interruptor que habia que interpretar.
+                detalle = if (linea.activa) null else stringResource(R.string.plan_este_mes_no),
+                final = {
+                    Text(
+                        text = dinero.formatear(linea.montoPlanificado),
+                        style = EstilosDeDinero.enLista,
+                        color = if (linea.activa) linea.tipo.color() else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                alPulsar = { alEvento(EventoDelPlan.EditarLinea(linea)) },
+                conChevron = false,
+                conSeparador = conSeparador,
+            )
         }
     }
 }
 
 @Composable
-private fun ControlesDeLinea(
-    linea: LineaDePlan,
-    alEvento: (EventoDelPlan) -> Unit,
-) {
-    // Sin descripcion, un lector de pantalla anuncia "interruptor" y no dice
-    // de que. El nombre de la linea no basta: hay que decir que hace.
-    val descripcionDelInterruptor = stringResource(R.string.plan_activa)
-    Switch(
-        checked = linea.activa,
-        onCheckedChange = { alEvento(EventoDelPlan.CambiarActiva(linea, it)) },
-        modifier = Modifier.semantics { contentDescription = descripcionDelInterruptor },
-    )
-    IconButton(onClick = { alEvento(EventoDelPlan.EliminarLinea(linea)) }) {
+private fun FondoDeEliminar() {
+    Box(
+        contentAlignment = Alignment.CenterEnd,
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.error)
+                .padding(horizontal = Espacio.m),
+    ) {
         Icon(
             Icons.Outlined.DeleteOutline,
-            contentDescription = stringResource(R.string.plan_eliminar),
+            // Lo dice la accion de accesibilidad de la fila.
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onError,
         )
     }
 }
 
-private val ANCHO_DEL_IMPORTE = 130.dp
-
 @Composable
-private fun camposSinFondo() =
-    TextFieldDefaults.colors(
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-    )
-
-private fun textoInicial(monto: Money): String = if (monto.esCero) "" else monto.toString()
-
-@Composable
-private fun TipoDeLinea.color(): Color =
+internal fun TipoDeLinea.color(): Color =
     when (this) {
         TipoDeLinea.INGRESO -> MiPlataTheme.dinero.ingreso
         TipoDeLinea.AHORRO -> MiPlataTheme.dinero.ahorro
         else -> MiPlataTheme.dinero.gasto
     }
 
-private fun TipoDeLinea.etiqueta(): Int =
+internal fun TipoDeLinea.etiqueta(): Int =
     when (this) {
         TipoDeLinea.INGRESO -> R.string.plan_tipo_ingreso
         TipoDeLinea.GASTO_FIJO -> R.string.plan_tipo_gasto_fijo

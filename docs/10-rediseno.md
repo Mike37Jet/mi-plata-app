@@ -118,8 +118,8 @@ lado, no en cápsula flotante.
 | 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "Marzo 2026" | ✅ |
 | 3 | **Movimientos**: lista agrupada por día ("Hoy", "Ayer", "Jueves, 26 de marzo"), transferencias como "Nómina → Visa" | ✅ |
 | — | **Ajustes**: tema (según el teléfono, claro u oscuro) y la copia de seguridad, que sale de Cuentas; engranaje en las cuatro pestañas | ✅ |
-| 4 | **Cuentas**: lista agrupada y archivadas plegadas | este |
-| 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | |
+| 4 | **Cuentas**: lista agrupada y archivadas plegadas | ✅ |
+| 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | este |
 | 6 | **Resumen**: cifra principal con su barra de progreso, "Comida · €42 de €400" con minibarras | |
 
 ## El esqueleto (PR 2)
@@ -198,6 +198,27 @@ lado, no en cápsula flotante.
 - **Sin verde en los saldos.** Un saldo positivo no es un ingreso, y en esta app
   el verde dice "entró dinero". Saldos y total van en el color del texto; solo lo
   negativo, en rojo.
+
+## Plan (PR 5)
+
+- **Filas limpias:** el nombre a la izquierda y el importe con su moneda a la
+  derecha, agrupadas por tipo con el total junto al título. Se ocultan los tipos
+  sin líneas. Una línea desactivada dice "Este mes no cuenta" en lugar de
+  mostrar un interruptor. Antes cada fila era un formulario (dos campos, un
+  interruptor y una papelera) que parecía texto subrayado.
+- **Una hoja de edición** para crear y editar. Nada se guarda hasta pulsar
+  Guardar, y cancelar deja el plan como estaba. Editar conserva lo que la hoja
+  no muestra: categoría, cuenta y día de cobro. Con el plan vacío, la hoja
+  propone "Ingreso".
+- **Un solo "+"**, como en las demás pestañas, en lugar de uno por sección.
+- **Borrar deslizando, con "Deshacer".** También se puede desde la hoja y como
+  acción de accesibilidad, porque deslizar no se descubre ni se puede hacer con
+  un lector de pantalla. "Deshacer" devuelve la línea a su sitio y **vuelve a
+  enganchar sus movimientos**: la base los suelta al borrarla (`ON DELETE SET
+  NULL`), y volver a crearla no bastaba.
+- **Filas con clave:** sin `key(linea.id)`, Compose reutilizaba el estado del
+  deslizamiento por posición, y la línea siguiente a una borrada se quedaba como
+  una franja roja vacía. Lo encontró Miguel en el emulador.
 
 ## Plano por pantalla
 

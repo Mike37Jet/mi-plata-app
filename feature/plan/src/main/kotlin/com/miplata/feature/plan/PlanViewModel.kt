@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
 import com.miplata.core.domain.model.LineaDePlan
+import com.miplata.core.domain.model.LineaId
+import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.TipoDeLinea
+import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.PlanRepository
+import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -18,14 +22,32 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
+
+/**
+ * Lo necesario para deshacer una eliminacion **del todo**.
+ *
+ * No basta con la linea. Al borrarla, la base suelta los movimientos que
+ * estaban enganchados a ella (clave foranea `ON DELETE SET NULL`), y volver a
+ * crear la linea no los vuelve a enganchar: el resumen seguiria sin saber de
+ * que linea eran. Por eso se apuntan al borrar y se restauran al deshacer.
+ */
+private data class Eliminacion(
+    val linea: LineaDePlan,
+    val mes: Mes,
+    /** Donde estaba, para volver a su sitio y no al final. */
+    val posicion: Int,
+    val movimientos: List<TransaccionId>,
+)
 
 /** El plan que se esta viendo, y si ya existe en la base o es una propuesta. */
 private data class PlanEnPantalla(
@@ -45,6 +67,7 @@ class PlanViewModel
     @Inject
     constructor(
         private val planes: PlanRepository,
+        private val transacciones: TransaccionRepository,
         private val abrirPlan: AbrirPlanDelMesUseCase,
         private val ids: GeneradorDeIds,
         ajustes: AjustesRepository,
@@ -54,6 +77,9 @@ class PlanViewModel
 
         /** Una escritura del plan cada vez; ver [editarPlan]. */
         private val escrituras = Mutex()
+
+        private val editor = MutableStateFlow<EditorDeLinea?>(null)
+        private val eliminacion = MutableStateFlow<Eliminacion?>(null)
 
         /**
          * El plan del mes en pantalla.
@@ -87,9 +113,11 @@ class PlanViewModel
                 mesSeleccionado,
                 planEnPantalla,
                 ajustes.observar(),
-            ) { mes, enPantalla, configuracion ->
+                editor,
+                eliminacion,
+            ) { mes, enPantalla, configuracion, abierto, eliminada ->
                 if (enPantalla == null) {
-                    PlanUiState(mes = mes, moneda = configuracion.moneda)
+                    PlanUiState(mes = mes, moneda = configuracion.moneda, editor = abierto)
                 } else {
                     val plan = enPantalla.plan
                     PlanUiState(
@@ -100,6 +128,8 @@ class PlanViewModel
                         salidas = salidasDe(plan),
                         cargando = false,
                         esBorrador = enPantalla.esBorrador,
+                        editor = abierto,
+                        eliminada = eliminada?.linea,
                     )
                 }
             }.stateIn(
@@ -116,40 +146,123 @@ class PlanViewModel
                 EventoDelPlan.MesSiguiente ->
                     mesSeleccionado.value = mesSeleccionado.value.siguiente()
 
-                is EventoDelPlan.AnadirLinea ->
-                    editarPlan { plan -> plan.copy(lineas = plan.lineas + lineaNueva(evento.tipo)) }
-
-                is EventoDelPlan.CambiarNombre ->
-                    editarLinea(evento.linea) { it.copy(nombre = evento.nombre) }
-
-                is EventoDelPlan.CambiarMonto ->
-                    editarLinea(evento.linea) { it.copy(montoPlanificado = evento.monto) }
-
-                is EventoDelPlan.CambiarActiva ->
-                    editarLinea(evento.linea) { it.copy(activa = evento.activa) }
-
-                is EventoDelPlan.EliminarLinea ->
-                    editarPlan { plan ->
-                        plan.copy(lineas = plan.lineas.filterNot { it.id == evento.linea.id })
-                    }
+                EventoDelPlan.NuevaLinea -> editor.value = hojaNueva()
+                is EventoDelPlan.EditarLinea -> editor.value = hojaDe(evento.linea)
+                EventoDelPlan.CerrarEditor -> editor.value = null
+                EventoDelPlan.GuardarLinea -> guardarLinea()
+                is EventoDelPlan.CambioEnEditor -> editor.update { it?.aplicar(evento) }
+                is EventoDelPlan.EliminarLinea -> eliminar(evento.id)
+                EventoDelPlan.DeshacerEliminacion -> deshacerEliminacion()
+                EventoDelPlan.OlvidarEliminacion -> eliminacion.value = null
             }
         }
 
-        private fun lineaNueva(tipo: TipoDeLinea) =
-            LineaDePlan(
-                id = ids.nuevaLineaId(),
-                // Sin nombre: el usuario lo escribe. Poner "Nueva linea" obligaria
-                // a borrarlo antes de escribir lo que de verdad quiere.
-                nombre = "",
-                tipo = tipo,
-                montoPlanificado = Money.ZERO,
+        /**
+         * Una hoja en blanco. Con el plan vacio empieza en los ingresos, que es el
+         * orden en el que la gente piensa su mes (y lo que dice el aviso de la
+         * pantalla vacia).
+         */
+        private fun hojaNueva() =
+            EditorDeLinea(tipo = if (uiState.value.estaVacio) TipoDeLinea.INGRESO else TipoDeLinea.GASTO_VARIABLE)
+
+        private fun hojaDe(linea: LineaDePlan) =
+            EditorDeLinea(
+                id = linea.id,
+                nombre = linea.nombre,
+                tipo = linea.tipo,
+                monto = linea.montoPlanificado,
+                activa = linea.activa,
             )
 
+        private fun EditorDeLinea.aplicar(cambio: EventoDelPlan.CambioEnEditor) =
+            when (cambio) {
+                is EventoDelPlan.CambioEnEditor.Nombre -> copy(nombre = cambio.nombre)
+                is EventoDelPlan.CambioEnEditor.Monto -> copy(monto = cambio.monto)
+                is EventoDelPlan.CambioEnEditor.Tipo -> copy(tipo = cambio.tipo)
+                is EventoDelPlan.CambioEnEditor.Activa -> copy(activa = cambio.activa)
+            }
+
+        /**
+         * Lleva lo que hay en la hoja al plan: una linea nueva al final, o la
+         * existente cambiada **conservando lo que la hoja no toca** -categoria,
+         * cuenta, dia-, que una copia desde cero perderia.
+         */
+        private fun guardarLinea() {
+            val enHoja = editor.value ?: return
+            editor.value = null
+            val id = enHoja.id
+            if (id == null) {
+                editarPlan { plan ->
+                    plan.copy(
+                        lineas =
+                            plan.lineas +
+                                LineaDePlan(
+                                    id = ids.nuevaLineaId(),
+                                    nombre = enHoja.nombre.trim(),
+                                    tipo = enHoja.tipo,
+                                    montoPlanificado = enHoja.monto,
+                                    activa = enHoja.activa,
+                                ),
+                    )
+                }
+            } else {
+                editarLinea(id) {
+                    it.copy(
+                        nombre = enHoja.nombre.trim(),
+                        tipo = enHoja.tipo,
+                        montoPlanificado = enHoja.monto,
+                        activa = enHoja.activa,
+                    )
+                }
+            }
+        }
+
+        private fun eliminar(id: LineaId) {
+            val enPantalla = planEnPantalla.value?.plan ?: return
+            if (editor.value?.id == id) editor.value = null
+            viewModelScope.launch {
+                escrituras.withLock {
+                    val actual = planes.obtenerDe(enPantalla.mes) ?: enPantalla
+                    val posicion = actual.lineas.indexOfFirst { it.id == id }
+                    if (posicion < 0) return@withLock
+                    // Antes de borrar: despues, la base ya los habra soltado.
+                    val enganchados =
+                        transacciones
+                            .observarTodas()
+                            .first()
+                            .filter { it.lineaDePlanId == id }
+                            .map { it.id }
+                    planes.guardar(actual.copy(lineas = actual.lineas.filterNot { it.id == id }))
+                    eliminacion.value = Eliminacion(actual.lineas[posicion], actual.mes, posicion, enganchados)
+                }
+            }
+        }
+
+        private fun deshacerEliminacion() {
+            val deshecha = eliminacion.value ?: return
+            eliminacion.value = null
+            viewModelScope.launch {
+                escrituras.withLock {
+                    val actual = planes.obtenerDe(deshecha.mes) ?: return@withLock
+                    val lineas =
+                        actual.lineas.toMutableList().apply {
+                            add(deshecha.posicion.coerceAtMost(size), deshecha.linea)
+                        }
+                    planes.guardar(actual.copy(lineas = lineas))
+                    deshecha.movimientos.forEach { id ->
+                        transacciones.obtener(id)?.let {
+                            transacciones.guardar(it.copy(lineaDePlanId = deshecha.linea.id))
+                        }
+                    }
+                }
+            }
+        }
+
         private fun editarLinea(
-            linea: LineaDePlan,
+            id: LineaId,
             cambio: (LineaDePlan) -> LineaDePlan,
         ) = editarPlan { plan ->
-            plan.copy(lineas = plan.lineas.map { if (it.id == linea.id) cambio(it) else it })
+            plan.copy(lineas = plan.lineas.map { if (it.id == id) cambio(it) else it })
         }
 
         /**
