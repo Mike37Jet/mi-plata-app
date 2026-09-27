@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -159,6 +161,55 @@ fun FilaDeLista(
                         .padding(start = Espacio.m, end = Espacio.m, bottom = Espacio.s),
                 content = final,
             )
+        }
+    }
+}
+
+/**
+ * Una opcion de un grupo en el que solo se elige una, como las de Ajustes de
+ * iOS: el nombre a la izquierda y una marca a la derecha en la elegida.
+ *
+ * Se anuncia como boton de opcion y dice si esta elegida: sin eso, un lector
+ * de pantalla leeria tres textos sueltos sin decir cual vale. Envuelve las
+ * opciones en un [GrupoDeLista] con `Modifier.selectableGroup()`.
+ */
+@Composable
+fun FilaDeOpcion(
+    titulo: String,
+    elegida: Boolean,
+    alElegir: () -> Unit,
+    modifier: Modifier = Modifier,
+    conSeparador: Boolean = false,
+) {
+    Column(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .selectable(selected = elegida, role = Role.RadioButton, onClick = alElegir),
+    ) {
+        if (conSeparador) {
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant,
+                modifier = Modifier.padding(start = Espacio.m),
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = Espacio.xl)
+                    .padding(horizontal = Espacio.m, vertical = Espacio.s),
+        ) {
+            Text(titulo, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            if (elegida) {
+                Icon(
+                    Icons.Filled.Check,
+                    // Decorativo: el estado ya lo anuncia `selectable`.
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }

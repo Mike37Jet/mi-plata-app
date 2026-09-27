@@ -23,6 +23,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +45,8 @@ import com.miplata.core.designsystem.accesibilidad.TextoQueCabe
 import com.miplata.core.designsystem.componentes.LocalEspacioDeLaBarraInferior
 import com.miplata.core.designsystem.componentes.cristal
 import com.miplata.core.designsystem.componentes.fondoDesenfocable
+import com.miplata.feature.ajustes.navigation.RutaAjustes
+import com.miplata.feature.ajustes.navigation.pantallaAjustes
 import com.miplata.feature.backup.navigation.RutaCopia
 import com.miplata.feature.backup.navigation.RutaRestaurar
 import com.miplata.feature.backup.navigation.pantallaCopia
@@ -74,12 +77,20 @@ fun NavegacionPrincipal(
     val entradaActual by navController.currentBackStackEntryAsState()
     val destinoActual = entradaActual?.destination
 
-    // Al tocar el recordatorio: a Cuentas y, encima, la copia. Asi "atras" lleva
-    // a Cuentas, que es de donde se llega a la copia normalmente, y no fuera de
-    // la app.
+    // La pestaña en la que se esta, o de la que se vino. Las pantallas internas
+    // -ajustes, copia, restaurar- no son de ninguna pestaña; mientras se esta en
+    // ellas, la barra sigue marcando la pestaña desde la que se entro.
+    val pestanaActual = DestinoPrincipal.entries.firstOrNull { destinoActual.estaEn(it) }
+    var pestanaDeOrigen by rememberSaveable { mutableStateOf(DestinoPrincipal.RESUMEN) }
+    LaunchedEffect(pestanaActual) { if (pestanaActual != null) pestanaDeOrigen = pestanaActual }
+    val enPantallaInterna = destinoActual != null && pestanaActual == null
+
+    // Al tocar el recordatorio: los ajustes y, encima, la copia. Asi "atras"
+    // lleva a los ajustes, que es de donde se llega a la copia normalmente, y
+    // no fuera de la app.
     LaunchedEffect(abrirCopiaAlEmpezar) {
         if (abrirCopiaAlEmpezar) {
-            navController.irA(DestinoPrincipal.CUENTAS)
+            navController.navigate(RutaAjustes)
             navController.navigate(RutaCopia)
         }
     }
@@ -123,10 +134,15 @@ fun NavegacionPrincipal(
                         .windowInsetsPadding(WindowInsets.statusBars)
                         .consumeWindowInsets(WindowInsets.navigationBars),
             ) {
-                pantallaResumen()
-                pantallaPlan()
-                pantallaTransacciones()
-                pantallaCuentas(alAbrirCopiaDeSeguridad = { navController.navigate(RutaCopia) })
+                val abrirAjustes = { navController.navigate(RutaAjustes) }
+                pantallaResumen(alAbrirAjustes = abrirAjustes)
+                pantallaPlan(alAbrirAjustes = abrirAjustes)
+                pantallaTransacciones(alAbrirAjustes = abrirAjustes)
+                pantallaCuentas(alAbrirAjustes = abrirAjustes)
+                pantallaAjustes(
+                    alVolver = navController::popBackStack,
+                    alAbrirCopia = { navController.navigate(RutaCopia) },
+                )
                 pantallaCopia(
                     alVolver = navController::popBackStack,
                     alAbrirRestaurar = { navController.navigate(RutaRestaurar) },
@@ -136,7 +152,8 @@ fun NavegacionPrincipal(
         }
 
         BarraInferior(
-            destinoActual = destinoActual,
+            pestanaMarcada = pestanaActual ?: pestanaDeOrigen,
+            enPantallaInterna = enPantallaInterna,
             irA = navController::irA,
             modifier =
                 Modifier
@@ -149,18 +166,21 @@ fun NavegacionPrincipal(
 
 @Composable
 private fun BarraInferior(
-    destinoActual: NavDestination?,
+    pestanaMarcada: DestinoPrincipal,
+    enPantallaInterna: Boolean,
     irA: (DestinoPrincipal) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Transparente: el color lo pone el cristal, que es velo mas desenfoque.
     NavigationBar(modifier = modifier, containerColor = Color.Transparent, tonalElevation = 0.dp) {
         DestinoPrincipal.entries.forEach { destino ->
-            val seleccionado = destinoActual.estaEn(destino)
+            val seleccionado = destino == pestanaMarcada
 
             NavigationBarItem(
                 selected = seleccionado,
-                onClick = { if (!seleccionado) irA(destino) },
+                // Desde una pantalla interna, tocar la pestaña marcada tambien
+                // navega: lleva a la raiz de esa pestaña, como en cualquier app.
+                onClick = { if (!seleccionado || enPantallaInterna) irA(destino) },
                 icon = {
                     // El icono no lleva descripcion porque la etiqueta de al lado
                     // ya dice lo mismo: repetirlo haria que un lector de pantalla
@@ -205,10 +225,16 @@ private fun NavDestination?.estaEn(destino: DestinoPrincipal): Boolean =
  * y `popUpTo(startDestination)` con `saveState` hace que volver a una seccion la
  * encuentre donde se dejo -el desplazamiento, el filtro- en vez de reiniciada.
  * Sin esto, el boton de atras acaba recorriendo cada pestana que se haya tocado.
+ *
+ * **Desde una pantalla interna no se guarda nada.** Ajustes y la copia se abren
+ * encima de la pestaña en la que se estaba. Si se guardaran al salir, volver a
+ * esa pestaña las restauraria: desde la copia, tocar "Resumen" devolvia a la
+ * copia y no habia forma de salir por la barra.
  */
 private fun NavHostController.irA(destino: DestinoPrincipal) {
+    val desdeUnaPantallaInterna = DestinoPrincipal.entries.none { currentDestination.estaEn(it) }
     navigate(destino.ruta) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
+        popUpTo(graph.findStartDestination().id) { saveState = !desdeUnaPantallaInterna }
         launchSingleTop = true
         restoreState = true
     }

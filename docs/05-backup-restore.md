@@ -101,8 +101,10 @@ tecleada la vuelve a pedir.
 
 ## Exportación
 
-Se entra desde **Cuentas → Copia de seguridad**. Cuentas no conoce el feature de
-la copia (docs/04): solo avisa de que se pidió, y `:app` decide a dónde se va.
+Se entra desde **Ajustes (el engranaje de cualquier pestaña) → Copia de
+seguridad**. La fila dice cuándo se hizo la última copia. Ajustes no conoce el
+feature de la copia (docs/04): solo avisa de que se pidió, y `:app` decide a
+dónde se va. Hasta el rediseño se entraba desde una esquina de Cuentas (docs/10).
 
 1. El usuario escribe la frase **dos veces** y marca *"Entiendo que si pierdo la
    frase, pierdo la copia"*. El aviso en rojo y la casilla son las dos veces que
@@ -130,8 +132,9 @@ Detalles que no se ven y que importan:
 
 ## Restauración
 
-Es la operación más peligrosa de la app. Se entra desde **Cuentas → Copia de
-seguridad → Restaurar una copia**. El flujo:
+Es la operación más peligrosa de la app. Se entra desde **Ajustes → Copia de
+seguridad → Restaurar una copia**, o desde la bienvenida en un móvil nuevo. El
+flujo:
 
 1. Seleccionar archivo (`ACTION_OPEN_DOCUMENT`, cualquier tipo: Drive guarda el
    `.mpb` como "binario desconocido" y un filtro por MIME lo escondería).
@@ -231,8 +234,8 @@ dado: sigue pendiente.
 
 **Limitación conocida:** quien nunca abre la pantalla de copia nunca ve la
 pregunta del permiso, así que en Android 13 o superior no recibe el
-recordatorio. Un aviso dentro de la app (por ejemplo, en la entrada de Cuentas)
-lo cubriría sin permisos.
+recordatorio. Un aviso dentro de la app (por ejemplo, en la fila de la copia en
+Ajustes) lo cubriría sin permisos.
 
 ### Permisos que añade WorkManager
 

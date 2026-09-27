@@ -4,7 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -15,9 +19,11 @@ import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.miplata.core.designsystem.R
 import com.miplata.core.designsystem.theme.Espacio
 
 /**
@@ -38,6 +44,9 @@ val LocalEspacioDeLaBarraInferior: ProvidableCompositionLocal<Dp> = compositionL
  * empezaban igual -el mes, una cifra verde grande y una etiqueta- y no se
  * distinguia en cual estabas (Nielsen, consistencia; docs/10).
  *
+ * @param alVolver si la pantalla no es una pestaña sino algo a lo que se llega
+ *   desde una, la flecha para volver. El gesto de "atras" del sistema tambien
+ *   funciona; la flecha es la pista visible de que se puede.
  * @param contenido recibe el relleno que tiene que aplicar a su lista: los
  *   margenes laterales de la escala aurea, el hueco del titulo arriba y el de
  *   la barra inferior y el boton flotante abajo.
@@ -47,6 +56,7 @@ val LocalEspacioDeLaBarraInferior: ProvidableCompositionLocal<Dp> = compositionL
 fun PantallaConTituloGrande(
     titulo: String,
     modifier: Modifier = Modifier,
+    alVolver: (() -> Unit)? = null,
     acciones: @Composable RowScope.() -> Unit = {},
     botonFlotante: @Composable () -> Unit = {},
     contenido: @Composable (relleno: PaddingValues) -> Unit,
@@ -61,6 +71,16 @@ fun PantallaConTituloGrande(
         topBar = {
             LargeTopAppBar(
                 title = { Text(titulo, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                navigationIcon = {
+                    if (alVolver != null) {
+                        IconButton(onClick = alVolver) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.designsystem_volver),
+                            )
+                        }
+                    }
+                },
                 actions = acciones,
                 // Mas bajo que el de Material (152dp): el titulo grande de iOS
                 // va pegado a la barra de estado, y el de Material dejaba casi un
