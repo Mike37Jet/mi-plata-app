@@ -99,16 +99,19 @@ sealed interface EventoDelPlan {
 
     data object MesSiguiente : EventoDelPlan
 
+    /** Lo que abre, cierra o guarda la hoja de una linea. */
+    sealed interface EventoDeLaHoja : EventoDelPlan
+
     /** El "+": abre la hoja con una linea en blanco. */
-    data object NuevaLinea : EventoDelPlan
+    data object NuevaLinea : EventoDeLaHoja
 
     data class EditarLinea(
         val linea: LineaDePlan,
-    ) : EventoDelPlan
+    ) : EventoDeLaHoja
 
-    data object CerrarEditor : EventoDelPlan
+    data object CerrarEditor : EventoDeLaHoja
 
-    data object GuardarLinea : EventoDelPlan
+    data object GuardarLinea : EventoDeLaHoja
 
     /** Desde la hoja, deslizando la fila o con la accion de un lector de pantalla. */
     data class EliminarLinea(
@@ -127,7 +130,7 @@ sealed interface EventoDelPlan {
      * Cambiar un campo de la hoja. Un subtipo aparte para que el ViewModel los
      * trate todos de golpe sin un `else` que se trague eventos nuevos.
      */
-    sealed interface CambioEnEditor : EventoDelPlan {
+    sealed interface CambioEnEditor : EventoDeLaHoja {
         data class Nombre(
             val nombre: String,
         ) : CambioEnEditor

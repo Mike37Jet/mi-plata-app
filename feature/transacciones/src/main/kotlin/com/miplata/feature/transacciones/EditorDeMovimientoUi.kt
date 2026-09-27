@@ -45,6 +45,7 @@ import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeTransaccion
@@ -142,16 +143,7 @@ internal fun EditorDeMovimientoUi(
                         .let { alEvento(EventoDeMovimientos.CambioDeCampo.CuentaOrigen(it.id)) }
                 }
 
-                // Sacar dinero de una cuenta que solo deberia subir se puede,
-                // pero no sin decirlo (docs/adr/0007).
-                val origen = estado.cuentas.firstOrNull { it.id == editor.cuentaOrigenId }
-                if (origen != null && origen.esIntocable && editor.tipo != TipoDeTransaccion.INGRESO) {
-                    Text(
-                        text = stringResource(R.string.transacciones_intocable, origen.nombre),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MiPlataTheme.dinero.sobregiro,
-                    )
-                }
+                AvisoDeIntocable(editor, estado.cuentas)
 
                 if (editor.esTransferencia) {
                     Selector(
@@ -372,3 +364,21 @@ private fun TipoDeTransaccion.etiqueta(): Int =
 private fun textoInicial(monto: Money): String = if (monto.esCero) "" else monto.toString()
 
 private const val UN_DIA = 1
+
+/**
+ * Sacar dinero de una cuenta que solo deberia subir se puede, pero no sin
+ * decirlo (docs/adr/0007).
+ */
+@Composable
+private fun AvisoDeIntocable(
+    editor: EditorDeMovimiento,
+    cuentas: List<Cuenta>,
+) {
+    val origen = cuentas.firstOrNull { it.id == editor.cuentaOrigenId } ?: return
+    if (!origen.esIntocable || editor.tipo == TipoDeTransaccion.INGRESO) return
+    Text(
+        text = stringResource(R.string.transacciones_intocable, origen.nombre),
+        style = MaterialTheme.typography.bodySmall,
+        color = MiPlataTheme.dinero.sobregiro,
+    )
+}

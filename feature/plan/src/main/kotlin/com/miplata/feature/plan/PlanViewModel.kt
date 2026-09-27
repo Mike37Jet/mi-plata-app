@@ -177,15 +177,21 @@ class PlanViewModel
                 EventoDelPlan.MesSiguiente ->
                     mesSeleccionado.value = mesSeleccionado.value.siguiente()
 
+                is EventoDelPlan.EventoDeLaHoja -> alHoja(evento)
+                is EventoDelPlan.EliminarLinea -> eliminar(evento.id)
+                EventoDelPlan.DeshacerEliminacion -> deshacerEliminacion()
+                EventoDelPlan.OlvidarEliminacion -> eliminacion.value = null
+                EventoDelPlan.RegistrarReparto -> registrarElReparto()
+            }
+        }
+
+        private fun alHoja(evento: EventoDelPlan.EventoDeLaHoja) {
+            when (evento) {
                 EventoDelPlan.NuevaLinea -> editor.value = hojaNueva()
                 is EventoDelPlan.EditarLinea -> editor.value = hojaDe(evento.linea)
                 EventoDelPlan.CerrarEditor -> editor.value = null
                 EventoDelPlan.GuardarLinea -> guardarLinea()
                 is EventoDelPlan.CambioEnEditor -> editor.update { it?.aplicar(evento) }
-                is EventoDelPlan.EliminarLinea -> eliminar(evento.id)
-                EventoDelPlan.DeshacerEliminacion -> deshacerEliminacion()
-                EventoDelPlan.OlvidarEliminacion -> eliminacion.value = null
-                EventoDelPlan.RegistrarReparto -> registrarElReparto()
             }
         }
 

@@ -98,6 +98,12 @@ data class CuentasUiState(
 }
 
 sealed interface EventoDeCuentas {
+    /**
+     * Cambiar un campo del editor. Un subtipo aparte para que el ViewModel los
+     * trate todos de golpe sin un `else` que se trague eventos nuevos.
+     */
+    sealed interface CambioEnEditor : EventoDeCuentas
+
     data object CrearCuenta : EventoDeCuentas
 
     data class EditarCuenta(
@@ -108,43 +114,43 @@ sealed interface EventoDeCuentas {
 
     data class CambiarNombre(
         val nombre: String,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarTipo(
         val tipo: TipoDeCuenta,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarSaldoInicial(
         val saldo: Money,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarIncluirEnTotal(
         val incluir: Boolean,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarArchivada(
         val archivada: Boolean,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarRol(
         val rol: PapelDeLaCuenta,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarModoDeReparto(
         val enPorcentaje: Boolean,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarPorcentaje(
         val porcentaje: Int?,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarMontoFijo(
         val monto: Money,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data class CambiarIntocable(
         val intocable: Boolean,
-    ) : EventoDeCuentas
+    ) : CambioEnEditor
 
     data object Guardar : EventoDeCuentas
 
