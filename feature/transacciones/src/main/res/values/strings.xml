@@ -32,4 +32,6 @@
     <string name="transacciones_cancelar">Cancelar</string>
     <string name="transacciones_eliminar">Eliminar</string>
     <string name="transacciones_sin_categoria">Sin categoría</string>
+    <string name="transacciones_sin_detalle">Sin detalle</string>
+    <string name="transacciones_intocable">%1$s es intocable: este dinero debería quedarse ahí.</string>
 </resources>

@@ -235,6 +235,7 @@ class TransaccionesViewModel
                 categoriaId = transaccion.categoriaId,
                 lineaDePlanId = transaccion.lineaDePlanId,
                 nota = transaccion.nota.orEmpty(),
+                ajusteDeCierre = transaccion.ajusteDeCierre,
             )
 
         /**
@@ -275,6 +276,7 @@ class TransaccionesViewModel
                     categoriaId = enEdicion.categoriaId,
                     lineaDePlanId = enEdicion.lineaDePlanId,
                     nota = enEdicion.nota.trim().takeIf { it.isNotBlank() },
+                    ajusteDeCierre = enEdicion.ajusteDeCierre,
                 )
 
             editor.value = null

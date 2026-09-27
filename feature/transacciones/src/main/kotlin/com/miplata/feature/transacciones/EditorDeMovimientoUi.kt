@@ -142,6 +142,17 @@ internal fun EditorDeMovimientoUi(
                         .let { alEvento(EventoDeMovimientos.CambioDeCampo.CuentaOrigen(it.id)) }
                 }
 
+                // Sacar dinero de una cuenta que solo deberia subir se puede,
+                // pero no sin decirlo (docs/adr/0007).
+                val origen = estado.cuentas.firstOrNull { it.id == editor.cuentaOrigenId }
+                if (origen != null && origen.esIntocable && editor.tipo != TipoDeTransaccion.INGRESO) {
+                    Text(
+                        text = stringResource(R.string.transacciones_intocable, origen.nombre),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MiPlataTheme.dinero.sobregiro,
+                    )
+                }
+
                 if (editor.esTransferencia) {
                     Selector(
                         titulo = stringResource(R.string.transacciones_cuenta_destino),
