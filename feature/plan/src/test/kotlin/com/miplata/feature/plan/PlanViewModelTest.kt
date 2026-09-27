@@ -4,23 +4,31 @@ import app.cash.turbine.test
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
+import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
+import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.FakeAjustesRepository
+import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
+import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
@@ -58,22 +66,27 @@ class PlanViewModelTest {
     private val planes = FakePlanRepository()
     private val transacciones = FakeTransaccionRepository()
     private val ajustes = FakeAjustesRepository()
+    private val cuentas = FakeCuentaRepository()
 
     private fun viewModel(
         mes: Mes = MARZO,
         repositorio: PlanRepository = planes,
     ): PlanViewModel {
         val ids = GeneradorDeIdsSecuencial()
+        val calendario =
+            object : Calendario {
+                override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, 1)
+            }
         return PlanViewModel(
             planes = repositorio,
             transacciones = transacciones,
             abrirPlan = AbrirPlanDelMesUseCase(repositorio, MaterializarPlanDelMesUseCase(ids)),
             ids = ids,
             ajustes = ajustes,
-            calendario =
-                object : Calendario {
-                    override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, 1)
-                },
+            calendario = calendario,
+            calcularPlanPorCuentas = CalcularPlanPorCuentasUseCase(),
+            registrarReparto = RegistrarRepartoUseCase(transacciones, ids, calendario),
+            cuentas = cuentas,
         )
     }
 
@@ -465,6 +478,106 @@ class PlanViewModelTest {
 
                 vm.alEvento(EventoDelPlan.MesSiguiente)
                 esperarHasta { it.mes == MARZO }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    private val normal =
+        Cuenta(
+            CuentaId("normal"),
+            "Normal",
+            TipoDeCuenta.BANCARIA,
+            Money.ZERO,
+            Moneda("USD"),
+            rol = RolDeCuenta.Principal,
+        )
+    private val diversion =
+        Cuenta(
+            CuentaId("diversion"),
+            "Diversion",
+            TipoDeCuenta.BANCARIA,
+            Money.ZERO,
+            Moneda("USD"),
+            rol = RolDeCuenta.Sobre(Reparto.Porcentaje(10)),
+        )
+
+    private suspend fun conElMetodo() {
+        cuentas.guardar(normal)
+        cuentas.guardar(diversion)
+        planes.guardar(
+            PlanMensual(
+                id = PlanId("p"),
+                mes = MARZO,
+                lineas =
+                    listOf(
+                        linea("i", "Sueldo", TipoDeLinea.INGRESO, 633),
+                        linea("f", "Arriendo", TipoDeLinea.GASTO_FIJO, 175),
+                    ),
+            ),
+        )
+    }
+
+    @Test
+    fun `con cuenta principal el plan se ve por cuentas y arriba sale lo sin repartir`() =
+        runTest {
+            conElMetodo()
+
+            viewModel().uiState.test {
+                val estado = esperarHasta { it.porCuentas != null }
+
+                estado.porCuentas!!.cuentas.map { it.cuenta.id } shouldBe listOf(normal.id, diversion.id)
+                // 633 - 63,30 de reparto - 175 de arriendo.
+                estado.disponible shouldBe Money.deCentavos(39_470)
+                estado.repartoPendiente shouldBe Money.deCentavos(6_330)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `sin cuenta principal el plan sigue por tipos`() =
+        runTest {
+            cuentas.guardar(diversion)
+
+            viewModel().uiState.test {
+                esperarCargado().porCuentas shouldBe null
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `una linea guarda de que cuenta sale`() =
+        runTest {
+            conElMetodo()
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarHasta { it.porCuentas != null }
+                vm.alEvento(EventoDelPlan.NuevaLinea)
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Nombre("Cine"))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Monto(Money.deUnidades(20)))
+                vm.alEvento(EventoDelPlan.CambioEnEditor.Cuenta(diversion.id))
+                vm.alEvento(EventoDelPlan.GuardarLinea)
+
+                val estado = esperarHasta { e -> e.porCuentas?.de(diversion.id)?.gastos == Money.deUnidades(20) }
+                estado.porCuentas!!.de(diversion.id)!!.terminaCon shouldBe Money.deCentavos(4_330)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `ya transferi el reparto anota las transferencias y deja de estar pendiente`() =
+        runTest {
+            conElMetodo()
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarHasta { it.repartoPendiente.esPositivo }
+                vm.alEvento(EventoDelPlan.RegistrarReparto)
+
+                esperarHasta { it.repartoPendiente.esCero }
+                val transferencia = transacciones.observarTodas().first().single()
+                transferencia.cuentaOrigenId shouldBe normal.id
+                transferencia.cuentaDestinoId shouldBe diversion.id
                 cancelAndIgnoreRemainingEvents()
             }
         }

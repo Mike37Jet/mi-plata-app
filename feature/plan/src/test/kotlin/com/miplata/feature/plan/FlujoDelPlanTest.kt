@@ -21,11 +21,14 @@ import com.miplata.core.domain.GeneradorDeIdsSecuencial
 import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.repository.FakeAjustesRepository
+import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
+import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,6 +66,7 @@ class FlujoDelPlanTest {
     private val planes = FakePlanRepository()
     private val transacciones = FakeTransaccionRepository()
     private val ajustes = FakeAjustesRepository()
+    private val cuentas = FakeCuentaRepository()
     private val marzo = Mes.de(2026, 3)
 
     @Before
@@ -77,6 +81,10 @@ class FlujoDelPlanTest {
 
     private fun abrirPantalla(repositorio: PlanRepository = planes) {
         val ids = GeneradorDeIdsSecuencial()
+        val calendario =
+            object : Calendario {
+                override fun hoy() = LocalDate(marzo.anio, marzo.numeroDeMes, 1)
+            }
         val viewModel =
             PlanViewModel(
                 planes = repositorio,
@@ -84,10 +92,10 @@ class FlujoDelPlanTest {
                 abrirPlan = AbrirPlanDelMesUseCase(repositorio, MaterializarPlanDelMesUseCase(ids)),
                 ids = ids,
                 ajustes = ajustes,
-                calendario =
-                    object : Calendario {
-                        override fun hoy() = LocalDate(marzo.anio, marzo.numeroDeMes, 1)
-                    },
+                calendario = calendario,
+                calcularPlanPorCuentas = CalcularPlanPorCuentasUseCase(),
+                registrarReparto = RegistrarRepartoUseCase(transacciones, ids, calendario),
+                cuentas = cuentas,
             )
 
         compose.setContent {
