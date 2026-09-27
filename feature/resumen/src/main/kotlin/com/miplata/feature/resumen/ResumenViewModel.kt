@@ -4,13 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.CierreDeMes
+import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.PeriodoMensual
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.ResumenMensual
 import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.repository.AjustesRepository
+import com.miplata.core.domain.repository.CierreRepository
+import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
+import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,6 +26,12 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+
+private data class DatosDeCuentas(
+    val cuentas: List<Cuenta>,
+    val movimientos: List<Transaccion>,
+    val cierres: List<CierreDeMes>,
+)
 
 /**
  * El estado de la pantalla del resumen.
@@ -37,9 +48,16 @@ class ResumenViewModel
         planes: PlanRepository,
         transacciones: TransaccionRepository,
         ajustes: AjustesRepository,
+        cuentas: CuentaRepository,
+        cierres: CierreRepository,
         private val calendario: Calendario,
         private val calcular: CalcularResumenMensualUseCase,
+        private val calcularPorCuentas: CalcularPlanPorCuentasUseCase,
     ) : ViewModel() {
+        /** Lo que hace falta para ver el mes por cuentas: todo el historial, no solo el mes. */
+        private val datosDeCuentas =
+            combine(cuentas.observarTodas(), transacciones.observarTodas(), cierres.observarTodos(), ::DatosDeCuentas)
+
         private val mesSeleccionado = MutableStateFlow(calendario.mesActual())
 
         @OptIn(ExperimentalCoroutinesApi::class)
@@ -52,8 +70,9 @@ class ResumenViewModel
                 combine(
                     planes.observarDe(periodo.mes),
                     transacciones.observarDelPeriodo(periodo),
-                ) { plan, movimientos ->
-                    estadoDe(periodo, configuracion, plan, movimientos)
+                    datosDeCuentas,
+                ) { plan, movimientos, deCuentas ->
+                    estadoDe(periodo, configuracion, plan, movimientos).conCuentas(periodo, plan, deCuentas)
                 }
             }.stateIn(
                 scope = viewModelScope,
@@ -93,6 +112,33 @@ class ResumenViewModel
                 progresoDelMes = periodo.progreso(calendario.hoy()),
                 progresoDelGasto = progresoDelGasto(resumen),
                 desviaciones = resumen.desviacionesDesfavorables,
+            )
+        }
+
+        /**
+         * Anade la vista por cuentas. En un mes cerrado, lo real es lo que se
+         * guardo al cerrar, no lo que se calcula hoy: un movimiento anotado
+         * despues no reescribe como termino el mes.
+         */
+        private fun ResumenUiState.conCuentas(
+            periodo: PeriodoMensual,
+            plan: PlanMensual?,
+            datos: DatosDeCuentas,
+        ): ResumenUiState {
+            val porCuentas =
+                calcularPorCuentas(periodo, datos.cuentas, plan, datos.movimientos, calendario.hoy()) ?: return this
+            val cierre = datos.cierres.firstOrNull { it.mes == periodo.mes }
+            return copy(
+                cerrado = cierre != null,
+                porCuenta =
+                    porCuentas.cuentas.map { deCuenta ->
+                        val guardado = cierre?.saldoDe(deCuenta.cuenta.id)
+                        CuentaDelResumen(
+                            nombre = deCuenta.cuenta.nombre,
+                            esperado = guardado?.esperado ?: deCuenta.terminaCon,
+                            actual = guardado?.real ?: deCuenta.saldoActual,
+                        )
+                    },
             )
         }
 
