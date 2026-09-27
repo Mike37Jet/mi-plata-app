@@ -94,6 +94,22 @@ En el tema oscuro, más transparencia se ve como una barra más negra, porque lo
 que pasa por detrás es sobre todo fondo negro. El cristal se nota cuando pasa
 contenido de color, y mucho más en el tema claro.
 
+**El aspecto de Liquid Glass sin su refracción.** Lo que hace que el cristal
+parezca vidrio y no una capa gris es la luz:
+
+- **Línea de brillo** en el canto superior, más intensa en el centro: 50 % de
+  blanco en oscuro y 90 % en claro. No va detrás de ningún texto.
+- **Reflejo** que baja desde el canto y se desvanece antes de la mitad. Va detrás
+  de las etiquetas, así que tiene como mucho un 4 % de blanco (`REFLEJO_MAXIMO`).
+  Con el 8 %, el texto del tema oscuro bajaba a 4,42:1. `ContrasteTest` lo cuenta
+  entero.
+
+La refracción de verdad (la lente que deforma lo que hay detrás) queda fuera. En
+Android necesita shaders AGSL de Android 13, y la única librería que la hace para
+Compose (Backdrop, de Kyant) exige Compose 1.10 y Kotlin 2.3. El proyecto va por
+Compose 1.9 y Kotlin 2.2. Tampoco se cambió la forma de la barra: sigue de lado a
+lado, no en cápsula flotante.
+
 ## Los PRs
 
 | PR | Qué | Estado |

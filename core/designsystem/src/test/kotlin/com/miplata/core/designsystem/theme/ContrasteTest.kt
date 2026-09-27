@@ -4,6 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.miplata.core.designsystem.componentes.OPACIDAD_DEL_VELO
+import com.miplata.core.designsystem.componentes.REFLEJO_MAXIMO
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -94,10 +95,13 @@ private fun textoSobreCristal(
             "texto desenfocado" to mezcla(esquema.onSurface, esquema.background, TINTA_DEL_TEXTO_DESENFOCADO),
         )
     return detras.map { (nombre, color) ->
+        // El reflejo aclara el cristal por arriba: se cuenta entero, como si el
+        // texto quedara justo en el borde.
+        val cristal = mezcla(esquema.surfaceContainer, color, OPACIDAD_DEL_VELO)
         Par(
             "onSurface sobre cristal con $nombre detras",
             esquema.onSurface,
-            mezcla(esquema.surfaceContainer, color, OPACIDAD_DEL_VELO),
+            mezcla(Color.White, cristal, REFLEJO_MAXIMO),
         )
     }
 }
