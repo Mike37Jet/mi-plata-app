@@ -236,6 +236,35 @@ lado, no en cápsula flotante.
 Con este PR, las cuatro pestañas y las pantallas internas usan el mismo lenguaje:
 título grande, grupos, filas de 55 dp y la escala áurea.
 
+## Icono
+
+**"Plan y realidad":** dos barras sobre un degradado del verde azulado de la app.
+La alta y translúcida es lo planeado; la sólida y más baja, lo que de verdad ha
+pasado. La realidad por debajo del plan es la respuesta que la app quiere dar:
+te alcanza. Se eligió entre tres conceptos:
+
+- **Anillo:** lo que queda del mes. Se descartó porque el anillo es la metáfora
+  de "cargando" y de las apps de actividad física.
+- **Moneda:** sin símbolo, para no atarla a una divisa. Se descartó porque, a
+  tamaño pequeño, recordaba a un botón de grabar.
+- **Plan y realidad:** el elegido.
+
+Criterios de icono de Apple aplicados a un icono adaptativo de Android:
+
+- **Un solo glifo, sin texto ni símbolo de moneda.** Se lee a 48 px y en
+  cualquier divisa.
+- **El degradado, más claro arriba,** como la luz de los iconos de Apple: da
+  volumen sin sombras ni texturas. Va de 18 a 90, que es la parte visible de un
+  icono adaptativo (72 de 108).
+- **El glifo dentro del círculo seguro de 66:** ninguna máscara del launcher
+  (círculo, squircle o lágrima) lo recorta.
+- **Capa monocroma** para los iconos temáticos de Android 13+. Solo cuenta la
+  opacidad, así que la barra del plan sigue siendo translúcida.
+- **Splash:** las barras sobre un círculo del color de la marca, con fondo blanco
+  en claro y negro en oscuro (antes era blanca siempre, y en oscuro deslumbraba).
+  En Android 12+ hace falta repetir el color del círculo con el prefijo
+  `android:` (`values-v31`), porque la splash la pinta el sistema.
+
 ## Plano por pantalla
 
 - **Resumen:** "Te quedan **€1.599,50**", con "de €2.000 planeados" debajo y
