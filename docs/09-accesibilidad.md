@@ -71,10 +71,10 @@ sobre cada fondo en el que puede aparecer, en los dos temas. Cubre:
   garantiza su contraste.
 
 Desde el rediseño (docs/10) cubre también el **texto sobre el cristal** de las
-barras translúcidas. Lo mide en el peor caso: el velo sobre contenido blanco puro
-bajo el tema oscuro, o negro puro bajo el claro. Sobre el cristal solo va texto
-principal. Así, un velo del 70 % basta. Con el gris secundario hacía falta el 92 %,
-y la barra se veía opaca.
+barras translúcidas. Sobre el cristal solo va texto principal, y se mide contra
+lo peor que la app puede pintar detrás: sus colores sólidos y su texto ya
+desenfocado. Así basta un velo del 55 %. Exigirlo contra blanco puro pedía el
+70 %, y con el gris secundario, el 92 %.
 
 Hoy todo pasa. El par más justo es `onPrimaryContainer` sobre
 `primaryContainer` en oscuro, con 4.56. Saboteado con un rojo de sobregiro más

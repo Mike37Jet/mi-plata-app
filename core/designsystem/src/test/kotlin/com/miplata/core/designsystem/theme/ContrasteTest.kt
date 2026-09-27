@@ -62,19 +62,48 @@ private fun mezcla(
     )
 
 /**
- * El texto de una barra de cristal sobre el peor fondo posible: el velo encima
- * de lo mas opuesto al tema que pueda pasar por detras (blanco puro bajo el
- * tema oscuro, negro puro bajo el claro). El desenfoque no ayuda aqui: una
- * foto grande y clara detras de la barra se desenfoca, pero sigue siendo clara.
+ * El texto de una barra de cristal sobre lo peor que la app puede pintar por
+ * detras de ella.
+ *
+ * - Cualquiera de sus colores solidos: acento, contenedores, celdas y colores
+ *   de dinero. Estos ultimos son texto, pero se tratan como solidos porque la
+ *   cifra principal es gruesa: es el caso mas exigente.
+ * - Su texto, que el desenfoque mezcla con el fondo: como mucho la mitad de
+ *   tinta en el radio de difuminado.
+ *
+ * No se prueba contra blanco puro: la app no lo pinta en superficies grandes,
+ * y exigirlo pedia un velo del 70% con el que la barra no dejaba ver nada.
  *
  * Solo el texto principal: es el unico que puede ir sobre el cristal (ver
  * OPACIDAD_DEL_VELO). El secundario y el acento van sobre superficies opacas.
  */
-private fun textoSobreCristal(esquema: ColorScheme): List<Par> {
-    val peorDetras = if (esquema.surface.luminance() < 0.5f) Color.White else Color.Black
-    val cristal = mezcla(esquema.surfaceContainer, peorDetras, OPACIDAD_DEL_VELO)
-    return listOf(Par("onSurface sobre cristal", esquema.onSurface, cristal))
+private fun textoSobreCristal(
+    esquema: ColorScheme,
+    dinero: ColoresDeDinero,
+): List<Par> {
+    val detras =
+        mapOf(
+            "primary" to esquema.primary,
+            "primaryContainer" to esquema.primaryContainer,
+            "secondaryContainer" to esquema.secondaryContainer,
+            "surfaceContainerHighest" to esquema.surfaceContainerHighest,
+            "dinero.ingreso" to dinero.ingreso,
+            "dinero.gasto" to dinero.gasto,
+            "dinero.sobregiro" to dinero.sobregiro,
+            "dinero.ahorro" to dinero.ahorro,
+            "texto desenfocado" to mezcla(esquema.onSurface, esquema.background, TINTA_DEL_TEXTO_DESENFOCADO),
+        )
+    return detras.map { (nombre, color) ->
+        Par(
+            "onSurface sobre cristal con $nombre detras",
+            esquema.onSurface,
+            mezcla(esquema.surfaceContainer, color, OPACIDAD_DEL_VELO),
+        )
+    }
 }
+
+/** Cuanto del color de un texto queda despues de desenfocarlo: como mucho la mitad. */
+private const val TINTA_DEL_TEXTO_DESENFOCADO = 0.5f
 
 private data class Par(
     val nombre: String,
@@ -90,7 +119,8 @@ private fun paresDe(
     dinero: ColoresDeDinero,
     peorSuperficieDinamica: Color,
 ): List<Par> =
-    sobreSuperficies(esquema, dinero, peorSuperficieDinamica) + sobreSuColor(esquema) + textoSobreCristal(esquema)
+    sobreSuperficies(esquema, dinero, peorSuperficieDinamica) + sobreSuColor(esquema) +
+        textoSobreCristal(esquema, dinero)
 
 private fun sobreSuperficies(
     esquema: ColorScheme,
