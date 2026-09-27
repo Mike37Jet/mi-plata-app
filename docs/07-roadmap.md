@@ -117,17 +117,21 @@ pantalla, y carísimo cuando ya hay diez hechas con tamaños fijos.
 
 > Con la 1.0 en uso se vio que la app solo cuadra si se anota todo, y eso no
 > pasa. Esta etapa la recentra en el método que sí funcionaba: una cuenta
-> principal que recibe el ingreso, sobres que reciben un porcentaje o un monto fijo y un cierre
-> de mes contra el saldo real del banco. Decisión y alternativas en el ADR 0007.
+> principal que recibe el ingreso, sobres que reciben un porcentaje o un monto
+> fijo y un cierre de mes contra el saldo real del banco. Decisión y alternativas en el ADR 0007.
 
 | # | Entregable | Rama |
 |---|---|---|
-| 8.1 | **Roles de cuenta**: principal, sobre con su reparto, porcentaje **o** monto fijo (10% por defecto), e intocable. Migración de la base y del formato de backup | `feat/roles-de-cuenta` |
-| 8.2 | **Plan por cuenta**: líneas de reparto calculadas desde el ingreso, gastos agrupados por cuenta y saldo esperado al final del mes | `feat/plan-por-cuenta` |
-| 8.3 | **Cierre de mes**: escribir el saldo real de cada cuenta, ajuste "Sin detalle" por la diferencia, comparación esperado vs. real por cuenta, y reabrir un mes | `feat/cierre-de-mes` |
-| 8.4 | **Cobertura**: cubrir la principal desde un sobre, detectar coberturas en el cierre y avisar si baja una cuenta intocable | `feat/cobertura` |
-| 8.5 | **Arrastre**: el mes siguiente arranca del saldo real de cada cuenta y el plan muestra con cuánto vienes | `feat/arrastre` |
-| 8.6 | **Bienvenida del método**: crear la principal y los sobres desde los primeros pasos | `feat/bienvenida-por-cuentas` |
+| 8.1 | ✅ **Roles de cuenta**: principal, sobre con su reparto, porcentaje **o** monto fijo (10% por defecto), e intocable. Migración de la base a la versión 2; la copia de seguridad los lleva sin cambiar de formato | `docs/presupuesto-por-cuentas` |
+| 8.2 | ✅ **Plan por cuenta**: reparto calculado desde el ingreso, gastos agrupados por cuenta y saldo esperado al final del mes | `docs/presupuesto-por-cuentas` |
+| 8.3 | ✅ **Cierre de mes**: escribir el saldo real de cada cuenta, ajuste "Sin detalle" por la diferencia, comparación esperado vs. real por cuenta, y reabrir un mes | `docs/presupuesto-por-cuentas` |
+| 8.4 | ✅ **Cobertura**: marcar en el cierre qué sobre cubrió a la principal y avisar si baja una cuenta intocable | `docs/presupuesto-por-cuentas` |
+| 8.5 | ✅ **Arrastre**: el mes siguiente arranca del saldo real de cada cuenta y el plan muestra con cuánto vienes | `docs/presupuesto-por-cuentas` |
+| 8.6 | ✅ **Bienvenida del método**: crear la principal y los sobres desde los primeros pasos | `docs/presupuesto-por-cuentas` |
+
+Toda la etapa fue en una sola rama y un solo PR: cada PR espera a CI, y seis
+PRs pequeños eran seis esperas. Sale como la versión 1.1.0 (versionCode 2), que
+se instala encima de la 1.0.0 sin perder datos.
 
 ---
 
