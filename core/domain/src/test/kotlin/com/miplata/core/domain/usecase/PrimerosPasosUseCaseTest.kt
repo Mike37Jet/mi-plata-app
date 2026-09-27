@@ -12,6 +12,8 @@ import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.model.Tema
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
@@ -221,4 +223,38 @@ class PrimerosPasosUseCaseTest {
                 cuentasQueFaltaban.shouldBeEmpty()
             }
     }
+
+    @Test
+    fun `sin sobres la cuenta queda aparte, como siempre`() =
+        runTest {
+            completar()(pasos())
+
+            cuentas
+                .observarTodas()
+                .first()
+                .single()
+                .rol shouldBe RolDeCuenta.Independiente
+        }
+
+    @Test
+    fun `con sobres la primera cuenta es la principal y los sobres reciben su reparto`() =
+        runTest {
+            completar()(
+                pasos().copy(
+                    sobres =
+                        listOf(
+                            SobreInicial("Libertad financiera", Money.deUnidades(200), intocable = true),
+                            SobreInicial("Diversion", Money.ZERO),
+                        ),
+                ),
+            )
+
+            val guardadas = cuentas.observarTodas().first()
+            guardadas.single { it.nombre == "Cuenta nómina" }.esPrincipal shouldBe true
+            val libertad = guardadas.single { it.nombre == "Libertad financiera" }
+            libertad.rol shouldBe RolDeCuenta.Sobre(Reparto.PorDefecto, intocable = true)
+            libertad.saldoInicial shouldBe Money.deUnidades(200)
+            libertad.moneda shouldBe Moneda("EUR")
+            guardadas.single { it.nombre == "Diversion" }.sobre.shouldNotBeNull()
+        }
 }

@@ -4,8 +4,10 @@ import android.database.SQLException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miplata.core.domain.model.Moneda
+import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.usecase.CompletarPrimerosPasosUseCase
 import com.miplata.core.domain.usecase.PrimerosPasos
+import com.miplata.core.domain.usecase.SobreInicial
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,6 +48,28 @@ class BienvenidaViewModel
                 is EventoDeBienvenida.ElegirTipoDeCuenta -> estado.update { it.copy(tipoDeCuenta = evento.tipo) }
                 is EventoDeBienvenida.CambiarSaldo -> estado.update { it.copy(saldoActual = evento.saldo) }
                 is EventoDeBienvenida.CambiarIngreso -> estado.update { it.copy(ingresoMensual = evento.ingreso) }
+                is EventoDeBienvenida.AlternarSobre ->
+                    estado.update {
+                        val sobres =
+                            if (evento.sobre in
+                                it.sobres
+                            ) {
+                                it.sobres - evento.sobre
+                            } else {
+                                it.sobres + (evento.sobre to Money.ZERO)
+                            }
+                        it.copy(sobres = sobres)
+                    }
+                is EventoDeBienvenida.CambiarSaldoDeSobre ->
+                    estado.update {
+                        if (evento.sobre in
+                            it.sobres
+                        ) {
+                            it.copy(sobres = it.sobres + (evento.sobre to evento.saldo))
+                        } else {
+                            it
+                        }
+                    }
                 is EventoDeBienvenida.Terminar -> terminar(evento)
             }
         }
@@ -79,6 +103,15 @@ class BienvenidaViewModel
                                 saldoActual = actual.saldoActual,
                                 ingresoMensual = actual.ingresoMensual.takeIf { evento.conIngreso },
                                 nombreDelIngreso = evento.nombreDelIngreso,
+                                // En el orden de la lista, no en el que se marcaron.
+                                sobres =
+                                    SobreSugerido.entries.filter { it in actual.sobres }.map { sobre ->
+                                        SobreInicial(
+                                            nombre = evento.nombresDeLosSobres[sobre] ?: sobre.name,
+                                            saldoActual = actual.sobres.getValue(sobre),
+                                            intocable = sobre.intocable,
+                                        )
+                                    },
                             ),
                         )
                     }

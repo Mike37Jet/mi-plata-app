@@ -86,12 +86,13 @@ internal fun PantallaBienvenida(
             PasoDeBienvenida.BIENVENIDA -> PasoInicial(alEvento, alTenerCopia)
             PasoDeBienvenida.TU_MES -> PasoTuMes(estado, alEvento)
             PasoDeBienvenida.PRIMERA_CUENTA -> PasoPrimeraCuenta(estado, alEvento)
+            PasoDeBienvenida.SOBRES -> PasoSobres(estado, alEvento)
             PasoDeBienvenida.PRIMER_INGRESO -> PasoPrimerIngreso(estado, alEvento, alTerminar)
         }
     }
 }
 
-/** Los tres pasos que preguntan algo; el inicial no cuenta. */
+/** Los pasos que preguntan algo; el inicial no cuenta. */
 private val PASOS_CON_PREGUNTAS = PasoDeBienvenida.entries.size - 1
 
 @Composable

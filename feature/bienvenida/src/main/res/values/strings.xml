@@ -31,6 +31,17 @@
     <string name="bienvenida_tipo_ahorro">Ahorro</string>
     <string name="bienvenida_tipo_inversion">Inversión</string>
 
+    <string name="bienvenida_sobres_titulo">¿Separas tu dinero en cuentas?</string>
+    <string name="bienvenida_sobres_texto">Si tienes cuentas aparte para ahorrar o darte gustos, márcalas. Cada mes recibirán el 10%% de tu ingreso desde %1$s, y al final del mes compararás lo planeado con lo que dice el banco. Si no, sigue sin marcar nada.</string>
+    <string name="bienvenida_sobre_libertad">Libertad financiera</string>
+    <string name="bienvenida_sobre_libertad_detalle">Solo sube. Si baja, te avisaremos.</string>
+    <string name="bienvenida_sobre_ahorros">Ahorros</string>
+    <string name="bienvenida_sobre_ahorros_detalle">Para gastos que planeas: pasajes, suscripciones.</string>
+    <string name="bienvenida_sobre_diversion">Diversión</string>
+    <string name="bienvenida_sobre_diversion_detalle">Para darte gustos sin culpa.</string>
+    <string name="bienvenida_sobre_entrenamiento">Entrenamiento</string>
+    <string name="bienvenida_sobre_entrenamiento_detalle">Para cursos y lo que te hace crecer.</string>
+
     <string name="bienvenida_ingreso_titulo">¿Cuánto entra al mes?</string>
     <string name="bienvenida_ingreso_texto">Tu sueldo o lo que recibas cada mes. Es el punto de partida del plan: después le restarás los gastos.</string>
     <string name="bienvenida_ingreso_monto">Ingreso mensual</string>
