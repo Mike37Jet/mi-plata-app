@@ -17,7 +17,7 @@ cuentas reales del banco (Banco Pichincha):
 |---|---|---|
 | **Normal** | Todos los ingresos (el sueldo, ~633) | Gastos fijos: arriendo, luz, agua, internet, comida, deudas |
 | **Libertad financiera** | 10% del ingreso | Solo acumula. **No debería bajar nunca** |
-| **Ahorros** | 10% del ingreso | Gastos planeados propios: pasajes, Spotify, megas… |
+| **Ahorros** | 10% del ingreso | Gastos planeados menores: pasajes, Spotify, plan de megas, corte de cabello |
 | **Diversión** | 10% del ingreso | Ocio |
 | **Entrenamiento** | 10% del ingreso | Formación: la suscripción a Claude, cursos… |
 
@@ -48,8 +48,12 @@ En concreto:
 
 1. **Roles de cuenta.**
    - Una cuenta es la **principal**: recibe los ingresos (Normal).
-   - Las demás pueden ser **sobres**: reciben un porcentaje del ingreso,
-     configurable por cuenta, 10% por defecto.
+   - Las demás pueden ser **sobres**. Cada sobre recibe **un porcentaje del
+     ingreso o un monto fijo**, a elegir por cuenta. Por defecto es el 10%.
+   - Es una cosa o la otra, nunca las dos. En el modelo es un tipo cerrado,
+     `Reparto.Porcentaje(10)` o `Reparto.Monto(50)`, así que tener ambos a la
+     vez no se puede representar. No hace falta validarlo ni mostrar un error.
+     En pantalla es un selector "% / $" con un solo campo.
    - Un sobre puede marcarse como **intocable** (Libertad financiera). Cualquier
      salida de esa cuenta se señala aparte y nunca se sugiere para cubrir a
      otra.
@@ -89,6 +93,7 @@ En concreto:
 | Leer las notificaciones o SMS del banco para anotar solo | Casi sin esfuerzo, y funciona sin internet | Depende del formato de cada banco. Aun así, un movimiento perdido descuadra | Aplazada: complementa esto, no lo sustituye |
 | Guardar el saldo real como punto de control (saldo = último cierre + movimientos posteriores) | El cierre queda explícito | Dos formas de calcular un saldo. Un movimiento anotado tarde, con fecha anterior al cierre, se pierde sin avisar | Rechazada |
 | **Cierre con movimiento de ajuste "Sin detalle"** | Una sola fórmula de saldo. Los resúmenes lo cuentan sin código especial. Lo no anotado queda visible con un nombre honesto | Añade movimientos que el usuario no escribió; hay que marcarlos y dejar deshacer el cierre | **Aceptada** |
+| Reparto con dos campos opcionales, porcentaje y monto | Fácil de guardar | Permite el estado "los dos" y el estado "ninguno", que hay que validar en cada sitio | Rechazada: el tipo cerrado lo hace imposible |
 | Sobres virtuales dentro de una sola cuenta | No depende de tener varias cuentas en el banco | No es como funciona el dinero de verdad aquí: las cuentas existen en el banco y se comparan con él | Rechazada |
 
 ## Consecuencias
@@ -98,7 +103,7 @@ En concreto:
   concreto ahora *reduce* "Sin detalle", un incentivo en lugar de una
   obligación.
 - **El modelo crece.**
-  - `Cuenta`: rol (principal / sobre), porcentaje de reparto e intocable.
+  - `Cuenta`: rol (principal / sobre), reparto (porcentaje o monto) e intocable.
   - `TipoDeLinea`: reparto, con cuenta de destino.
   - `Transaccion`: una marca de ajuste de cierre.
   - Hay que registrar qué meses están cerrados.
