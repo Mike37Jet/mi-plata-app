@@ -16,6 +16,7 @@ import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakeCategoriaRepository
+import com.miplata.core.domain.repository.FakeCierreRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeRepositorioDeRestauracion
@@ -96,9 +97,10 @@ class RestaurarViewModelTest {
     private val categorias = FakeCategoriaRepository()
     private val transacciones = FakeTransaccionRepository()
     private val planes = FakePlanRepository()
+    private val cierres = FakeCierreRepository()
     private val ajustes = FakeAjustesRepository()
-    private val repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes)
-    private val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes)
+    private val repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes, cierres)
+    private val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes, cierres)
     private val copiaPrevia = CopiaPreviaEnMemoria()
 
     /** Lo que devuelve el selector: una copia de verdad, cifrada con [FRASE]. */
@@ -120,6 +122,7 @@ class RestaurarViewModelTest {
                 FakeTransaccionRepository(),
                 FakePlanRepository(),
                 FakeAjustesRepository(),
+                FakeCierreRepository(),
             ).recolectar()
         return archivo.escribirABytes(
             ContenidoDelBackup(datos, 1, "0.1.0", creadoEnMillis = CREADA_EN, dispositivo = "Movil viejo"),

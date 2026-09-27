@@ -9,9 +9,11 @@ import androidx.room.Relation
 import androidx.room.Transaction
 import androidx.room.Upsert
 import com.miplata.core.data.database.entity.CategoriaEntity
+import com.miplata.core.data.database.entity.CierreEntity
 import com.miplata.core.data.database.entity.CuentaEntity
 import com.miplata.core.data.database.entity.LineaDePlanEntity
 import com.miplata.core.data.database.entity.PlanEntity
+import com.miplata.core.data.database.entity.SaldoDeCierreEntity
 import com.miplata.core.data.database.entity.TransaccionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -233,6 +235,48 @@ interface PlanDao {
     )
 }
 
+/** Un cierre con sus saldos, resuelto en una sola operacion como [PlanConLineas]. */
+data class CierreConSaldos(
+    @Embedded val cierre: CierreEntity,
+    @Relation(parentColumn = "mes", entityColumn = "cierreMes")
+    val saldos: List<SaldoDeCierreEntity>,
+)
+
+@Dao
+interface CierreDao {
+    @Transaction
+    @Query("SELECT * FROM cierres_de_mes ORDER BY mes")
+    fun observarTodos(): Flow<List<CierreConSaldos>>
+
+    @Transaction
+    @Query("SELECT * FROM cierres_de_mes WHERE mes = :mes")
+    suspend fun obtener(mes: String): CierreConSaldos?
+
+    @Upsert
+    suspend fun guardarCierre(cierre: CierreEntity)
+
+    @Query("DELETE FROM saldos_de_cierre WHERE cierreMes = :mes")
+    suspend fun borrarSaldosDe(mes: String)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun guardarSaldos(saldos: List<SaldoDeCierreEntity>)
+
+    /** El cierre y sus saldos, de una vez: volver a cerrar un mes reemplaza los saldos. */
+    @Transaction
+    suspend fun guardarConSaldos(
+        cierre: CierreEntity,
+        saldos: List<SaldoDeCierreEntity>,
+    ) {
+        guardarCierre(cierre)
+        borrarSaldosDe(cierre.mes)
+        guardarSaldos(saldos)
+    }
+
+    /** Borra de verdad; los saldos se van con el por la cascada. */
+    @Query("DELETE FROM cierres_de_mes WHERE mes = :mes")
+    suspend fun eliminar(mes: String)
+}
+
 /**
  * Lo que necesita una restauracion: vaciar la base y rellenarla de golpe.
  *
@@ -252,6 +296,12 @@ interface PlanDao {
 internal interface VaciadoDeRestauracionDao {
     // El orden de borrado respeta las claves foraneas: primero lo que apunta a
     // otras tablas, al final aquello a lo que se apunta.
+    @Query("DELETE FROM saldos_de_cierre")
+    suspend fun borrarSaldosDeCierre()
+
+    @Query("DELETE FROM cierres_de_mes")
+    suspend fun borrarCierres()
+
     @Query("DELETE FROM transacciones")
     suspend fun borrarTransacciones()
 
@@ -302,4 +352,10 @@ internal interface CargaDeRestauracionDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertarTransacciones(transacciones: List<TransaccionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarCierres(cierres: List<CierreEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertarSaldosDeCierre(saldos: List<SaldoDeCierreEntity>)
 }

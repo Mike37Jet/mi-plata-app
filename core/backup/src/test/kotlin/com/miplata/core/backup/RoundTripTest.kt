@@ -3,6 +3,7 @@ package com.miplata.core.backup
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.FrecuenciaDeRecordatorio
@@ -13,6 +14,9 @@ import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
+import com.miplata.core.domain.model.SaldoDeCierre
 import com.miplata.core.domain.model.Tema
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
@@ -21,6 +25,7 @@ import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakeCategoriaRepository
+import com.miplata.core.domain.repository.FakeCierreRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeRepositorioDeRestauracion
@@ -58,6 +63,37 @@ class RoundTripTest {
         ponerCategorias()
         ponerPlanes()
         ponerTransacciones()
+        ponerCierre()
+    }
+
+    /** El presupuesto por cuentas (ADR 0007): roles, un cierre y su ajuste. */
+    private suspend fun AppEnMemoria.ponerCierre() {
+        cuentas.guardar(
+            Cuenta(
+                id = CuentaId("libertad"),
+                nombre = "Libertad financiera",
+                tipo = TipoDeCuenta.AHORRO,
+                saldoInicial = Money.ZERO,
+                moneda = Moneda("EUR"),
+                rol = RolDeCuenta.Sobre(Reparto.Monto(Money.deCentavos(6_330)), intocable = true),
+            ),
+        )
+        cierres.guardar(
+            CierreDeMes(
+                Mes.de(2026, 3),
+                listOf(SaldoDeCierre(CuentaId("banco"), Money.deUnidades(4000), Money.deCentavos(389_950))),
+            ),
+        )
+        transacciones.guardar(
+            Transaccion(
+                id = TransaccionId("sin-detalle"),
+                fecha = LocalDate(2026, 3, 31),
+                monto = Money.deCentavos(4_775),
+                tipo = TipoDeTransaccion.GASTO,
+                cuentaOrigenId = CuentaId("banco"),
+                ajusteDeCierre = Mes.de(2026, 3),
+            ),
+        )
     }
 
     private suspend fun AppEnMemoria.ponerAjustes() {
@@ -81,6 +117,7 @@ class RoundTripTest {
                 tipo = TipoDeCuenta.BANCARIA,
                 saldoInicial = Money.deUnidades(2500),
                 moneda = Moneda("EUR"),
+                rol = RolDeCuenta.Principal,
             ),
         )
         cuentas.guardar(
@@ -181,6 +218,7 @@ class RoundTripTest {
             nuevo.categorias.observarTodas().first() shouldBe original.categorias.observarTodas().first()
             nuevo.transacciones.observarTodas().first() shouldBe original.transacciones.observarTodas().first()
             nuevo.planes.observarTodos().first() shouldBe original.planes.observarTodos().first()
+            nuevo.cierres.observarTodos().first() shouldBe original.cierres.observarTodos().first()
         }
 
     // Los centavos viajan como enteros justamente para esto: un 400,50 escrito
@@ -274,7 +312,8 @@ class RoundTripTest {
                     .leer(ByteArrayInputStream(archivo.escribirABytes(original.aContenido(), FRASE)), FRASE)
                     .manifiesto
 
-            manifiesto.contenido shouldBe Recuento(cuentas = 2, categorias = 2, transacciones = 3, planes = 2)
+            manifiesto.contenido shouldBe
+                Recuento(cuentas = 3, categorias = 2, transacciones = 4, planes = 2, cierres = 1)
         }
 }
 
@@ -284,14 +323,15 @@ private class AppEnMemoria {
     val categorias = FakeCategoriaRepository()
     val transacciones = FakeTransaccionRepository()
     val planes = FakePlanRepository()
+    val cierres = FakeCierreRepository()
     val ajustes = FakeAjustesRepository()
 
-    val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes)
+    val recolector = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes, cierres)
     val restaurador =
         RestauradorDeCopias(
             recolector = recolector,
             archivo = archivoRapido(),
-            repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes),
+            repositorio = FakeRepositorioDeRestauracion(cuentas, categorias, transacciones, planes, cierres),
             ajustes = ajustes,
             copiaPrevia = AlmacenEnMemoria(),
         )

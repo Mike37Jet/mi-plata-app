@@ -3,6 +3,7 @@ package com.miplata.core.backup
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
@@ -14,6 +15,9 @@ import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
+import com.miplata.core.domain.model.SaldoDeCierre
 import com.miplata.core.domain.model.Tema
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.model.TipoDeTransaccion
@@ -34,6 +38,7 @@ internal fun DatosDelBackup.aContenidoFinanciero() =
         categorias = categorias.map { it.aDominio() },
         transacciones = transacciones.map { it.aDominio() },
         planes = planes.map { it.aDominio() },
+        cierres = cierres.map { it.aDominio() },
     )
 
 internal fun AjustesDto.aDominio() =
@@ -59,7 +64,30 @@ internal fun CuentaDto.aDominio() =
         moneda = Moneda(moneda),
         incluirEnTotal = incluirEnTotal,
         archivada = archivada,
+        rol = rolDeCuenta(),
     )
+
+/**
+ * El rol falla si no se entiende, como un tipo de cuenta: un sobre leido como
+ * independiente cambiaria el plan de todo el mes.
+ */
+private fun CuentaDto.rolDeCuenta(): RolDeCuenta =
+    when (rol) {
+        ROL_INDEPENDIENTE -> RolDeCuenta.Independiente
+        ROL_PRINCIPAL -> RolDeCuenta.Principal
+        ROL_SOBRE -> {
+            val porcentaje = repartoPorcentaje
+            val monto = repartoMontoEnCentavos
+            val reparto =
+                when {
+                    porcentaje != null && monto == null -> Reparto.Porcentaje(porcentaje)
+                    monto != null && porcentaje == null -> Reparto.Monto(Money.deCentavos(monto))
+                    else -> throw BackupInvalido("El sobre $id necesita un porcentaje o un monto, y solo uno")
+                }
+            RolDeCuenta.Sobre(reparto, intocable)
+        }
+        else -> throw BackupInvalido("rol de cuenta desconocido en el backup: '$rol'")
+    }
 
 internal fun CategoriaDto.aDominio() =
     Categoria(
@@ -81,6 +109,7 @@ internal fun TransaccionDto.aDominio() =
         categoriaId = categoriaId?.let(::CategoriaId),
         lineaDePlanId = lineaDePlanId?.let(::LineaId),
         nota = nota,
+        ajusteDeCierre = ajusteDeCierre?.let(::mesDe),
     )
 
 internal fun PlanDto.aDominio() =
@@ -100,6 +129,19 @@ internal fun LineaDePlanDto.aDominio() =
         cuentaId = cuentaId?.let(::CuentaId),
         diaDelMes = diaDelMes,
         activa = activa,
+    )
+
+internal fun CierreDto.aDominio() =
+    CierreDeMes(
+        mes = mesDe(mes),
+        saldos =
+            saldos.map {
+                SaldoDeCierre(
+                    cuentaId = CuentaId(it.cuentaId),
+                    esperado = Money.deCentavos(it.esperadoEnCentavos),
+                    real = Money.deCentavos(it.realEnCentavos),
+                )
+            },
     )
 
 /**

@@ -1,10 +1,8 @@
 package com.miplata.core.domain.usecase
 
 import com.miplata.core.domain.model.Cuenta
-import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
-import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.sumar
 
@@ -90,29 +88,4 @@ class CalcularSaldosDeCuentasUseCase {
 
     /** Archivar o desmarcar del total son decisiones del usuario, no avisos. */
     private fun cuentaEntraEnElTotal(cuenta: Cuenta): Boolean = cuenta.incluirEnTotal && !cuenta.archivada
-
-    /**
-     * Cuanto se ha movido en cada cuenta desde su saldo inicial.
-     *
-     * Una transferencia toca dos cuentas a la vez: sale de una y entra en otra.
-     * Por eso no vale con agrupar por `cuentaOrigenId`.
-     */
-    private fun movimientoPorCuenta(transacciones: List<Transaccion>): Map<CuentaId, Money> =
-        transacciones
-            .flatMap { efectoEnCuentas(it) }
-            .groupBy({ it.first }, { it.second })
-            .mapValues { (_, montos) -> montos.sumar() }
-
-    private fun efectoEnCuentas(transaccion: Transaccion): List<Pair<CuentaId, Money>> =
-        when (transaccion.tipo) {
-            TipoDeTransaccion.INGRESO -> listOf(transaccion.cuentaOrigenId to transaccion.monto)
-            TipoDeTransaccion.GASTO -> listOf(transaccion.cuentaOrigenId to -transaccion.monto)
-            TipoDeTransaccion.TRANSFERENCIA ->
-                listOf(
-                    transaccion.cuentaOrigenId to -transaccion.monto,
-                    // El modelo garantiza que una transferencia tiene destino
-                    // (`Transaccion.init`), asi que aqui no hay nada que decidir.
-                    transaccion.cuentaDestinoId!! to transaccion.monto,
-                )
-        }
 }

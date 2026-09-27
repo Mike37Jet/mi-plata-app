@@ -1,0 +1,660 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "6e4da768b3b60579a5f83c0e0c788af4",
+    "entities": [
+      {
+        "tableName": "cuentas",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `nombre` TEXT NOT NULL, `tipo` TEXT NOT NULL, `saldoInicialCentavos` INTEGER NOT NULL, `moneda` TEXT NOT NULL, `incluirEnTotal` INTEGER NOT NULL, `archivada` INTEGER NOT NULL, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, `eliminadaEn` INTEGER, `rol` TEXT NOT NULL DEFAULT 'INDEPENDIENTE', `repartoPorcentaje` INTEGER, `repartoMontoCentavos` INTEGER, `intocable` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "saldoInicialCentavos",
+            "columnName": "saldoInicialCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "moneda",
+            "columnName": "moneda",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "incluirEnTotal",
+            "columnName": "incluirEnTotal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "archivada",
+            "columnName": "archivada",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creadaEn",
+            "columnName": "creadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualizadaEn",
+            "columnName": "actualizadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eliminadaEn",
+            "columnName": "eliminadaEn",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "rol",
+            "columnName": "rol",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'INDEPENDIENTE'"
+          },
+          {
+            "fieldPath": "repartoPorcentaje",
+            "columnName": "repartoPorcentaje",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "repartoMontoCentavos",
+            "columnName": "repartoMontoCentavos",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "intocable",
+            "columnName": "intocable",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      },
+      {
+        "tableName": "categorias",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `nombre` TEXT NOT NULL, `padreId` TEXT, `icono` TEXT NOT NULL, `color` INTEGER NOT NULL, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, `eliminadaEn` INTEGER, PRIMARY KEY(`id`), FOREIGN KEY(`padreId`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "padreId",
+            "columnName": "padreId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "icono",
+            "columnName": "icono",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "color",
+            "columnName": "color",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creadaEn",
+            "columnName": "creadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualizadaEn",
+            "columnName": "actualizadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eliminadaEn",
+            "columnName": "eliminadaEn",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_categorias_padreId",
+            "unique": false,
+            "columnNames": [
+              "padreId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_categorias_padreId` ON `${TABLE_NAME}` (`padreId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "categorias",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "padreId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "transacciones",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `fecha` TEXT NOT NULL, `montoCentavos` INTEGER NOT NULL, `tipo` TEXT NOT NULL, `cuentaOrigenId` TEXT NOT NULL, `cuentaDestinoId` TEXT, `categoriaId` TEXT, `lineaDePlanId` TEXT, `nota` TEXT, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, `eliminadaEn` INTEGER, `ajusteDeCierre` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`cuentaOrigenId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`cuentaDestinoId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`categoriaId`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`lineaDePlanId`) REFERENCES `lineas_de_plan`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fecha",
+            "columnName": "fecha",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "montoCentavos",
+            "columnName": "montoCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cuentaOrigenId",
+            "columnName": "cuentaOrigenId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cuentaDestinoId",
+            "columnName": "cuentaDestinoId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "categoriaId",
+            "columnName": "categoriaId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lineaDePlanId",
+            "columnName": "lineaDePlanId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "nota",
+            "columnName": "nota",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "creadaEn",
+            "columnName": "creadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualizadaEn",
+            "columnName": "actualizadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eliminadaEn",
+            "columnName": "eliminadaEn",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "ajusteDeCierre",
+            "columnName": "ajusteDeCierre",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_transacciones_fecha",
+            "unique": false,
+            "columnNames": [
+              "fecha"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transacciones_fecha` ON `${TABLE_NAME}` (`fecha`)"
+          },
+          {
+            "name": "index_transacciones_cuentaOrigenId",
+            "unique": false,
+            "columnNames": [
+              "cuentaOrigenId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transacciones_cuentaOrigenId` ON `${TABLE_NAME}` (`cuentaOrigenId`)"
+          },
+          {
+            "name": "index_transacciones_cuentaDestinoId",
+            "unique": false,
+            "columnNames": [
+              "cuentaDestinoId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transacciones_cuentaDestinoId` ON `${TABLE_NAME}` (`cuentaDestinoId`)"
+          },
+          {
+            "name": "index_transacciones_categoriaId",
+            "unique": false,
+            "columnNames": [
+              "categoriaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transacciones_categoriaId` ON `${TABLE_NAME}` (`categoriaId`)"
+          },
+          {
+            "name": "index_transacciones_lineaDePlanId",
+            "unique": false,
+            "columnNames": [
+              "lineaDePlanId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_transacciones_lineaDePlanId` ON `${TABLE_NAME}` (`lineaDePlanId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "cuentas",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cuentaOrigenId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "cuentas",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cuentaDestinoId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "categorias",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "lineas_de_plan",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "lineaDePlanId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "planes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mes` TEXT NOT NULL, `id` TEXT NOT NULL, `creadoEn` INTEGER NOT NULL, `actualizadoEn` INTEGER NOT NULL, `eliminadoEn` INTEGER, PRIMARY KEY(`mes`))",
+        "fields": [
+          {
+            "fieldPath": "mes",
+            "columnName": "mes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creadoEn",
+            "columnName": "creadoEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualizadoEn",
+            "columnName": "actualizadoEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "eliminadoEn",
+            "columnName": "eliminadoEn",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mes"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_planes_id",
+            "unique": true,
+            "columnNames": [
+              "id"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_planes_id` ON `${TABLE_NAME}` (`id`)"
+          }
+        ]
+      },
+      {
+        "tableName": "lineas_de_plan",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `planMes` TEXT NOT NULL, `nombre` TEXT NOT NULL, `tipo` TEXT NOT NULL, `montoPlanificadoCentavos` INTEGER NOT NULL, `categoriaId` TEXT, `cuentaId` TEXT, `diaDelMes` INTEGER, `activa` INTEGER NOT NULL, `orden` INTEGER NOT NULL, `creadaEn` INTEGER NOT NULL, `actualizadaEn` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`planMes`) REFERENCES `planes`(`mes`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`categoriaId`) REFERENCES `categorias`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`cuentaId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "planMes",
+            "columnName": "planMes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tipo",
+            "columnName": "tipo",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "montoPlanificadoCentavos",
+            "columnName": "montoPlanificadoCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "categoriaId",
+            "columnName": "categoriaId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "cuentaId",
+            "columnName": "cuentaId",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "diaDelMes",
+            "columnName": "diaDelMes",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "activa",
+            "columnName": "activa",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orden",
+            "columnName": "orden",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creadaEn",
+            "columnName": "creadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualizadaEn",
+            "columnName": "actualizadaEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_lineas_de_plan_planMes",
+            "unique": false,
+            "columnNames": [
+              "planMes"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_lineas_de_plan_planMes` ON `${TABLE_NAME}` (`planMes`)"
+          },
+          {
+            "name": "index_lineas_de_plan_categoriaId",
+            "unique": false,
+            "columnNames": [
+              "categoriaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_lineas_de_plan_categoriaId` ON `${TABLE_NAME}` (`categoriaId`)"
+          },
+          {
+            "name": "index_lineas_de_plan_cuentaId",
+            "unique": false,
+            "columnNames": [
+              "cuentaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_lineas_de_plan_cuentaId` ON `${TABLE_NAME}` (`cuentaId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "planes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "planMes"
+            ],
+            "referencedColumns": [
+              "mes"
+            ]
+          },
+          {
+            "table": "categorias",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "categoriaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          },
+          {
+            "table": "cuentas",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cuentaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "cierres_de_mes",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mes` TEXT NOT NULL, `creadoEn` INTEGER NOT NULL, PRIMARY KEY(`mes`))",
+        "fields": [
+          {
+            "fieldPath": "mes",
+            "columnName": "mes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "creadoEn",
+            "columnName": "creadoEn",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "mes"
+          ]
+        }
+      },
+      {
+        "tableName": "saldos_de_cierre",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`cierreMes` TEXT NOT NULL, `cuentaId` TEXT NOT NULL, `esperadoCentavos` INTEGER NOT NULL, `realCentavos` INTEGER NOT NULL, PRIMARY KEY(`cierreMes`, `cuentaId`), FOREIGN KEY(`cierreMes`) REFERENCES `cierres_de_mes`(`mes`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`cuentaId`) REFERENCES `cuentas`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "fields": [
+          {
+            "fieldPath": "cierreMes",
+            "columnName": "cierreMes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cuentaId",
+            "columnName": "cuentaId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "esperadoCentavos",
+            "columnName": "esperadoCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "realCentavos",
+            "columnName": "realCentavos",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "cierreMes",
+            "cuentaId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_saldos_de_cierre_cuentaId",
+            "unique": false,
+            "columnNames": [
+              "cuentaId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_saldos_de_cierre_cuentaId` ON `${TABLE_NAME}` (`cuentaId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "cierres_de_mes",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cierreMes"
+            ],
+            "referencedColumns": [
+              "mes"
+            ]
+          },
+          {
+            "table": "cuentas",
+            "onDelete": "RESTRICT",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "cuentaId"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6e4da768b3b60579a5f83c0e0c788af4')"
+    ]
+  }
+}

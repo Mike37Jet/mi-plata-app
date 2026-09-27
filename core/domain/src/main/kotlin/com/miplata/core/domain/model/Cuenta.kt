@@ -37,8 +37,20 @@ data class Cuenta(
      * resumenes de meses anteriores siguen cuadrando.
      */
     val archivada: Boolean = false,
+    /** Su papel en el presupuesto por cuentas (docs/adr/0007). */
+    val rol: RolDeCuenta = RolDeCuenta.Independiente,
 ) {
     init {
         require(nombre.isNotBlank()) { "Una cuenta necesita un nombre" }
     }
+
+    val esPrincipal: Boolean get() = rol == RolDeCuenta.Principal
+
+    /** El sobre, si la cuenta lo es. */
+    val sobre: RolDeCuenta.Sobre? get() = rol as? RolDeCuenta.Sobre
+
+    val esIntocable: Boolean get() = sobre?.intocable == true
+
+    /** Si la cuenta forma parte del metodo: la principal o un sobre. */
+    val estaEnElMetodo: Boolean get() = rol != RolDeCuenta.Independiente
 }

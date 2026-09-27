@@ -17,6 +17,7 @@ import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.model.TipoDeTransaccion
@@ -52,6 +53,7 @@ fun CuentaEntity.aDominio(): Cuenta =
         moneda = Moneda(moneda),
         incluirEnTotal = incluirEnTotal,
         archivada = archivada,
+        rol = rolDeCuenta(),
     )
 
 fun Cuenta.aEntidad(
@@ -68,6 +70,10 @@ fun Cuenta.aEntidad(
         archivada = archivada,
         creadaEn = creadaEn,
         actualizadaEn = actualizadaEn,
+        rol = rol.aColumna(),
+        repartoPorcentaje = (sobre?.reparto as? Reparto.Porcentaje)?.valor,
+        repartoMontoCentavos = (sobre?.reparto as? Reparto.Monto)?.monto?.centavos,
+        intocable = esIntocable,
     )
 
 // --- Categoria ---
@@ -108,6 +114,7 @@ fun TransaccionEntity.aDominio(): Transaccion =
         categoriaId = categoriaId?.let(::CategoriaId),
         lineaDePlanId = lineaDePlanId?.let(::LineaId),
         nota = nota,
+        ajusteDeCierre = ajusteDeCierre?.let(::aMes),
     )
 
 fun Transaccion.aEntidad(
@@ -126,6 +133,7 @@ fun Transaccion.aEntidad(
         nota = nota,
         creadaEn = creadaEn,
         actualizadaEn = actualizadaEn,
+        ajusteDeCierre = ajusteDeCierre?.toString(),
     )
 
 private fun aFecha(texto: String): LocalDate =
@@ -197,7 +205,7 @@ fun PlanMensual.lineasAEntidades(
         )
     }
 
-private fun aMes(texto: String): Mes =
+internal fun aMes(texto: String): Mes =
     try {
         Mes.de(texto)
     } catch (e: IllegalArgumentException) {

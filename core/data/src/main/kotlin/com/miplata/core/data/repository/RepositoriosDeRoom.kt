@@ -1,14 +1,17 @@
 package com.miplata.core.data.repository
 
 import com.miplata.core.data.database.dao.CategoriaDao
+import com.miplata.core.data.database.dao.CierreDao
 import com.miplata.core.data.database.dao.CuentaDao
 import com.miplata.core.data.database.dao.PlanDao
 import com.miplata.core.data.database.dao.TransaccionDao
 import com.miplata.core.data.mapper.aDominio
 import com.miplata.core.data.mapper.aEntidad
 import com.miplata.core.data.mapper.lineasAEntidades
+import com.miplata.core.data.mapper.saldosAEntidades
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Mes
@@ -17,6 +20,7 @@ import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.CategoriaRepository
+import com.miplata.core.domain.repository.CierreRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
@@ -130,5 +134,23 @@ class RoomPlanRepository(
 
     override suspend fun eliminar(mes: Mes) {
         dao.marcarEliminado(mes.toString(), reloj.ahoraEnMillis())
+    }
+}
+
+class RoomCierreRepository(
+    private val dao: CierreDao,
+    private val reloj: Reloj = Reloj.DEL_SISTEMA,
+) : CierreRepository {
+    override fun observarTodos(): Flow<List<CierreDeMes>> =
+        dao.observarTodos().map { filas -> filas.map { it.aDominio() } }
+
+    override suspend fun obtenerDe(mes: Mes): CierreDeMes? = dao.obtener(mes.toString())?.aDominio()
+
+    override suspend fun guardar(cierre: CierreDeMes) {
+        dao.guardarConSaldos(cierre.aEntidad(creadoEn = reloj.ahoraEnMillis()), cierre.saldosAEntidades())
+    }
+
+    override suspend fun eliminar(mes: Mes) {
+        dao.eliminar(mes.toString())
     }
 }

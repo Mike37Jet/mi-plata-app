@@ -21,12 +21,12 @@ enum class TipoDeTransaccion {
  * cambia de sitio pero el patrimonio no se mueve. Contarla como gasto es el
  * error clasico que infla los informes de cualquier app de finanzas.
  *
- * Sobre el `@Suppress`: detekt avisa de nueve parametros, y el aviso es correcto
- * para una **funcion** -nueve argumentos posicionales en una llamada son
+ * Sobre el `@Suppress`: detekt avisa de diez parametros, y el aviso es correcto
+ * para una **funcion** -diez argumentos posicionales en una llamada son
  * ilegibles-. Aqui es un contenedor de datos con valores por defecto que se
- * construye con argumentos con nombre. Los nueve campos son los que fija
- * `docs/03` para una transaccion, y agruparlos artificialmente solo moveria el
- * problema de sitio.
+ * construye con argumentos con nombre. Son los nueve campos que fija `docs/03`
+ * para una transaccion mas la marca de ajuste de cierre (ADR 0007), y
+ * agruparlos artificialmente solo moveria el problema de sitio.
  */
 @Suppress("LongParameterList")
 data class Transaccion(
@@ -48,8 +48,24 @@ data class Transaccion(
      */
     val lineaDePlanId: LineaId? = null,
     val nota: String? = null,
+    /**
+     * El mes cuyo cierre creo este movimiento, o `null` si lo anoto el usuario.
+     *
+     * El cierre crea dos clases de movimiento (docs/adr/0007):
+     * - un ingreso o gasto por lo que no se anoto, la diferencia entre el saldo
+     *   que la app calculaba y el del banco. Se muestra como "Sin detalle";
+     * - una transferencia cuando un sobre cubrio a la principal.
+     *
+     * Reabrir el mes borra los dos.
+     */
+    val ajusteDeCierre: Mes? = null,
 ) {
     val esTransferencia: Boolean get() = tipo == TipoDeTransaccion.TRANSFERENCIA
+
+    val esAjusteDeCierre: Boolean get() = ajusteDeCierre != null
+
+    /** Un ingreso o gasto que puso el cierre: lo que no se anoto. */
+    val esSinDetalle: Boolean get() = esAjusteDeCierre && !esTransferencia
 
     init {
         require(monto.esPositivo) {

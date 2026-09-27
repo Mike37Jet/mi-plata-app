@@ -9,6 +9,7 @@ import com.miplata.core.data.database.entity.TransaccionEntity
 import com.miplata.core.data.mapper.DatoGuardadoInvalido
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
@@ -19,6 +20,9 @@ import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PeriodoMensual
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
+import com.miplata.core.domain.model.SaldoDeCierre
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.model.TipoDeTransaccion
@@ -192,6 +196,69 @@ class RepositoriosDeRoomTest {
             )
 
             shouldThrow<DatoGuardadoInvalido> { cuentas.obtener(CuentaId("c1")) }
+        }
+
+    @Test
+    fun `los roles de cuenta sobreviven al ida y vuelta`() =
+        runTest {
+            val guardadas =
+                listOf(
+                    cuenta("normal").copy(rol = RolDeCuenta.Principal),
+                    cuenta("libertad").copy(rol = RolDeCuenta.Sobre(Reparto.Porcentaje(10), intocable = true)),
+                    cuenta("entrenamiento").copy(rol = RolDeCuenta.Sobre(Reparto.Monto(Money.deUnidades(50)))),
+                    cuenta("cartera"),
+                )
+            guardadas.forEach { cuentas.guardar(it) }
+
+            guardadas.forEach { cuentas.obtener(it.id) shouldBe it }
+        }
+
+    /** Las dos columnas del reparto son la forma de guardar un tipo cerrado; nunca las dos a la vez. */
+    @Test
+    fun `un sobre con porcentaje y monto a la vez falla en vez de elegir`() =
+        runTest {
+            db.cuentaDao().guardar(
+                CuentaEntity(
+                    id = "c1",
+                    nombre = "Doble",
+                    tipo = "BANCARIA",
+                    saldoInicialCentavos = 0,
+                    moneda = "USD",
+                    incluirEnTotal = true,
+                    archivada = false,
+                    creadaEn = PRIMER_INSTANTE,
+                    actualizadaEn = PRIMER_INSTANTE,
+                    rol = CuentaEntity.ROL_SOBRE,
+                    repartoPorcentaje = 10,
+                    repartoMontoCentavos = 5_000,
+                ),
+            )
+
+            shouldThrow<DatoGuardadoInvalido> { cuentas.obtener(CuentaId("c1")) }
+        }
+
+    @Test
+    fun `un cierre y sus ajustes sobreviven al ida y vuelta, y reabrir lo borra`() =
+        runTest {
+            cuentas.guardar(cuenta("c1"))
+            val cierres = RoomCierreRepository(db.cierreDao(), reloj)
+            val cierre =
+                CierreDeMes(MARZO, listOf(SaldoDeCierre(CuentaId("c1"), Money.deUnidades(63), Money.deUnidades(20))))
+            val ajuste = gasto("t1", LocalDate(2026, 3, 31), monto = 43).copy(ajusteDeCierre = MARZO)
+
+            cierres.guardar(cierre)
+            transacciones.guardar(ajuste)
+
+            cierres.obtenerDe(MARZO) shouldBe cierre
+            transacciones.obtener(ajuste.id)!!.ajusteDeCierre shouldBe MARZO
+
+            // Volver a cerrar reemplaza los saldos, no los duplica.
+            val otraVez = cierre.copy(saldos = listOf(cierre.saldos.single().copy(real = Money.deUnidades(25))))
+            cierres.guardar(otraVez)
+            cierres.observarTodos().first() shouldBe listOf(otraVez)
+
+            cierres.eliminar(MARZO)
+            cierres.obtenerDe(MARZO).shouldBeNull()
         }
 
     @Test

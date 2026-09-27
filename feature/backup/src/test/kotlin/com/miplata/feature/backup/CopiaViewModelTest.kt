@@ -14,6 +14,7 @@ import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakeCategoriaRepository
+import com.miplata.core.domain.repository.FakeCierreRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
@@ -73,6 +74,7 @@ class CopiaViewModelTest {
                     FakeTransaccionRepository(),
                     FakePlanRepository(),
                     ajustes,
+                    FakeCierreRepository(),
                 ),
             archivo = archivo,
             abridor = abridor,
