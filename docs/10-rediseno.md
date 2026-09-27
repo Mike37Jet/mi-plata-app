@@ -116,8 +116,8 @@ lado, no en cápsula flotante.
 |---|---|---|
 | 1 | **Base**: escala áurea, Inter, paleta, formas, color dinámico apagado, `GrupoDeLista`/`FilaDeLista`, `CifraPrincipal`, cristal | ✅ |
 | 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "Marzo 2026" | ✅ |
-| 3 | **Movimientos**: lista agrupada por día ("Jueves 26 de marzo"), transferencias como "Nómina → Visa" | |
-| — | **Ajustes**: tema (según el teléfono, claro u oscuro) y la copia de seguridad, que sale de Cuentas; engranaje en las cuatro pestañas | este |
+| 3 | **Movimientos**: lista agrupada por día ("Hoy", "Ayer", "Jueves, 26 de marzo"), transferencias como "Nómina → Visa" | este |
+| — | **Ajustes**: tema (según el teléfono, claro u oscuro) y la copia de seguridad, que sale de Cuentas; engranaje en las cuatro pestañas | ✅ |
 | 4 | **Cuentas**: lista agrupada y archivadas plegadas | |
 | 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | |
 | 6 | **Resumen**: cifra principal con su barra de progreso, "Comida · €42 de €400" con minibarras | |
@@ -168,6 +168,24 @@ lado, no en cápsula flotante.
   volver a la pestaña se restauraba. Ahora esa pila no se guarda al salir.
 - La moneda y el día de inicio del mes siguen fuera. Cambiar la moneda con
   cuentas ya creadas pide decidir qué pasa con ellas, y eso merece su propio ADR.
+
+## Movimientos (PR 3)
+
+- **Un grupo por día**, con cabecera "Hoy", "Ayer" o "Jueves, 26 de marzo" y el
+  total del día a la derecha. El total sale en verde solo si el día fue a más.
+  Un día con solo transferencias no muestra total: antes enseñaba "€0.00" en
+  verde, como un día de ingresos.
+- **Filas de la lista agrupada**, sin chevron (todas llevan al editor), con el
+  tipo en un círculo de 34 dp tintado: entra, sale o cambia de cuenta.
+- **Transferencias:** "Cuenta nómina → Visa", sin signo y en color neutro. Antes
+  salían como "Sin categoría −€100": una transferencia no tiene categoría, y el
+  signo la hacía pasar por un gasto.
+- **Nombres de lo ya anotado:** se resuelven con todas las cuentas y todas las
+  líneas del plan. Archivar una cuenta o desactivar una línea las quita del
+  editor, no de lo ya anotado. Antes una transferencia a una cuenta archivada
+  salía sin destino, y un gasto de una línea desactivada, como "Sin categoría".
+- **Por el camino salió un fallo grave de datos,** arreglado en su propio PR:
+  editar el plan soltaba todos los movimientos del mes de sus líneas.
 
 ## Plano por pantalla
 

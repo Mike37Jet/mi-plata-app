@@ -1,7 +1,9 @@
 package com.miplata.core.designsystem.formato
 
 import com.miplata.core.domain.model.Mes
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -29,6 +31,22 @@ fun nombreDelMes(mes: Mes): String = YearMonth.of(mes.anio, mes.numeroDeMes).for
 
 /** "Jueves, 26 de marzo". Sin año: lo dice el mes que se esta viendo. */
 fun fechaLarga(fecha: LocalDate): String = fecha.toJavaLocalDate().format(DIA_Y_MES).conMayuscula()
+
+/**
+ * "Hoy", "Ayer" o "Jueves, 26 de marzo".
+ *
+ * Lo reciente se dice como se dice hablando: nadie piensa en lo que gasto
+ * esta mañana como "el sabado 26". Mas atras, la fecha larga.
+ */
+fun fechaRelativa(
+    fecha: LocalDate,
+    hoy: LocalDate,
+): String =
+    when (fecha) {
+        hoy -> "Hoy"
+        hoy.minus(1, DateTimeUnit.DAY) -> "Ayer"
+        else -> fechaLarga(fecha)
+    }
 
 // En español los meses y los dias van en minuscula, pero al empezar una
 // etiqueta va mayuscula, como en cualquier frase.

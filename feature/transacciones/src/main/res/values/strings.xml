@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="transacciones_transferencia">Transferencia</string>
+    <string name="transacciones_transferencia_entre">%1$s → %2$s</string>
     <string name="transacciones_titulo">Movimientos</string>
 
     <string name="transacciones_entro">Entró</string>
@@ -30,5 +32,4 @@
     <string name="transacciones_cancelar">Cancelar</string>
     <string name="transacciones_eliminar">Eliminar</string>
     <string name="transacciones_sin_categoria">Sin categoría</string>
-    <string name="transacciones_hacia">Hacia %1$s</string>
 </resources>

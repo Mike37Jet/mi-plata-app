@@ -39,25 +39,30 @@ import com.miplata.core.designsystem.theme.Espacio
  *
  * @param titulo encima del grupo, en pequeño: dice que hay dentro.
  * @param pie debajo, para una aclaracion que no merece fila propia.
+ * @param alLadoDelTitulo a la derecha del titulo: un total del grupo, por ejemplo.
  */
 @Composable
 fun GrupoDeLista(
     modifier: Modifier = Modifier,
     titulo: String? = null,
     pie: String? = null,
+    alLadoDelTitulo: (@Composable () -> Unit)? = null,
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
         if (titulo != null) {
-            Text(
-                text = titulo,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier
-                        .padding(horizontal = Espacio.m)
-                        .semantics { heading() },
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Espacio.m),
+            ) {
+                Text(
+                    text = titulo,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                alLadoDelTitulo?.invoke()
+            }
         }
         Surface(
             shape = MaterialTheme.shapes.medium,
@@ -85,8 +90,10 @@ fun GrupoDeLista(
  *
  * @param inicio un icono o una marca a la izquierda.
  * @param final lo que va a la derecha: casi siempre un importe.
- * @param alPulsar si la fila se puede tocar. Entonces lleva un chevron: es la
- *   pista de que lleva a otra parte, que una fila plana no da.
+ * @param alPulsar si la fila se puede tocar.
+ * @param conChevron la pista de que la fila lleva a otra parte, que una fila
+ *   plana no da. Por defecto, en toda fila que se puede tocar. Se quita donde
+ *   todas las filas se tocan y es evidente, como en una lista de movimientos.
  * @param conSeparador la linea fina de arriba. Todas la llevan menos la
  *   primera de su grupo.
  */
@@ -98,6 +105,7 @@ fun FilaDeLista(
     inicio: (@Composable () -> Unit)? = null,
     final: (@Composable RowScope.() -> Unit)? = null,
     alPulsar: (() -> Unit)? = null,
+    conChevron: Boolean = alPulsar != null,
     conSeparador: Boolean = false,
 ) {
     Column(
@@ -131,7 +139,7 @@ fun FilaDeLista(
             if (final != null && !conLetraGrande()) {
                 Row(verticalAlignment = Alignment.CenterVertically, content = final)
             }
-            if (alPulsar != null) {
+            if (conChevron) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     // Decorativo: el rol de boton ya dice que se puede pulsar.
