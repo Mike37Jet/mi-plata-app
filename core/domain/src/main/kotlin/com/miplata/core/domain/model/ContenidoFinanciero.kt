@@ -15,4 +15,5 @@ data class ContenidoFinanciero(
     val categorias: List<Categoria> = emptyList(),
     val transacciones: List<Transaccion> = emptyList(),
     val planes: List<PlanMensual> = emptyList(),
+    val cierres: List<CierreDeMes> = emptyList(),
 )

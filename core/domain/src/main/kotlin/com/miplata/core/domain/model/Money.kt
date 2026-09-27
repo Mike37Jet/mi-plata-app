@@ -42,6 +42,21 @@ value class Money private constructor(
     fun valorAbsoluto(): Money = if (esNegativo) -this else this
 
     /**
+     * El [tanto] por ciento de esta cantidad: el 10% de 633,00 son 63,30.
+     *
+     * Redondea al centavo con HALF_EVEN, por lo mismo que [deDecimal]: repartir
+     * un sueldo entre varios sobres cada mes es sumar muchos redondeos.
+     */
+    fun porcentaje(tanto: Int): Money =
+        Money(
+            BigDecimal
+                .valueOf(centavos)
+                .multiply(BigDecimal.valueOf(tanto.toLong()))
+                .divide(BigDecimal.valueOf(POR_CIENTO), 0, RoundingMode.HALF_EVEN)
+                .longValueExact(),
+        )
+
+    /**
      * Que porcentaje representa esta cantidad respecto de [total].
      *
      * Devuelve `null` cuando [total] es cero: "he gastado 50 de un presupuesto
@@ -72,6 +87,7 @@ value class Money private constructor(
     companion object {
         private const val CENTAVOS_POR_UNIDAD = 100L
         private const val PORCENTAJE = 100.0
+        private const val POR_CIENTO = 100L
         private const val DECIMALES = 2
 
         val ZERO: Money = Money(0L)

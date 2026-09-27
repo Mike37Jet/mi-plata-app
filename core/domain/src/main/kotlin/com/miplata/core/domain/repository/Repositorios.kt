@@ -3,6 +3,7 @@ package com.miplata.core.domain.repository
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.Categoria
 import com.miplata.core.domain.model.CategoriaId
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.ContenidoFinanciero
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
@@ -139,6 +140,23 @@ interface PlanRepository {
     suspend fun obtenerUltimoAnteriorA(mes: Mes): PlanMensual?
 
     suspend fun guardar(plan: PlanMensual)
+
+    suspend fun eliminar(mes: Mes)
+}
+
+/**
+ * Los meses cerrados contra el saldo del banco (docs/adr/0007).
+ *
+ * Borrar un cierre es de verdad, sin marca: reabrir un mes dice "este cierre no
+ * valio", y lo que queda de el son sus ajustes, que se borran aparte.
+ */
+interface CierreRepository {
+    /** Todos, del mes mas antiguo al mas reciente. */
+    fun observarTodos(): Flow<List<CierreDeMes>>
+
+    suspend fun obtenerDe(mes: Mes): CierreDeMes?
+
+    suspend fun guardar(cierre: CierreDeMes)
 
     suspend fun eliminar(mes: Mes)
 }

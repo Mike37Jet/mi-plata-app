@@ -71,6 +71,7 @@ data class Recuento(
     val categorias: Int = 0,
     val transacciones: Int = 0,
     val planes: Int = 0,
+    val cierres: Int = 0,
 )
 
 /**
@@ -89,6 +90,8 @@ data class DatosDelBackup(
     val categorias: List<CategoriaDto> = emptyList(),
     val transacciones: List<TransaccionDto> = emptyList(),
     val planes: List<PlanDto> = emptyList(),
+    /** Desde el presupuesto por cuentas (ADR 0007). Las copias de antes no lo traen. */
+    val cierres: List<CierreDto> = emptyList(),
 )
 
 @Serializable
@@ -115,6 +118,16 @@ data class CuentaDto(
     val moneda: String,
     val incluirEnTotal: Boolean = true,
     val archivada: Boolean = false,
+    /**
+     * El rol en el presupuesto por cuentas (ADR 0007): `INDEPENDIENTE`,
+     * `PRINCIPAL` o `SOBRE`. Con valores por defecto, como `frecuenciaDeRecordatorio`:
+     * una copia de antes trae cuentas independientes, que es lo que eran.
+     */
+    val rol: String = "INDEPENDIENTE",
+    /** Solo en un sobre, y solo uno de los dos. */
+    val repartoPorcentaje: Int? = null,
+    val repartoMontoEnCentavos: Long? = null,
+    val intocable: Boolean = false,
 )
 
 @Serializable
@@ -138,6 +151,8 @@ data class TransaccionDto(
     val categoriaId: String? = null,
     val lineaDePlanId: String? = null,
     val nota: String? = null,
+    /** El mes ISO del cierre que lo creo, o nulo si lo anoto el usuario. */
+    val ajusteDeCierre: String? = null,
 )
 
 @Serializable
@@ -158,4 +173,18 @@ data class LineaDePlanDto(
     val cuentaId: String? = null,
     val diaDelMes: Int? = null,
     val activa: Boolean = true,
+)
+
+@Serializable
+data class CierreDto(
+    /** El mes en ISO (`2026-03`). */
+    val mes: String,
+    val saldos: List<SaldoDeCierreDto> = emptyList(),
+)
+
+@Serializable
+data class SaldoDeCierreDto(
+    val cuentaId: String,
+    val esperadoEnCentavos: Long,
+    val realEnCentavos: Long,
 )

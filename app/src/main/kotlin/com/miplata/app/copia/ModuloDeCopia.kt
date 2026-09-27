@@ -10,6 +10,7 @@ import com.miplata.core.backup.RestauradorDeCopias
 import com.miplata.core.data.database.MiPlataDatabase
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
+import com.miplata.core.domain.repository.CierreRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.RepositorioDeRestauracion
@@ -43,7 +44,8 @@ object ModuloDeCopia {
         transacciones: TransaccionRepository,
         planes: PlanRepository,
         ajustes: AjustesRepository,
-    ): RecolectorDeDatos = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes)
+        cierres: CierreRepository,
+    ): RecolectorDeDatos = RecolectorDeDatos(cuentas, categorias, transacciones, planes, ajustes, cierres)
 
     @Provides
     fun proveerArchivo(): ArchivoDeBackup = ArchivoDeBackup()

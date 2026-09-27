@@ -1,5 +1,6 @@
 package com.miplata.core.data.database.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -36,7 +37,31 @@ data class CuentaEntity(
     val actualizadaEn: Long,
     /** Instante del borrado logico. `null` significa vigente. */
     val eliminadaEn: Long? = null,
-)
+    /**
+     * `INDEPENDIENTE`, `PRINCIPAL` o `SOBRE` (docs/adr/0007).
+     *
+     * Las columnas del rol llegaron en la version 2 con valores por defecto:
+     * las cuentas que ya existian quedan como independientes, que es como se
+     * comportaban.
+     */
+    @ColumnInfo(defaultValue = "INDEPENDIENTE") val rol: String = ROL_INDEPENDIENTE,
+    /**
+     * El reparto de un sobre: **una de las dos** columnas, nunca ambas.
+     *
+     * En el dominio es un tipo cerrado y no puede tener las dos; aqui son dos
+     * columnas porque SQLite no tiene tipos suma. El mapper rechaza una fila
+     * que traiga las dos o ninguna.
+     */
+    val repartoPorcentaje: Int? = null,
+    val repartoMontoCentavos: Long? = null,
+    @ColumnInfo(defaultValue = "0") val intocable: Boolean = false,
+) {
+    companion object {
+        const val ROL_INDEPENDIENTE = "INDEPENDIENTE"
+        const val ROL_PRINCIPAL = "PRINCIPAL"
+        const val ROL_SOBRE = "SOBRE"
+    }
+}
 
 @Entity(
     tableName = "categorias",
@@ -125,6 +150,49 @@ data class TransaccionEntity(
     val creadaEn: Long,
     val actualizadaEn: Long,
     val eliminadaEn: Long? = null,
+    /** Mes ISO del cierre que creo este movimiento; nulo si lo anoto el usuario. */
+    val ajusteDeCierre: String? = null,
+)
+
+/**
+ * Un mes cerrado contra el saldo del banco (docs/adr/0007).
+ *
+ * Sin borrado logico, como las lineas del plan: reabrir un mes dice que el
+ * cierre no valio, y una fila marcada impediria volver a cerrarlo con la misma
+ * clave.
+ */
+@Entity(tableName = "cierres_de_mes")
+data class CierreEntity(
+    /** Mes ISO `AAAA-MM`. */
+    @PrimaryKey val mes: String,
+    val creadoEn: Long,
+)
+
+/** Lo esperado y lo real de una cuenta en un cierre. */
+@Entity(
+    tableName = "saldos_de_cierre",
+    primaryKeys = ["cierreMes", "cuentaId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = CierreEntity::class,
+            parentColumns = ["mes"],
+            childColumns = ["cierreMes"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = CuentaEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["cuentaId"],
+            onDelete = ForeignKey.RESTRICT,
+        ),
+    ],
+    indices = [Index("cuentaId")],
+)
+data class SaldoDeCierreEntity(
+    val cierreMes: String,
+    val cuentaId: String,
+    val esperadoCentavos: Long,
+    val realCentavos: Long,
 )
 
 /**
