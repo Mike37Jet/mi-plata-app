@@ -99,7 +99,7 @@ internal fun PantallaPlan(
         ContenidoDelPlan(estado, dinero, alEvento, relleno)
     }
 
-    estado.editor?.let { EditorDeLineaUi(it, alEvento) }
+    estado.editor?.let { EditorDeLineaUi(it, estado.cuentas, alEvento) }
 }
 
 /**
@@ -160,10 +160,20 @@ private fun ContenidoDelPlan(
             item { Aviso(stringResource(R.string.plan_vacio)) }
         }
 
-        // Solo los tipos que tienen lineas: una seccion vacia era una cabecera,
-        // un total en cero y un boton, sin nada que decir.
-        items(estado.secciones.filter { it.lineas.isNotEmpty() }, key = { it.tipo.name }) { seccion ->
-            GrupoDeTipo(seccion, dinero, alEvento)
+        val porCuentas = estado.porCuentas
+        if (porCuentas != null) {
+            if (estado.repartoPendiente.esPositivo) {
+                item(key = "reparto") { BotonDelReparto(estado.repartoPendiente, dinero, alEvento) }
+            }
+            items(porCuentas.cuentas, key = { it.cuenta.id.valor }) { deCuenta ->
+                GrupoDeCuenta(deCuenta, dinero, alEvento)
+            }
+        } else {
+            // Solo los tipos que tienen lineas: una seccion vacia era una
+            // cabecera, un total en cero y un boton, sin nada que decir.
+            items(estado.secciones.filter { it.lineas.isNotEmpty() }, key = { it.tipo.name }) { seccion ->
+                GrupoDeTipo(seccion, dinero, alEvento)
+            }
         }
     }
 }
@@ -181,11 +191,14 @@ private fun Cabecera(
             alSiguiente = { alEvento(EventoDelPlan.MesSiguiente) },
         )
 
+        val etiqueta =
+            when {
+                estado.enSobregiro -> R.string.plan_sobregiro
+                estado.porCuentas != null -> R.string.plan_sin_repartir
+                else -> R.string.plan_disponible
+            }
         Text(
-            text =
-                stringResource(
-                    if (estado.enSobregiro) R.string.plan_sobregiro else R.string.plan_disponible,
-                ),
+            text = stringResource(etiqueta),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -250,7 +263,7 @@ private fun GrupoDeTipo(
  * como accion de accesibilidad y en la hoja.
  */
 @Composable
-private fun FilaDeLinea(
+internal fun FilaDeLinea(
     linea: LineaDePlan,
     dinero: FormateadorDeDinero,
     conSeparador: Boolean,

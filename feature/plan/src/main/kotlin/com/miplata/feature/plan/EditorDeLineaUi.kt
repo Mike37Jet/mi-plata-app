@@ -38,6 +38,8 @@ import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
+import com.miplata.core.domain.model.Cuenta
+import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeLinea
 
@@ -53,6 +55,7 @@ import com.miplata.core.domain.model.TipoDeLinea
 @Composable
 internal fun EditorDeLineaUi(
     editor: EditorDeLinea,
+    cuentas: List<Cuenta>,
     alEvento: (EventoDelPlan) -> Unit,
 ) {
     val analizador = recordarAnalizadorDeDinero()
@@ -128,6 +131,10 @@ internal fun EditorDeLineaUi(
                     }
                 }
 
+                if (cuentas.isNotEmpty()) {
+                    SelectorDeCuenta(editor.cuentaId, cuentas) { alEvento(EventoDelPlan.CambioEnEditor.Cuenta(it)) }
+                }
+
                 CuentaEsteMes(editor.activa) { alEvento(EventoDelPlan.CambioEnEditor.Activa(it)) }
             }
         }
@@ -177,6 +184,51 @@ private fun CabeceraDelEditor(
                 modifier = Modifier.padding(horizontal = Espacio.xs),
             ) {
                 Text(stringResource(R.string.plan_eliminar), color = MaterialTheme.colorScheme.error)
+            }
+        }
+    }
+}
+
+/**
+ * De que cuenta sale la linea: de ahi sale su dinero en el plan por cuentas
+ * (docs/adr/0007).
+ *
+ * Una linea sin cuenta sale de la principal, asi que con principal no hay
+ * opcion "ninguna": se marca la principal. Sin principal si la hay, porque
+ * entonces "ninguna" es un estado distinto de cualquier cuenta.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SelectorDeCuenta(
+    elegida: CuentaId?,
+    cuentas: List<Cuenta>,
+    alElegir: (CuentaId?) -> Unit,
+) {
+    val principal = cuentas.firstOrNull { it.esPrincipal }
+    val marcada = elegida?.takeIf { id -> cuentas.any { it.id == id } } ?: principal?.id
+    Column(verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
+        Text(
+            text = stringResource(R.string.plan_cuenta),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Espacio.xs),
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+        ) {
+            if (principal == null) {
+                FilterChip(
+                    selected = marcada == null,
+                    onClick = { alElegir(null) },
+                    label = { Text(stringResource(R.string.plan_ninguna_cuenta)) },
+                )
+            }
+            cuentas.forEach { cuenta ->
+                FilterChip(
+                    selected = cuenta.id == marcada,
+                    onClick = { alElegir(cuenta.id) },
+                    label = { Text(cuenta.nombre) },
+                )
             }
         }
     }

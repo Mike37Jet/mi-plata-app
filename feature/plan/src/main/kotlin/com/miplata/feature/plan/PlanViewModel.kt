@@ -4,17 +4,26 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
+import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Money
+import com.miplata.core.domain.model.PeriodoMensual
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.TipoDeLinea
+import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.TransaccionId
+import com.miplata.core.domain.model.sumar
 import com.miplata.core.domain.repository.AjustesRepository
+import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
+import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
+import com.miplata.core.domain.usecase.repartoPendiente
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +58,13 @@ private data class Eliminacion(
     val movimientos: List<TransaccionId>,
 )
 
+/** Lo que hace falta, ademas del plan, para verlo por cuentas. */
+private data class DatosDeCuentas(
+    val cuentas: List<Cuenta>,
+    val movimientos: List<Transaccion>,
+    val ajustes: Ajustes,
+)
+
 /** El plan que se esta viendo, y si ya existe en la base o es una propuesta. */
 private data class PlanEnPantalla(
     val plan: PlanMensual,
@@ -70,8 +86,11 @@ class PlanViewModel
         private val transacciones: TransaccionRepository,
         private val abrirPlan: AbrirPlanDelMesUseCase,
         private val ids: GeneradorDeIds,
-        ajustes: AjustesRepository,
-        calendario: Calendario,
+        private val ajustes: AjustesRepository,
+        private val calendario: Calendario,
+        private val calcularPlanPorCuentas: CalcularPlanPorCuentasUseCase,
+        private val registrarReparto: RegistrarRepartoUseCase,
+        cuentas: CuentaRepository,
     ) : ViewModel() {
         private val mesSeleccionado = MutableStateFlow(calendario.mesActual())
 
@@ -108,21 +127,28 @@ class PlanViewModel
                     }
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(CINCO_SEGUNDOS), null)
 
+        private val datos =
+            combine(cuentas.observarTodas(), transacciones.observarTodas(), ajustes.observar(), ::DatosDeCuentas)
+
         val uiState: StateFlow<PlanUiState> =
             combine(
                 mesSeleccionado,
                 planEnPantalla,
-                ajustes.observar(),
+                datos,
                 editor,
                 eliminacion,
-            ) { mes, enPantalla, configuracion, abierto, eliminada ->
+            ) { mes, enPantalla, datos, abierto, eliminada ->
+                val vigentes = datos.cuentas.filterNot { it.archivada }
                 if (enPantalla == null) {
-                    PlanUiState(mes = mes, moneda = configuracion.moneda, editor = abierto)
+                    PlanUiState(mes = mes, moneda = datos.ajustes.moneda, editor = abierto, cuentas = vigentes)
                 } else {
                     val plan = enPantalla.plan
+                    val periodo = PeriodoMensual(mes, datos.ajustes.primerDiaDelMesFinanciero)
+                    val porCuentas =
+                        calcularPlanPorCuentas(periodo, datos.cuentas, plan, datos.movimientos, calendario.hoy())
                     PlanUiState(
                         mes = mes,
-                        moneda = configuracion.moneda,
+                        moneda = datos.ajustes.moneda,
                         secciones = seccionesDe(plan),
                         ingresos = plan.totalPlanificadoDe(TipoDeLinea.INGRESO),
                         salidas = salidasDe(plan),
@@ -130,6 +156,11 @@ class PlanViewModel
                         esBorrador = enPantalla.esBorrador,
                         editor = abierto,
                         eliminada = eliminada?.linea,
+                        porCuentas = porCuentas,
+                        repartoPendiente =
+                            porCuentas?.let { repartoPendiente(periodo, it, datos.movimientos).values.sumar() }
+                                ?: Money.ZERO,
+                        cuentas = vigentes,
                     )
                 }
             }.stateIn(
@@ -154,6 +185,7 @@ class PlanViewModel
                 is EventoDelPlan.EliminarLinea -> eliminar(evento.id)
                 EventoDelPlan.DeshacerEliminacion -> deshacerEliminacion()
                 EventoDelPlan.OlvidarEliminacion -> eliminacion.value = null
+                EventoDelPlan.RegistrarReparto -> registrarElReparto()
             }
         }
 
@@ -172,6 +204,7 @@ class PlanViewModel
                 tipo = linea.tipo,
                 monto = linea.montoPlanificado,
                 activa = linea.activa,
+                cuentaId = linea.cuentaId,
             )
 
         private fun EditorDeLinea.aplicar(cambio: EventoDelPlan.CambioEnEditor) =
@@ -180,12 +213,27 @@ class PlanViewModel
                 is EventoDelPlan.CambioEnEditor.Monto -> copy(monto = cambio.monto)
                 is EventoDelPlan.CambioEnEditor.Tipo -> copy(tipo = cambio.tipo)
                 is EventoDelPlan.CambioEnEditor.Activa -> copy(activa = cambio.activa)
+                is EventoDelPlan.CambioEnEditor.Cuenta -> copy(cuentaId = cambio.cuentaId)
             }
+
+        /**
+         * Anota las transferencias del reparto que faltan en el mes en pantalla.
+         *
+         * Con el mes y el plan que se ven, no con los de hoy: quien mira abril
+         * y pulsa el boton espera que se anote el reparto de abril.
+         */
+        private fun registrarElReparto() {
+            val porCuentas = uiState.value.porCuentas ?: return
+            val mes = uiState.value.mes
+            viewModelScope.launch {
+                registrarReparto(PeriodoMensual(mes, ajustes.obtener().primerDiaDelMesFinanciero), porCuentas)
+            }
+        }
 
         /**
          * Lleva lo que hay en la hoja al plan: una linea nueva al final, o la
          * existente cambiada **conservando lo que la hoja no toca** -categoria,
-         * cuenta, dia-, que una copia desde cero perderia.
+         * dia-, que una copia desde cero perderia.
          */
         private fun guardarLinea() {
             val enHoja = editor.value ?: return
@@ -202,6 +250,7 @@ class PlanViewModel
                                     tipo = enHoja.tipo,
                                     montoPlanificado = enHoja.monto,
                                     activa = enHoja.activa,
+                                    cuentaId = enHoja.cuentaId,
                                 ),
                     )
                 }
@@ -212,6 +261,7 @@ class PlanViewModel
                         tipo = enHoja.tipo,
                         montoPlanificado = enHoja.monto,
                         activa = enHoja.activa,
+                        cuentaId = enHoja.cuentaId,
                     )
                 }
             }

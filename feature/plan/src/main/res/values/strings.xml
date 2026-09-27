@@ -34,6 +34,19 @@
     <string name="plan_eliminada_sin_nombre">Línea eliminada</string>
     <string name="plan_deshacer">Deshacer</string>
 
+    <string name="plan_sin_repartir">Sin repartir</string>
+    <string name="plan_empiezas_con">Empieza con</string>
+    <string name="plan_recibe">Recibe del reparto</string>
+    <string name="plan_reparte">Reparto a los sobres</string>
+    <string name="plan_termina_con">Debería terminar con</string>
+    <string name="plan_hoy_tiene">Hoy tiene %1$s</string>
+    <string name="plan_queda_corta">Quedaría en %1$s. Cúbrela con dinero de un sobre que no sea intocable.</string>
+    <string name="plan_intocable_con_gastos">Es intocable: lo que planees sacar de aquí se señalará al cerrar el mes.</string>
+    <string name="plan_registrar_reparto">Ya transferí el reparto · %1$s</string>
+    <string name="plan_registrar_reparto_detalle">Anota hoy las transferencias de la principal a cada sobre.</string>
+    <string name="plan_cuenta">Sale de</string>
+    <string name="plan_ninguna_cuenta">Ninguna</string>
+
     <string name="plan_borrador">Copiado de tu mes anterior. Se guardará en cuanto cambies algo.</string>
     <string name="plan_vacio">Aún no hay nada. Empieza por tus ingresos.</string>
 </resources>
