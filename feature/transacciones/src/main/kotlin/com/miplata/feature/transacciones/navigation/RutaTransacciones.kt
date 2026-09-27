@@ -15,9 +15,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object RutaTransacciones
 
-/** El feature declara como se entra en el; `:app` solo lo ensambla. */
-fun NavGraphBuilder.pantallaTransacciones() {
+/**
+ * El feature declara como se entra en el; `:app` solo lo ensambla.
+ *
+ * @param alAbrirAjustes a donde se va lo decide `:app` (docs/04).
+ */
+fun NavGraphBuilder.pantallaTransacciones(alAbrirAjustes: () -> Unit = {}) {
     composable<RutaTransacciones> {
-        PantallaTransacciones()
+        PantallaTransacciones(alAbrirAjustes = alAbrirAjustes)
     }
 }

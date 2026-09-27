@@ -28,6 +28,7 @@ dependencies {
     implementation(projects.feature.cuentas)
     implementation(projects.feature.backup)
     implementation(projects.feature.bienvenida)
+    implementation(projects.feature.ajustes)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

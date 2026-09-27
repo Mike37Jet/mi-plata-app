@@ -15,9 +15,13 @@ import kotlinx.serialization.Serializable
 @Serializable
 data object RutaPlan
 
-/** El feature declara como se entra en el; `:app` solo lo ensambla. */
-fun NavGraphBuilder.pantallaPlan() {
+/**
+ * El feature declara como se entra en el; `:app` solo lo ensambla.
+ *
+ * @param alAbrirAjustes a donde se va lo decide `:app` (docs/04).
+ */
+fun NavGraphBuilder.pantallaPlan(alAbrirAjustes: () -> Unit = {}) {
     composable<RutaPlan> {
-        PantallaPlan()
+        PantallaPlan(alAbrirAjustes = alAbrirAjustes)
     }
 }

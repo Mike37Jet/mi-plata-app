@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
+import com.miplata.core.designsystem.componentes.BotonDeAjustes
 import com.miplata.core.designsystem.componentes.CifraPrincipal
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.componentes.SelectorDeMes
@@ -59,10 +60,11 @@ import com.miplata.core.domain.model.TipoDeLinea
 @Composable
 fun PantallaPlan(
     modifier: Modifier = Modifier,
+    alAbrirAjustes: () -> Unit = {},
     viewModel: PlanViewModel = hiltViewModel(),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
-    PantallaPlan(estado, viewModel::alEvento, modifier)
+    PantallaPlan(estado, viewModel::alEvento, modifier, alAbrirAjustes)
 }
 
 /**
@@ -76,10 +78,15 @@ internal fun PantallaPlan(
     estado: PlanUiState,
     alEvento: (EventoDelPlan) -> Unit,
     modifier: Modifier = Modifier,
+    alAbrirAjustes: () -> Unit = {},
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
-    PantallaConTituloGrande(titulo = stringResource(R.string.plan_titulo), modifier = modifier) { relleno ->
+    PantallaConTituloGrande(
+        titulo = stringResource(R.string.plan_titulo),
+        modifier = modifier,
+        acciones = { BotonDeAjustes(alAbrirAjustes) },
+    ) { relleno ->
         ContenidoDelPlan(estado, dinero, alEvento, relleno)
     }
 }

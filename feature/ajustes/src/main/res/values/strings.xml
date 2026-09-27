@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ajustes_titulo">Ajustes</string>
+
+    <string name="ajustes_apariencia">Apariencia</string>
+    <string name="ajustes_tema_sistema">Según el teléfono</string>
+    <string name="ajustes_tema_claro">Claro</string>
+    <string name="ajustes_tema_oscuro">Oscuro</string>
+    <string name="ajustes_apariencia_pie">Según el teléfono cambia sola cuando el teléfono pasa a modo oscuro.</string>
+
+    <string name="ajustes_datos">Tus datos</string>
+    <string name="ajustes_copia">Copia de seguridad</string>
+    <string name="ajustes_copia_ultima">Última: %1$s</string>
+    <string name="ajustes_copia_nunca">Aún no has hecho ninguna</string>
+</resources>

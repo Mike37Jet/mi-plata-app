@@ -10,13 +10,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material3.Card
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -31,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.miplata.core.designsystem.componentes.BotonDeAjustes
 import com.miplata.core.designsystem.componentes.CifraPrincipal
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
@@ -48,11 +47,11 @@ import com.miplata.core.domain.usecase.CuentaConSaldo
 @Composable
 fun PantallaCuentas(
     modifier: Modifier = Modifier,
-    alAbrirCopiaDeSeguridad: () -> Unit = {},
+    alAbrirAjustes: () -> Unit = {},
     viewModel: CuentasViewModel = hiltViewModel(),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
-    PantallaCuentas(estado, viewModel::alEvento, modifier, alAbrirCopiaDeSeguridad)
+    PantallaCuentas(estado, viewModel::alEvento, modifier, alAbrirAjustes)
 }
 
 /**
@@ -66,13 +65,14 @@ internal fun PantallaCuentas(
     estado: CuentasUiState,
     alEvento: (EventoDeCuentas) -> Unit,
     modifier: Modifier = Modifier,
-    alAbrirCopiaDeSeguridad: () -> Unit = {},
+    alAbrirAjustes: () -> Unit = {},
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
     PantallaConTituloGrande(
         titulo = stringResource(R.string.cuentas_titulo),
         modifier = modifier,
+        acciones = { BotonDeAjustes(alAbrirAjustes) },
         botonFlotante = {
             FloatingActionButton(onClick = { alEvento(EventoDeCuentas.CrearCuenta) }) {
                 Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.cuentas_anadir))
@@ -84,7 +84,6 @@ internal fun PantallaCuentas(
             contentPadding = relleno,
             verticalArrangement = Arrangement.spacedBy(Espacio.xs),
         ) {
-            item { AccesoALaCopia(alAbrirCopiaDeSeguridad) }
             item { Total(estado, dinero) }
 
             if (estado.estaVacio && !estado.cargando) {
@@ -98,29 +97,6 @@ internal fun PantallaCuentas(
     }
 
     estado.editor?.let { Editor(it, alEvento) }
-}
-
-/**
- * La entrada a la copia de seguridad.
- *
- * Vive en Cuentas porque es la pantalla de "lo que tengo", y la copia es la
- * forma de no perderlo. Con icono **y** texto, no un icono suelto: un simbolo
- * de nube con flecha no le dice a nadie que ahi esta el backup.
- *
- * Esta pantalla no sabe que existe el feature de la copia -no puede, docs/04-:
- * solo avisa de que se pidio, y `:app` decide a donde se va.
- */
-@Composable
-private fun AccesoALaCopia(alAbrir: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-        TextButton(onClick = alAbrir) {
-            Icon(Icons.Outlined.Backup, contentDescription = null)
-            Text(
-                text = stringResource(R.string.cuentas_copia_de_seguridad),
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
-    }
 }
 
 @Composable

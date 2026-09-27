@@ -75,7 +75,11 @@ class PantallaCopiaTest {
         abrir()
 
         compose.onNodeWithText("Si olvidas la frase", substring = true).assertIsDisplayed()
-        compose.onNodeWithText("Entiendo que si pierdo la frase, pierdo la copia.").assertIsDisplayed()
+        compose
+            .onNodeWithText(
+                "Entiendo que si pierdo la frase, pierdo la copia.",
+            ).performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -93,7 +97,11 @@ class PantallaCopiaTest {
         compose.onNodeWithText("Repite la frase").performTextInput(FRASE)
         compose.onNodeWithText("Entiendo que si pierdo la frase, pierdo la copia.").performClick()
 
-        compose.onNodeWithText("Guardar copia").assertIsEnabled().performClick()
+        compose
+            .onNodeWithText("Guardar copia")
+            .performScrollTo()
+            .assertIsEnabled()
+            .performClick()
         guardados shouldBe 1
     }
 
@@ -107,7 +115,11 @@ class PantallaCopiaTest {
         compose.onNodeWithText("Repite la frase").performTextInput(FRASE)
 
         compose.onNodeWithText("Guardar copia").assertIsNotEnabled()
-        compose.onNodeWithText("Marca la casilla para confirmar que lo entiendes.").assertIsDisplayed()
+        compose
+            .onNodeWithText(
+                "Marca la casilla para confirmar que lo entiendes.",
+            ).performScrollTo()
+            .assertIsDisplayed()
     }
 
     @Test
@@ -117,7 +129,7 @@ class PantallaCopiaTest {
         compose.onNodeWithText("Frase de respaldo").performTextInput(FRASE)
         compose.onNodeWithText("Repite la frase").performTextInput("otra frase distinta")
 
-        compose.onNodeWithText("Las dos frases no coinciden.").assertIsDisplayed()
+        compose.onNodeWithText("Las dos frases no coinciden.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Guardar copia").assertIsNotEnabled()
     }
 
@@ -133,7 +145,7 @@ class PantallaCopiaTest {
     fun `sin copias previas lo dice`() {
         abrir()
 
-        compose.onNodeWithText("Todavía no has hecho ninguna copia.").assertIsDisplayed()
+        compose.onNodeWithText("Todavía no has hecho ninguna copia.").performScrollTo().assertIsDisplayed()
     }
 
     @Test
