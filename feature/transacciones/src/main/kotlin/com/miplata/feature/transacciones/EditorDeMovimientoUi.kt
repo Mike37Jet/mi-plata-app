@@ -40,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
+import com.miplata.core.designsystem.formato.fechaLarga
 import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
@@ -295,7 +296,7 @@ private fun SelectorDeFecha(
                 contentDescription = stringResource(R.string.transacciones_dia_anterior),
             )
         }
-        Text(text = fecha.toString(), style = MaterialTheme.typography.bodyLarge)
+        Text(text = fechaLarga(fecha), style = MaterialTheme.typography.bodyLarge)
         IconButton(onClick = { alCambiar(fecha.plus(UN_DIA, DateTimeUnit.DAY)) }) {
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,

@@ -1,17 +1,31 @@
 package com.miplata.app.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -21,6 +35,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.miplata.core.designsystem.accesibilidad.TextoQueCabe
+import com.miplata.core.designsystem.componentes.LocalEspacioDeLaBarraInferior
+import com.miplata.core.designsystem.componentes.cristal
+import com.miplata.core.designsystem.componentes.fondoDesenfocable
 import com.miplata.feature.backup.navigation.RutaCopia
 import com.miplata.feature.backup.navigation.RutaRestaurar
 import com.miplata.feature.backup.navigation.pantallaCopia
@@ -32,6 +49,7 @@ import com.miplata.feature.plan.navigation.pantallaPlan
 import com.miplata.feature.resumen.navigation.RutaResumen
 import com.miplata.feature.resumen.navigation.pantallaResumen
 import com.miplata.feature.transacciones.navigation.pantallaTransacciones
+import dev.chrisbanes.haze.HazeState
 
 /**
  * El esqueleto de navegacion de la app.
@@ -64,33 +82,58 @@ fun NavegacionPrincipal(
         if (empezarEnElPlan) navController.irA(DestinoPrincipal.PLAN)
     }
 
-    Scaffold(
-        modifier = modifier.fillMaxSize(),
-        bottomBar = { BarraInferior(destinoActual, navController::irA) },
-    ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = RutaResumen,
-            // `consumeWindowInsets` avisa a las pantallas de que la barra
-            // inferior ya se desconto. Sin esto, una pantalla que se aparta del
-            // teclado con `imePadding()` restaba el teclado ENTERO, sin saber que
-            // parte de ese hueco ya lo ocupaba la barra: quedaba una franja en
-            // blanco encima del teclado del alto de la barra.
+    // Lo que pasa por detras de la barra inferior, y se ve desenfocado a traves
+    // de ella (docs/10).
+    val fondoDesenfocable = remember { HazeState() }
+
+    // La altura de la barra inferior, medida. Es el hueco que las pantallas
+    // dejan al final de su lista para que lo ultimo pueda subir por encima.
+    val densidad = LocalDensity.current
+    var alturaDeLaBarra by remember { mutableStateOf(0.dp) }
+
+    // El contenido ocupa toda la pantalla y la barra flota encima, en un Box:
+    // tiene que pasar por DETRAS de ella, o no habria nada que desenfocar. La
+    // altura de la barra se mide en vez de suponerla, porque cambia con la letra
+    // del sistema y con la barra de navegacion de cada movil.
+    Box(modifier = modifier.fillMaxSize()) {
+        CompositionLocalProvider(LocalEspacioDeLaBarraInferior provides alturaDeLaBarra) {
+            NavHost(
+                navController = navController,
+                startDestination = RutaResumen,
+                // `consumeWindowInsets` avisa a las pantallas de que las barras del
+                // sistema ya estan descontadas: la de estado con el padding de
+                // aqui, y la de navegacion dentro del hueco de la barra inferior.
+                // Sin esto, una pantalla que se aparta del teclado con
+                // `imePadding()` restaria el teclado ENTERO y quedaria una franja
+                // en blanco encima de el.
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .fondoDesenfocable(fondoDesenfocable)
+                        .windowInsetsPadding(WindowInsets.statusBars)
+                        .consumeWindowInsets(WindowInsets.navigationBars),
+            ) {
+                pantallaResumen()
+                pantallaPlan()
+                pantallaTransacciones()
+                pantallaCuentas(alAbrirCopiaDeSeguridad = { navController.navigate(RutaCopia) })
+                pantallaCopia(
+                    alVolver = navController::popBackStack,
+                    alAbrirRestaurar = { navController.navigate(RutaRestaurar) },
+                )
+                pantallaRestaurar(alVolver = navController::popBackStack)
+            }
+        }
+
+        BarraInferior(
+            destinoActual = destinoActual,
+            irA = navController::irA,
             modifier =
                 Modifier
-                    .padding(innerPadding)
-                    .consumeWindowInsets(innerPadding),
-        ) {
-            pantallaResumen()
-            pantallaPlan()
-            pantallaTransacciones()
-            pantallaCuentas(alAbrirCopiaDeSeguridad = { navController.navigate(RutaCopia) })
-            pantallaCopia(
-                alVolver = navController::popBackStack,
-                alAbrirRestaurar = { navController.navigate(RutaRestaurar) },
-            )
-            pantallaRestaurar(alVolver = navController::popBackStack)
-        }
+                    .align(Alignment.BottomCenter)
+                    .onSizeChanged { alturaDeLaBarra = with(densidad) { it.height.toDp() } }
+                    .cristal(fondoDesenfocable),
+        )
     }
 }
 
@@ -98,8 +141,10 @@ fun NavegacionPrincipal(
 private fun BarraInferior(
     destinoActual: NavDestination?,
     irA: (DestinoPrincipal) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    NavigationBar {
+    // Transparente: el color lo pone el cristal, que es velo mas desenfoque.
+    NavigationBar(modifier = modifier, containerColor = Color.Transparent, tonalElevation = 0.dp) {
         DestinoPrincipal.entries.forEach { destino ->
             val seleccionado = destinoActual.estaEn(destino)
 

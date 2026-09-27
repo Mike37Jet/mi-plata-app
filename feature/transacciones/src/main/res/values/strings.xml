@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="transacciones_titulo">Movimientos</string>
 
-    <string name="transacciones_mes_anterior">Mes anterior</string>
-    <string name="transacciones_mes_siguiente">Mes siguiente</string>
     <string name="transacciones_entro">Entró</string>
     <string name="transacciones_salio">Salió</string>
 

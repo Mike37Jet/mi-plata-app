@@ -1,13 +1,10 @@
 package com.miplata.feature.cuentas
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -35,8 +32,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.designsystem.componentes.CifraPrincipal
+import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
+import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.Cuenta
@@ -71,11 +70,19 @@ internal fun PantallaCuentas(
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
-    Box(modifier = modifier.fillMaxSize()) {
+    PantallaConTituloGrande(
+        titulo = stringResource(R.string.cuentas_titulo),
+        modifier = modifier,
+        botonFlotante = {
+            FloatingActionButton(onClick = { alEvento(EventoDeCuentas.CrearCuenta) }) {
+                Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.cuentas_anadir))
+            }
+        },
+    ) { relleno ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = relleno,
+            verticalArrangement = Arrangement.spacedBy(Espacio.xs),
         ) {
             item { AccesoALaCopia(alAbrirCopiaDeSeguridad) }
             item { Total(estado, dinero) }
@@ -87,17 +94,6 @@ internal fun PantallaCuentas(
             items(estado.cuentas, key = { it.cuenta.id.valor }) { conSaldo ->
                 FilaDeCuenta(conSaldo, dinero) { alEvento(EventoDeCuentas.EditarCuenta(conSaldo.cuenta)) }
             }
-        }
-
-        FloatingActionButton(
-            onClick = { alEvento(EventoDeCuentas.CrearCuenta) },
-            modifier =
-                Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-        ) {
-            Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.cuentas_anadir))
         }
     }
 

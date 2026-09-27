@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="cuentas_titulo">Cuentas</string>
 
     <string name="cuentas_total">Tienes en total</string>
     <string name="cuentas_copia_de_seguridad">Copia de seguridad</string>

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.backup.Recuento
+import com.miplata.core.designsystem.componentes.LocalEspacioDeLaBarraInferior
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import kotlinx.datetime.TimeZone
 
@@ -105,7 +106,10 @@ internal fun PantallaRestaurar(
                 .fillMaxSize()
                 .imePadding()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(16.dp)
+                // Lo que tapa la barra inferior de cristal: el final de la
+                // pantalla tiene que poder subir por encima de ella.
+                .padding(bottom = LocalEspacioDeLaBarraInferior.current),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

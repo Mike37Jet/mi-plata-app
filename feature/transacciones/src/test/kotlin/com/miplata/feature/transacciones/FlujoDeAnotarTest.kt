@@ -121,7 +121,7 @@ class FlujoDeAnotarTest {
 
         // Agrupado bajo su dia, y con signo: en una lista de movimientos el
         // signo es la informacion.
-        compose.onNodeWithText("2026-03-10").assertIsDisplayed()
+        compose.onAllNodesWithText("Martes, 10 de marzo")[0].assertIsDisplayed()
         compose.onAllNodesWithText("-$42.00")[0].assertIsDisplayed()
     }
 

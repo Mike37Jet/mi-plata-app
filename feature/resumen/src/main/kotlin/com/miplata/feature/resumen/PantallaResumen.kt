@@ -7,15 +7,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -35,8 +29,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.componentes.CifraPrincipal
+import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
+import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
+import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.model.DesviacionLinea
@@ -71,10 +68,22 @@ internal fun PantallaResumen(
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
+    PantallaConTituloGrande(titulo = stringResource(R.string.resumen_titulo), modifier = modifier) { relleno ->
+        ContenidoDelResumen(estado, dinero, alEvento, relleno)
+    }
+}
+
+@Composable
+private fun ContenidoDelResumen(
+    estado: ResumenUiState,
+    dinero: FormateadorDeDinero,
+    alEvento: (EventoDelResumen) -> Unit,
+    relleno: PaddingValues,
+) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = relleno,
+        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
     ) {
         item { Cabecera(estado, dinero, alEvento) }
 
@@ -108,26 +117,11 @@ private fun Cabecera(
     alEvento: (EventoDelResumen) -> Unit,
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { alEvento(EventoDelResumen.MesAnterior) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                    contentDescription = stringResource(R.string.resumen_mes_anterior),
-                )
-            }
-            Text(
-                text = estado.mes.toString(),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.widthIn(min = 120.dp),
-                textAlign = TextAlign.Center,
-            )
-            IconButton(onClick = { alEvento(EventoDelResumen.MesSiguiente) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = stringResource(R.string.resumen_mes_siguiente),
-                )
-            }
-        }
+        SelectorDeMes(
+            mes = estado.mes,
+            alAnterior = { alEvento(EventoDelResumen.MesAnterior) },
+            alSiguiente = { alEvento(EventoDelResumen.MesSiguiente) },
+        )
 
         Text(
             text =
