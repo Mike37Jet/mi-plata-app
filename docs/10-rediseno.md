@@ -71,19 +71,28 @@ se queda en 3,08:1 sobre el fondo agrupado y no llega al 4,5:1 de WCAG AA
 (docs/09). Se usan #636366 en claro y #98989F en oscuro, los más claros que
 pasan en todos los fondos.
 
-**El cristal tapa el 70 %, y sobre él solo va texto principal.** Al principio
-tapaba el 92 %, porque las pestañas no seleccionadas iban en el gris
-secundario, como en iOS. Ese gris necesita un velo del 92 % para llegar a 4,5:1
-cuando pasa contenido muy opuesto al tema por detrás, y con eso la barra se veía
-opaca. Con todas las etiquetas en el color principal, el 70 % basta incluso en
-ese peor caso (5,6:1 en oscuro y 8,1:1 en claro). La pestaña activa se distingue
-por la pastilla, el color del icono y la seminegrita. El acento tampoco va
-directamente sobre el cristal, porque necesitaría el 86 %. `ContrasteTest`
-comprueba el peor caso. El desenfoque no ayuda: una foto clara desenfocada sigue
-siendo clara.
+**El cristal tapa el 55 %, desenfoca 34 dp, y sobre él solo va texto
+principal.** Llegar ahí costó tres intentos:
 
-En el tema oscuro el cristal siempre será sutil: lo que pasa por detrás es casi
-todo negro, como en la barra oscura de iOS.
+1. **92 %:** las pestañas inactivas iban en gris secundario, como en iOS, y ese
+   gris pedía un velo casi opaco para leerse.
+2. **70 %:** con todas las etiquetas en el color principal, pero exigiendo que se
+   leyeran con **blanco puro** detrás. La barra apenas dejaba ver nada.
+3. **55 %:** el peor caso es lo que la app de verdad pinta detrás de la barra:
+   - sus colores sólidos (acento, contenedores, celdas y colores de dinero, estos
+     tratados como sólidos porque la cifra principal es gruesa);
+   - su texto, que con 34 dp de desenfoque queda como una mancha con, como mucho,
+     la mitad de tinta.
+
+   El caso más exigente es el gris de gasto bajo el tema oscuro, que pide un 49 %.
+
+La pestaña activa se distingue por la pastilla, el color del icono y la
+seminegrita. `ContrasteTest` comprueba cada caso: con un velo del 45 % falla con
+el par exacto ("ingreso detrás: 4,38").
+
+En el tema oscuro, más transparencia se ve como una barra más negra, porque lo
+que pasa por detrás es sobre todo fondo negro. El cristal se nota cuando pasa
+contenido de color, y mucho más en el tema claro.
 
 ## Los PRs
 
