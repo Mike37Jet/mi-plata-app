@@ -347,6 +347,46 @@ class RepositoriosDeRoomTest {
         )
     }
 
+    /**
+     * Editar el plan no puede soltar los movimientos de sus lineas.
+     *
+     * Guardar el plan borraba todas sus lineas y las volvia a insertar. La clave
+     * foranea del movimiento es `ON DELETE SET NULL`, asi que cada borrado dejaba
+     * sin linea a todo lo anotado ese mes, aunque la linea volviera a existir un
+     * instante despues con el mismo id. Tras añadir una linea al plan, el
+     * resumen decia "Sueldo: 0 de 2000" con el sueldo ya cobrado.
+     */
+    @Test
+    fun `guardar otra vez el plan conserva los movimientos enganchados a sus lineas`() =
+        runTest {
+            cuentas.guardar(cuenta("c1"))
+            val sueldo = linea("sueldo", TipoDeLinea.INGRESO, 2000)
+            planes.guardar(PlanMensual(PlanId("p"), MARZO, listOf(sueldo)))
+            transacciones.guardar(gasto("t1", LocalDate(2026, 3, 25), linea = "sueldo"))
+
+            // Añadir una linea, que es lo que hace la pantalla del plan.
+            planes.guardar(
+                PlanMensual(PlanId("p"), MARZO, listOf(sueldo, linea("comida", TipoDeLinea.GASTO_VARIABLE, 400))),
+            )
+
+            transacciones.obtener(TransaccionId("t1"))?.lineaDePlanId shouldBe LineaId("sueldo")
+        }
+
+    /** Quitar una linea si suelta sus movimientos: siguen contando, pero sin linea. */
+    @Test
+    fun `quitar una linea del plan deja sus movimientos sin linea`() =
+        runTest {
+            cuentas.guardar(cuenta("c1"))
+            planes.guardar(PlanMensual(PlanId("p"), MARZO, listOf(linea("comida", TipoDeLinea.GASTO_VARIABLE, 400))))
+            transacciones.guardar(gasto("t1", LocalDate(2026, 3, 10), linea = "comida"))
+
+            planes.guardar(PlanMensual(PlanId("p"), MARZO, emptyList()))
+
+            val movimiento = transacciones.obtener(TransaccionId("t1"))
+            movimiento?.lineaDePlanId.shouldBeNull()
+            movimiento?.monto shouldBe Money.deUnidades(10)
+        }
+
     private fun linea(
         id: String,
         tipo: TipoDeLinea,
