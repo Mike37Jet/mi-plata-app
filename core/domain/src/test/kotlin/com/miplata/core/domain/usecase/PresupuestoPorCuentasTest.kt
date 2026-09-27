@@ -22,6 +22,7 @@ import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
 import com.miplata.core.domain.model.TransaccionId
 import com.miplata.core.domain.repository.FakeCierreRepository
+import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -498,6 +499,38 @@ class PresupuestoPorCuentasTest {
 
                 transacciones.observarTodas().first() shouldContainExactly listOf(anotado)
                 cierres.observarTodos().first() shouldContainExactly listOf(febrero)
+            }
+    }
+
+    @Nested
+    @DisplayName("guardar una cuenta")
+    inner class GuardarUnaCuenta {
+        private val cuentas = FakeCuentaRepository(listOf(NORMAL, DIVERSION))
+        private val guardar = GuardarCuentaUseCase(cuentas)
+
+        @Test
+        fun `una principal nueva deja a la anterior como independiente`() =
+            runTest {
+                guardar(cuenta("nueva", RolDeCuenta.Principal))
+
+                cuentas.obtener(NORMAL.id)!!.rol shouldBe RolDeCuenta.Independiente
+                cuentas.obtener(CuentaId("nueva"))!!.esPrincipal shouldBe true
+            }
+
+        @Test
+        fun `guardar la misma principal no la degrada`() =
+            runTest {
+                guardar(NORMAL.copy(nombre = "Normal"))
+
+                cuentas.obtener(NORMAL.id)!!.esPrincipal shouldBe true
+            }
+
+        @Test
+        fun `un sobre no toca a la principal`() =
+            runTest {
+                guardar(DIVERSION.copy(rol = RolDeCuenta.Sobre(Reparto.Porcentaje(15))))
+
+                cuentas.obtener(NORMAL.id)!!.esPrincipal shouldBe true
             }
     }
 }

@@ -6,6 +6,8 @@ import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
@@ -14,6 +16,7 @@ import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
 import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
+import com.miplata.core.domain.usecase.GuardarCuentaUseCase
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -52,6 +55,7 @@ class CuentasViewModelTest {
     private fun viewModel() =
         CuentasViewModel(
             cuentas = cuentas,
+            guardarCuenta = GuardarCuentaUseCase(cuentas),
             ids = GeneradorDeIdsSecuencial(),
             transacciones = transacciones,
             ajustes = ajustes,
@@ -339,6 +343,88 @@ class CuentasViewModelTest {
                     .cuentas
                     .single()
                     .cuenta.moneda shouldBe Moneda("EUR")
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `un sobre con porcentaje se guarda con su reparto`() =
+        runTest {
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarCargado()
+                vm.alEvento(EventoDeCuentas.CrearCuenta)
+                esperarHasta { it.editor != null }
+                vm.alEvento(EventoDeCuentas.CambiarNombre("Libertad financiera"))
+                vm.alEvento(EventoDeCuentas.CambiarRol(PapelDeLaCuenta.SOBRE))
+                vm.alEvento(EventoDeCuentas.CambiarIntocable(true))
+                vm.alEvento(EventoDeCuentas.Guardar)
+
+                esperarHasta { it.cuentas.isNotEmpty() }
+                    .cuentas
+                    .single()
+                    .cuenta.rol shouldBe RolDeCuenta.Sobre(Reparto.Porcentaje(10), intocable = true)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `un sobre con monto fijo guarda el monto y no el porcentaje`() =
+        runTest {
+            val vm = viewModel()
+
+            vm.uiState.test {
+                esperarCargado()
+                vm.alEvento(EventoDeCuentas.CrearCuenta)
+                esperarHasta { it.editor != null }
+                vm.alEvento(EventoDeCuentas.CambiarNombre("Entrenamiento"))
+                vm.alEvento(EventoDeCuentas.CambiarRol(PapelDeLaCuenta.SOBRE))
+                vm.alEvento(EventoDeCuentas.CambiarModoDeReparto(enPorcentaje = false))
+
+                // Sin monto todavia no se puede guardar.
+                esperarHasta { it.editor?.repartoEnPorcentaje == false }.editor!!.puedeGuardar shouldBe false
+
+                vm.alEvento(EventoDeCuentas.CambiarMontoFijo(Money.deUnidades(50)))
+                vm.alEvento(EventoDeCuentas.Guardar)
+
+                esperarHasta { it.cuentas.isNotEmpty() }
+                    .cuentas
+                    .single()
+                    .cuenta.rol shouldBe RolDeCuenta.Sobre(Reparto.Monto(Money.deUnidades(50)))
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `un porcentaje fuera de rango no deja guardar`() {
+        val sobre = EditorDeCuenta(nombre = "Ahorros", rol = PapelDeLaCuenta.SOBRE)
+
+        sobre.puedeGuardar shouldBe true
+        sobre.copy(porcentaje = 0).puedeGuardar shouldBe false
+        sobre.copy(porcentaje = 101).puedeGuardar shouldBe false
+        sobre.copy(porcentaje = null).puedeGuardar shouldBe false
+    }
+
+    @Test
+    fun `elegir otra principal deja a la anterior aparte`() =
+        runTest {
+            cuentas.guardar(cuenta("normal").copy(rol = RolDeCuenta.Principal))
+            cuentas.guardar(cuenta("otra"))
+            val vm = viewModel()
+
+            vm.uiState.test {
+                val otra = esperarCargado().cuentas.first { it.cuenta.id.valor == "otra" }.cuenta
+                vm.alEvento(EventoDeCuentas.EditarCuenta(otra))
+                esperarHasta { it.editor != null }
+                vm.alEvento(EventoDeCuentas.CambiarRol(PapelDeLaCuenta.PRINCIPAL))
+                vm.alEvento(EventoDeCuentas.Guardar)
+
+                val estado =
+                    esperarHasta { e -> e.cuentas.any { it.cuenta.id.valor == "otra" && it.cuenta.esPrincipal } }
+                estado.cuentas
+                    .single { it.cuenta.id.valor == "normal" }
+                    .cuenta.rol shouldBe RolDeCuenta.Independiente
                 cancelAndIgnoreRemainingEvents()
             }
         }

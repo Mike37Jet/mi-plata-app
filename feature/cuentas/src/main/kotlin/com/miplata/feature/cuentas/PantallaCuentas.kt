@@ -53,6 +53,8 @@ import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.usecase.CuentaConSaldo
 
@@ -217,7 +219,7 @@ private fun FilaDeCuenta(
     val cuenta = conSaldo.cuenta
     FilaDeLista(
         titulo = cuenta.nombre,
-        detalle = etiquetaDe(cuenta),
+        detalle = etiquetaDe(cuenta, dinero),
         inicio = { IconoEnCirculo(cuenta.tipo.icono(), MaterialTheme.colorScheme.primary) },
         final = {
             Text(
@@ -250,9 +252,30 @@ private fun TipoDeCuenta.icono(): ImageVector =
  * y separarlas en insignias sueltas llenaria la fila de ruido.
  */
 @Composable
-private fun etiquetaDe(cuenta: Cuenta): String =
+private fun etiquetaDe(
+    cuenta: Cuenta,
+    dinero: FormateadorDeDinero,
+): String =
     buildList {
         add(stringResource(cuenta.tipo.etiqueta()))
+        when (val rol = cuenta.rol) {
+            RolDeCuenta.Independiente -> Unit
+            RolDeCuenta.Principal -> add(stringResource(R.string.cuentas_etiqueta_principal))
+            is RolDeCuenta.Sobre -> {
+                add(
+                    when (val reparto = rol.reparto) {
+                        is Reparto.Porcentaje ->
+                            stringResource(
+                                R.string.cuentas_etiqueta_sobre_porcentaje,
+                                reparto.valor,
+                            )
+                        is Reparto.Monto ->
+                            stringResource(R.string.cuentas_etiqueta_sobre_monto, dinero.formatear(reparto.monto))
+                    },
+                )
+                if (rol.intocable) add(stringResource(R.string.cuentas_etiqueta_intocable))
+            }
+        }
         if (!cuenta.incluirEnTotal) add(stringResource(R.string.cuentas_etiqueta_fuera_del_total))
     }.joinToString(" · ")
 
