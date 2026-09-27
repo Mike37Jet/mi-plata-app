@@ -119,8 +119,8 @@ lado, no en cápsula flotante.
 | 3 | **Movimientos**: lista agrupada por día ("Hoy", "Ayer", "Jueves, 26 de marzo"), transferencias como "Nómina → Visa" | ✅ |
 | — | **Ajustes**: tema (según el teléfono, claro u oscuro) y la copia de seguridad, que sale de Cuentas; engranaje en las cuatro pestañas | ✅ |
 | 4 | **Cuentas**: lista agrupada y archivadas plegadas | ✅ |
-| 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | este |
-| 6 | **Resumen**: cifra principal con su barra de progreso, "Comida · €42 de €400" con minibarras | |
+| 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | ✅ |
+| 6 | **Resumen**: cifra principal con lo planeado debajo, plan y realidad con minibarras, ritmo y desviaciones en grupos | este |
 
 ## El esqueleto (PR 2)
 
@@ -219,6 +219,22 @@ lado, no en cápsula flotante.
 - **Filas con clave:** sin `key(linea.id)`, Compose reutilizaba el estado del
   deslizamiento por posición, y la línea siguiente a una borrada se quedaba como
   una franja roja vacía. Lo encontró Miguel en el emulador.
+
+## Resumen (PR 6)
+
+- **La cifra principal lleva su referencia:** "Te queda €1.600" y debajo "de
+  €2.000 planeados". Sin ella, el número no dice si es mucho o poco.
+- **Plan y realidad:** una fila por concepto con lo real a la derecha, "de X
+  planeados" debajo y una minibarra de cuánto se lleva. Antes era una tabla de
+  dos columnas que, con letra grande, partía los importes y necesitaba una
+  versión apilada aparte. La fila de lista ya se adapta sola.
+- **Ritmo del mes:** un grupo con las dos barras. Cuando se gasta más deprisa de
+  lo que pasa el mes, el aviso va al pie del grupo.
+- **Desviaciones:** filas de lista con "€520 de €400" y el exceso con signo, en
+  rojo. De paso, "Dónde" recupera la tilde.
+
+Con este PR, las cuatro pestañas y las pantallas internas usan el mismo lenguaje:
+título grande, grupos, filas de 55 dp y la escala áurea.
 
 ## Plano por pantalla
 
