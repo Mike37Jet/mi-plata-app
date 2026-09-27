@@ -4,6 +4,8 @@ import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.usecase.CuentaConSaldo
 
@@ -26,11 +28,54 @@ data class EditorDeCuenta(
     val saldoInicial: Money = Money.ZERO,
     val incluirEnTotal: Boolean = true,
     val archivada: Boolean = false,
+    val rol: PapelDeLaCuenta = PapelDeLaCuenta.APARTE,
+    /** Si el reparto del sobre es un porcentaje; si no, un monto fijo. */
+    val repartoEnPorcentaje: Boolean = true,
+    /** Nulo mientras el campo esta vacio o no es un numero. */
+    val porcentaje: Int? = PORCENTAJE_POR_DEFECTO,
+    val montoFijo: Money = Money.ZERO,
+    val intocable: Boolean = false,
 ) {
     val esNueva: Boolean get() = id == null
 
-    /** Sin nombre no hay cuenta que guardar; es la unica regla que impone el dominio. */
-    val puedeGuardar: Boolean get() = nombre.isNotBlank()
+    /**
+     * Sin nombre no hay cuenta que guardar. Un sobre, ademas, necesita un
+     * reparto valido: de 1 a 100 por ciento, o un monto mayor que cero.
+     */
+    val puedeGuardar: Boolean get() = nombre.isNotBlank() && (rol != PapelDeLaCuenta.SOBRE || reparto() != null)
+
+    /** El reparto tal como esta escrito, o nulo si aun no es valido. */
+    fun reparto(): Reparto? =
+        if (repartoEnPorcentaje) {
+            porcentaje?.takeIf { it in 1..PORCENTAJE_MAXIMO }?.let { Reparto.Porcentaje(it) }
+        } else {
+            montoFijo.takeIf { it.esPositivo }?.let { Reparto.Monto(it) }
+        }
+
+    /** El rol del dominio. Solo se llama con [puedeGuardar]. */
+    fun rolDeCuenta(): RolDeCuenta =
+        when (rol) {
+            PapelDeLaCuenta.APARTE -> RolDeCuenta.Independiente
+            PapelDeLaCuenta.PRINCIPAL -> RolDeCuenta.Principal
+            PapelDeLaCuenta.SOBRE -> RolDeCuenta.Sobre(checkNotNull(reparto()), intocable)
+        }
+
+    companion object {
+        const val PORCENTAJE_POR_DEFECTO = 10
+        private const val PORCENTAJE_MAXIMO = 100
+    }
+}
+
+/**
+ * El rol de la cuenta tal como se elige en el editor.
+ *
+ * Existe aparte de `RolDeCuenta` porque el formulario tiene que poder decir
+ * "sobre" antes de que su reparto sea valido.
+ */
+enum class PapelDeLaCuenta {
+    APARTE,
+    PRINCIPAL,
+    SOBRE,
 }
 
 /** Todo lo que la pantalla de cuentas necesita para dibujarse. */
@@ -79,6 +124,26 @@ sealed interface EventoDeCuentas {
 
     data class CambiarArchivada(
         val archivada: Boolean,
+    ) : EventoDeCuentas
+
+    data class CambiarRol(
+        val rol: PapelDeLaCuenta,
+    ) : EventoDeCuentas
+
+    data class CambiarModoDeReparto(
+        val enPorcentaje: Boolean,
+    ) : EventoDeCuentas
+
+    data class CambiarPorcentaje(
+        val porcentaje: Int?,
+    ) : EventoDeCuentas
+
+    data class CambiarMontoFijo(
+        val monto: Money,
+    ) : EventoDeCuentas
+
+    data class CambiarIntocable(
+        val intocable: Boolean,
     ) : EventoDeCuentas
 
     data object Guardar : EventoDeCuentas

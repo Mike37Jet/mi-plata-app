@@ -4,10 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miplata.core.domain.GeneradorDeIds
 import com.miplata.core.domain.model.Cuenta
+import com.miplata.core.domain.model.Money
+import com.miplata.core.domain.model.Reparto
+import com.miplata.core.domain.model.RolDeCuenta
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
+import com.miplata.core.domain.usecase.GuardarCuentaUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,6 +34,7 @@ class CuentasViewModel
     @Inject
     constructor(
         private val cuentas: CuentaRepository,
+        private val guardarCuenta: GuardarCuentaUseCase,
         private val ids: GeneradorDeIds,
         transacciones: TransaccionRepository,
         ajustes: AjustesRepository,
@@ -78,21 +83,38 @@ class CuentasViewModel
                 is EventoDeCuentas.CambiarSaldoInicial -> editar { it.copy(saldoInicial = evento.saldo) }
                 is EventoDeCuentas.CambiarIncluirEnTotal -> editar { it.copy(incluirEnTotal = evento.incluir) }
                 is EventoDeCuentas.CambiarArchivada -> editar { it.copy(archivada = evento.archivada) }
+                is EventoDeCuentas.CambiarRol -> editar { it.copy(rol = evento.rol) }
+                is EventoDeCuentas.CambiarModoDeReparto -> editar { it.copy(repartoEnPorcentaje = evento.enPorcentaje) }
+                is EventoDeCuentas.CambiarPorcentaje -> editar { it.copy(porcentaje = evento.porcentaje) }
+                is EventoDeCuentas.CambiarMontoFijo -> editar { it.copy(montoFijo = evento.monto) }
+                is EventoDeCuentas.CambiarIntocable -> editar { it.copy(intocable = evento.intocable) }
 
                 EventoDeCuentas.Guardar -> guardar()
                 EventoDeCuentas.Eliminar -> eliminar()
             }
         }
 
-        private fun editorDe(cuenta: Cuenta) =
-            EditorDeCuenta(
+        private fun editorDe(cuenta: Cuenta): EditorDeCuenta {
+            val reparto = cuenta.sobre?.reparto
+            return EditorDeCuenta(
                 id = cuenta.id,
                 nombre = cuenta.nombre,
                 tipo = cuenta.tipo,
                 saldoInicial = cuenta.saldoInicial,
                 incluirEnTotal = cuenta.incluirEnTotal,
                 archivada = cuenta.archivada,
+                rol =
+                    when (cuenta.rol) {
+                        RolDeCuenta.Independiente -> PapelDeLaCuenta.APARTE
+                        RolDeCuenta.Principal -> PapelDeLaCuenta.PRINCIPAL
+                        is RolDeCuenta.Sobre -> PapelDeLaCuenta.SOBRE
+                    },
+                repartoEnPorcentaje = reparto !is Reparto.Monto,
+                porcentaje = (reparto as? Reparto.Porcentaje)?.valor ?: EditorDeCuenta.PORCENTAJE_POR_DEFECTO,
+                montoFijo = (reparto as? Reparto.Monto)?.monto ?: Money.ZERO,
+                intocable = cuenta.esIntocable,
             )
+        }
 
         private fun editar(cambio: (EditorDeCuenta) -> EditorDeCuenta) {
             editor.value = editor.value?.let(cambio)
@@ -119,10 +141,11 @@ class CuentasViewModel
                     moneda = moneda,
                     incluirEnTotal = enEdicion.incluirEnTotal,
                     archivada = enEdicion.archivada,
+                    rol = enEdicion.rolDeCuenta(),
                 )
 
             editor.value = null
-            viewModelScope.launch { cuentas.guardar(cuenta) }
+            viewModelScope.launch { guardarCuenta(cuenta) }
         }
 
         /**

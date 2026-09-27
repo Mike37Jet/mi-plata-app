@@ -40,6 +40,7 @@ import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
 import com.miplata.core.domain.usecase.CalcularSaldosDeCuentasUseCase
 import com.miplata.core.domain.usecase.CerrarMesUseCase
 import com.miplata.core.domain.usecase.CompletarPrimerosPasosUseCase
+import com.miplata.core.domain.usecase.GuardarCuentaUseCase
 import com.miplata.core.domain.usecase.HayQueDarLaBienvenidaUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import com.miplata.core.domain.usecase.ReabrirMesUseCase
@@ -221,6 +222,9 @@ object ModuloDeCasosDeUso {
         transacciones: TransaccionRepository,
         cierres: CierreRepository,
     ): ReabrirMesUseCase = ReabrirMesUseCase(transacciones, cierres)
+
+    @Provides
+    fun proveerGuardarCuenta(cuentas: CuentaRepository): GuardarCuentaUseCase = GuardarCuentaUseCase(cuentas)
 
     @Provides
     fun proveerRegistrarReparto(
