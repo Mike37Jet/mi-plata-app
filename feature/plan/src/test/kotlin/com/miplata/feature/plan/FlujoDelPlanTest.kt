@@ -1,16 +1,20 @@
 package com.miplata.feature.plan
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
@@ -18,6 +22,7 @@ import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.repository.FakeAjustesRepository
 import com.miplata.core.domain.repository.FakePlanRepository
+import com.miplata.core.domain.repository.FakeTransaccionRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
@@ -56,6 +61,7 @@ class FlujoDelPlanTest {
     val compose = createComposeRule()
 
     private val planes = FakePlanRepository()
+    private val transacciones = FakeTransaccionRepository()
     private val ajustes = FakeAjustesRepository()
     private val marzo = Mes.de(2026, 3)
 
@@ -74,6 +80,7 @@ class FlujoDelPlanTest {
         val viewModel =
             PlanViewModel(
                 planes = repositorio,
+                transacciones = transacciones,
                 abrirPlan = AbrirPlanDelMesUseCase(repositorio, MaterializarPlanDelMesUseCase(ids)),
                 ids = ids,
                 ajustes = ajustes,
@@ -98,8 +105,8 @@ class FlujoDelPlanTest {
         // que la gente piensa su mes.
         compose.onNodeWithText("Aún no hay nada. Empieza por tus ingresos.").assertIsDisplayed()
 
-        anadirEn("Ingresos", nombre = "Sueldo", monto = "2000")
-        anadirEn("Gastos fijos", nombre = "Arriendo", monto = "450")
+        anadir("Ingreso", nombre = "Sueldo", monto = "2000")
+        anadir("Gasto fijo", nombre = "Arriendo", monto = "450")
 
         // 2000 - 450. Es la cifra que responde "¿me alcanza?" antes de haber
         // anotado un solo movimiento, que es el punto entero del modelo.
@@ -111,70 +118,106 @@ class FlujoDelPlanTest {
     fun `lo que se anota queda guardado`() {
         abrirPantalla()
 
-        anadirEn("Ingresos", nombre = "Sueldo", monto = "2000")
+        anadir("Ingreso", nombre = "Sueldo", monto = "2000")
 
         compose.waitUntil(ESPERA) { runBlocking { planes.obtenerDe(marzo) } != null }
         val guardado = requireNotNull(runBlocking { planes.obtenerDe(marzo) })
         guardado.lineasActivas.single().nombre shouldBe "Sueldo"
     }
 
-    // Cada tecla del nombre se guarda en la base y vuelve por el flujo del plan
-    // un rato despues. Si el campo leyera su texto de ese flujo, la
-    // recomposicion que llega antes lo devolveria al texto anterior y la
-    // siguiente tecla se aplicaria encima: en el emulador, "Transporte" quedo
-    // como "ransTe". Aqui la base retiene las escrituras hasta que se ha
-    // terminado de escribir, que es el caso extremo de lo mismo.
+    /**
+     * Escribir en la hoja letra a letra, con una base que tarda, no pierde nada.
+     *
+     * Cuando se editaba en la propia fila, cada tecla se guardaba y volvia por el
+     * flujo del plan; la recomposicion que llegaba antes devolvia el campo al
+     * texto anterior, y "Transporte" quedo como "ransTe" en el emulador. La hoja
+     * guarda el texto en si misma hasta pulsar Guardar.
+     */
     @Test
-    fun `escribir tecla a tecla no pierde letras aunque la base tarde en devolver el plan`() {
+    fun `escribir letra a letra en la hoja no pierde letras aunque la base tarde`() {
         val base = BaseQueRetiene(planes)
         abrirPantalla(base)
-        botonAnadirDe("Ingresos").performClick()
-        compose.onNodeWithText("Sin nombre").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Añadir línea").performClick()
 
         base.retener = true
         "Sueldo".forEach { letra ->
-            compose.onAllNodes(hasSetTextAction())[0].performTextInput(letra.toString())
+            campo("Nombre").performTextInput(letra.toString())
             compose.waitForIdle()
         }
+        campo("Nombre").assert(hasText("Sueldo"))
+        enLaHoja("Guardar")
         base.soltar()
 
         compose.waitUntil(ESPERA) {
             runBlocking { planes.obtenerDe(marzo) }?.lineas?.singleOrNull()?.nombre == "Sueldo"
         }
-        compose.onAllNodes(hasSetTextAction())[0].assert(hasText("Sueldo"))
+    }
+
+    @Test
+    fun `eliminar desde la hoja se puede deshacer`() {
+        abrirPantalla()
+        anadir("Gasto fijo", nombre = "Arriendo", monto = "450")
+
+        compose.onNodeWithText("Arriendo").performClick()
+        enLaHoja("Eliminar")
+
+        compose.onNodeWithText("«Arriendo» eliminada").assertIsDisplayed()
+        compose.onNodeWithText("Arriendo").assertDoesNotExist()
+        compose.onNodeWithText("Deshacer").performClick()
+
+        compose.waitUntil(ESPERA) { compose.onAllNodesWithText("Arriendo").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Arriendo").assertIsDisplayed()
     }
 
     /**
-     * Anade una linea a una seccion y la rellena.
+     * Al deslizar una linea para borrarla, la de debajo tiene que seguir viendose.
      *
-     * La fila nueva es la ultima de su tipo, asi que se localizan los campos por
-     * su marcador de posicion: es lo mismo que ve el usuario cuando la fila
-     * aparece vacia.
+     * Sin clave en las filas, Compose reutilizaba el estado del deslizamiento
+     * por posicion: la linea siguiente heredaba el "deslizada" de la borrada y se
+     * quedaba como una franja roja vacia.
      */
-    private fun anadirEn(
-        seccion: String,
+    @Test
+    fun `deslizar una linea la borra y la siguiente sigue viendose`() {
+        abrirPantalla()
+        anadir("Gasto fijo", nombre = "Arriendo", monto = "450")
+        anadir("Gasto fijo", nombre = "Luz", monto = "40")
+
+        compose.onNodeWithText("Arriendo").performTouchInput { swipeLeft() }
+
+        compose.waitUntil(ESPERA) { compose.onAllNodesWithText("Arriendo").fetchSemanticsNodes().isEmpty() }
+        compose.onNodeWithText("Luz").assertIsDisplayed()
+    }
+
+    /** Pulsa el "+", elige el tipo y rellena la hoja. */
+    private fun anadir(
+        tipo: String,
         nombre: String,
         monto: String,
     ) {
-        compose.onNodeWithText(seccion).assertIsDisplayed()
-        botonAnadirDe(seccion).performClick()
-
-        compose.onNodeWithText("Sin nombre").performTextInput(nombre)
-        compose
-            .onAllNodesWithText("0")
-            .filterToOne(hasSetTextAction())
-            .performTextInput(monto)
+        compose.onNodeWithContentDescription("Añadir línea").performClick()
+        enLaHoja(tipo)
+        campo("Nombre").performTextInput(nombre)
+        campo("Importe").performTextInput(monto)
+        enLaHoja("Guardar")
+        // Hasta que la hoja se cierra y la linea aparece en el plan: el nombre
+        // escrito en el campo ya "existia" antes de guardar.
+        compose.waitUntil(ESPERA) { compose.onAllNodes(hasSetTextAction()).fetchSemanticsNodes().isEmpty() }
+        compose.waitUntil(ESPERA) { compose.onAllNodesWithText(nombre).fetchSemanticsNodes().isNotEmpty() }
     }
 
-    private fun botonAnadirDe(seccion: String) = compose.onAllNodesWithText("Añadir")[indiceDeSeccion(seccion)]
+    private fun campo(etiqueta: String) = compose.onNode(hasSetTextAction() and hasText(etiqueta))
 
-    private fun indiceDeSeccion(seccion: String) =
-        when (seccion) {
-            "Ingresos" -> 0
-            "Gastos fijos" -> 1
-            "Gastos variables" -> 2
-            else -> 3
-        }
+    /**
+     * Pulsa algo de la hoja.
+     *
+     * Con la accion de pulsar de la semantica -la de un lector de pantalla- y no
+     * con un toque simulado: en Robolectric el toque no llega a la hoja modal,
+     * que vive en su propia ventana, y el test pulsaba Guardar sin que pasara
+     * nada. En el telefono se comprobo a mano que el toque funciona.
+     */
+    private fun enLaHoja(texto: String) {
+        compose.onNodeWithText(texto).performSemanticsAction(SemanticsActions.OnClick)
+    }
 
     private companion object {
         const val ESPERA = 5_000L
