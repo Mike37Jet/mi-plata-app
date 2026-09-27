@@ -116,9 +116,9 @@ lado, no en cápsula flotante.
 |---|---|---|
 | 1 | **Base**: escala áurea, Inter, paleta, formas, color dinámico apagado, `GrupoDeLista`/`FilaDeLista`, `CifraPrincipal`, cristal | ✅ |
 | 2 | **Esqueleto**: barra inferior de cristal con el contenido pasando por detrás, títulos grandes que se encogen al hacer scroll, meses como "Marzo 2026" | ✅ |
-| 3 | **Movimientos**: lista agrupada por día ("Hoy", "Ayer", "Jueves, 26 de marzo"), transferencias como "Nómina → Visa" | este |
+| 3 | **Movimientos**: lista agrupada por día ("Hoy", "Ayer", "Jueves, 26 de marzo"), transferencias como "Nómina → Visa" | ✅ |
 | — | **Ajustes**: tema (según el teléfono, claro u oscuro) y la copia de seguridad, que sale de Cuentas; engranaje en las cuatro pestañas | ✅ |
-| 4 | **Cuentas**: lista agrupada y archivadas plegadas | |
+| 4 | **Cuentas**: lista agrupada y archivadas plegadas | este |
 | 5 | **Plan**: filas limpias que abren una hoja de edición, borrar deslizando con "Deshacer", un solo "+" | |
 | 6 | **Resumen**: cifra principal con su barra de progreso, "Comida · €42 de €400" con minibarras | |
 
@@ -186,6 +186,18 @@ lado, no en cápsula flotante.
   salía sin destino, y un gasto de una línea desactivada, como "Sin categoría".
 - **Por el camino salió un fallo grave de datos,** arreglado en su propio PR:
   editar el plan soltaba todos los movimientos del mes de sus líneas.
+
+## Cuentas (PR 4)
+
+- **Lista agrupada** con las cuentas activas. Cada una lleva el icono de su tipo
+  (efectivo, banco, tarjeta, ahorro o inversión) en el mismo círculo que
+  Movimientos, que ahora es `IconoEnCirculo` en el design system.
+- **Archivadas plegadas** bajo una fila "Archivadas" con su número, que se
+  despliega al tocarla y anuncia a un lector de pantalla si está desplegada.
+  Antes ocupaban el mismo sitio que las activas.
+- **Sin verde en los saldos.** Un saldo positivo no es un ingreso, y en esta app
+  el verde dice "entró dinero". Saldos y total van en el color del texto; solo lo
+  negativo, en rojo.
 
 ## Plano por pantalla
 

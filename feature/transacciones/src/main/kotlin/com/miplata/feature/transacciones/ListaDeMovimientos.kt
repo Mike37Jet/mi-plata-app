@@ -1,25 +1,20 @@
 package com.miplata.feature.transacciones
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDownward
 import androidx.compose.material.icons.outlined.ArrowUpward
 import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import com.miplata.core.designsystem.componentes.FilaDeLista
 import com.miplata.core.designsystem.componentes.GrupoDeLista
+import com.miplata.core.designsystem.componentes.IconoEnCirculo
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.fechaLarga
 import com.miplata.core.designsystem.formato.fechaRelativa
@@ -110,31 +105,16 @@ private fun FilaDeMovimiento(
  */
 @Composable
 private fun IconoDelTipo(tipo: TipoDeTransaccion) {
-    val color = colorDe(tipo)
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier =
-            Modifier
-                .size(Espacio.l)
-                .background(color.copy(alpha = TINTE_DEL_ICONO), CircleShape),
-    ) {
-        Icon(
-            imageVector =
-                when (tipo) {
-                    TipoDeTransaccion.INGRESO -> Icons.Outlined.ArrowDownward
-                    TipoDeTransaccion.GASTO -> Icons.Outlined.ArrowUpward
-                    TipoDeTransaccion.TRANSFERENCIA -> Icons.Outlined.SwapHoriz
-                },
-            // Decorativo: lo dicen el signo del importe y, en una transferencia,
-            // la flecha entre las dos cuentas.
-            contentDescription = null,
-            tint = color,
-            modifier = Modifier.size(Espacio.m),
-        )
-    }
+    IconoEnCirculo(
+        icono =
+            when (tipo) {
+                TipoDeTransaccion.INGRESO -> Icons.Outlined.ArrowDownward
+                TipoDeTransaccion.GASTO -> Icons.Outlined.ArrowUpward
+                TipoDeTransaccion.TRANSFERENCIA -> Icons.Outlined.SwapHoriz
+            },
+        color = colorDe(tipo),
+    )
 }
-
-private const val TINTE_DEL_ICONO = 0.15f
 
 /**
  * Lo que mejor identifica el movimiento, de lo mas concreto a lo mas generico.

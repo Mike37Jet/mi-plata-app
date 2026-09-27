@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="cuentas_archivadas">Archivadas</string>
+    <string name="cuentas_desplegadas">Desplegadas</string>
+    <string name="cuentas_plegadas">Plegadas</string>
     <string name="cuentas_titulo">Cuentas</string>
 
     <string name="cuentas_total">Tienes en total</string>
@@ -26,7 +29,6 @@
     <string name="cuentas_eliminar">Eliminar</string>
     <string name="cuentas_eliminar_titulo">¿Eliminar %1$s?</string>
     <string name="cuentas_eliminar_aviso">Sus movimientos dejarán de verse en esta cuenta. Si solo quieres dejar de usarla, archívala.</string>
-    <string name="cuentas_etiqueta_archivada">Archivada</string>
     <string name="cuentas_etiqueta_fuera_del_total">Fuera del total</string>
 
     <string name="cuentas_tipo_efectivo">Efectivo</string>
