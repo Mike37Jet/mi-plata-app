@@ -24,8 +24,11 @@ class AndroidApplicationConventionPlugin : Plugin<Project> {
 
                 defaultConfig {
                     targetSdk = libs.version("targetSdk").toInt()
+                    // 1.0.0: el primer APK de release, al cerrar la Etapa 7 (docs/07).
+                    // versionCode sube en 1 con cada APK que se instale: Android
+                    // no deja instalar encima uno con un numero menor.
                     versionCode = 1
-                    versionName = "0.1.0"
+                    versionName = "1.0.0"
                     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
                 }
 
