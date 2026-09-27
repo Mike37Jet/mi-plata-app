@@ -12,8 +12,8 @@
     <string name="resumen_comparativa">Plan y realidad</string>
     <string name="resumen_ingresos">Ingresos</string>
     <string name="resumen_gastos">Gastos</string>
-    <string name="resumen_columna_plan">Planificado</string>
-    <string name="resumen_columna_real">Real</string>
+    <string name="resumen_de_planeados">de %1$s planeados</string>
+    <string name="resumen_sin_nombre">Sin nombre</string>
 
     <string name="resumen_ritmo">Ritmo del mes</string>
     <string name="resumen_ritmo_mes">Va del mes</string>
@@ -21,7 +21,7 @@
     <string name="resumen_ritmo_aviso">Estás gastando más deprisa de lo que pasa el mes.</string>
     <string name="resumen_porcentaje">%1$d %%</string>
 
-    <string name="resumen_desviaciones">Donde te has desviado</string>
+    <string name="resumen_desviaciones">Dónde te has desviado</string>
     <string name="resumen_desviacion_detalle">%1$s de %2$s</string>
     <string name="resumen_sin_desviaciones">Ninguna línea se te ha ido del plan.</string>
 </resources>

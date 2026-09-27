@@ -8,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,15 +19,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.componentes.BotonDeAjustes
 import com.miplata.core.designsystem.componentes.CifraPrincipal
+import com.miplata.core.designsystem.componentes.FilaDeLista
+import com.miplata.core.designsystem.componentes.GrupoDeLista
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
@@ -90,7 +87,7 @@ private fun ContenidoDelResumen(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = relleno,
-        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
+        verticalArrangement = Arrangement.spacedBy(Espacio.l),
     ) {
         item { Cabecera(estado, dinero, alEvento) }
 
@@ -103,16 +100,9 @@ private fun ContenidoDelResumen(
         }
 
         if (estado.hayPlan) {
-            item { Comparativa(estado, dinero) }
-            item { Ritmo(estado) }
-            item { TituloDeSeccion(stringResource(R.string.resumen_desviaciones)) }
-
-            if (estado.desviaciones.isEmpty()) {
-                item { Aviso(stringResource(R.string.resumen_sin_desviaciones)) }
-            }
-            items(estado.desviaciones, key = { it.linea.id.valor }) { desviacion ->
-                FilaDeDesviacion(desviacion, dinero)
-            }
+            item { PlanYRealidad(estado, dinero) }
+            if (estado.progresoDelGasto != null) item { Ritmo(estado, estado.progresoDelGasto) }
+            item { Desviaciones(estado, dinero) }
         }
     }
 }
@@ -145,45 +135,46 @@ private fun Cabecera(
             color =
                 if (estado.enSobregiro) MiPlataTheme.dinero.sobregiro else MiPlataTheme.dinero.ingreso,
         )
+        // La referencia de la cifra: "te quedan 1.600" no dice si es mucho o
+        // poco hasta que sabes que planeabas quedarte con 2.000.
+        if (estado.hayPlan) {
+            Text(
+                text = stringResource(R.string.resumen_de_planeados, dinero.formatear(estado.disponiblePlanificado)),
+                style = EstilosDeDinero.secundario,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 /**
- * Plan contra realidad.
+ * Plan contra realidad: el numero grande dice como vas, y esto dice por que.
  *
- * Es la comparacion que da sentido a la app: el numero grande de arriba dice
- * como vas, y esto dice por que.
- *
- * A partir de cierta escala de fuente la tabla de dos columnas deja de caber y
- * los importes se parten por la mitad -"$2,000.0" y un "0" debajo-, que en una
- * app de dinero se lee como otra cifra. Pasado ese umbral cada concepto se
- * apila. El umbral esta en la escala y no en el ancho del movil porque el
- * problema lo crea el tamano del texto, no el de la pantalla.
+ * Una fila por concepto con lo real a la derecha, lo planeado debajo y una
+ * barra de cuanto se lleva. Antes era una tabla de dos columnas que, con letra
+ * grande, partia los importes por la mitad -"$2,000.0" y un "0" debajo- y
+ * tenia que reorganizarse aparte. La fila de lista ya se adapta sola.
  */
 @Composable
-private fun Comparativa(
+private fun PlanYRealidad(
     estado: ResumenUiState,
     dinero: FormateadorDeDinero,
 ) {
-    val apilado = conLetraGrande()
-
-    Column(modifier = Modifier.padding(top = 16.dp)) {
-        TituloDeSeccion(stringResource(R.string.resumen_comparativa))
-
+    GrupoDeLista(titulo = stringResource(R.string.resumen_comparativa)) {
         Concepto(
             etiqueta = stringResource(R.string.resumen_ingresos),
-            planificado = dinero.formatear(estado.ingresosPlanificados),
-            real = dinero.formatear(estado.ingresosReales),
+            real = estado.ingresosReales,
+            planificado = estado.ingresosPlanificados,
             color = MiPlataTheme.dinero.ingreso,
-            apilado = apilado,
-            conCabecera = !apilado,
+            dinero = dinero,
         )
         Concepto(
             etiqueta = stringResource(R.string.resumen_gastos),
-            planificado = dinero.formatear(estado.gastosPlanificados),
-            real = dinero.formatear(estado.gastosReales),
+            real = estado.gastosReales,
+            planificado = estado.gastosPlanificados,
             color = MiPlataTheme.dinero.gasto,
-            apilado = apilado,
+            dinero = dinero,
+            conSeparador = true,
         )
     }
 }
@@ -191,50 +182,26 @@ private fun Comparativa(
 @Composable
 private fun Concepto(
     etiqueta: String,
-    planificado: String,
-    real: String,
+    real: Money,
+    planificado: Money,
     color: Color,
-    apilado: Boolean,
-    conCabecera: Boolean = false,
+    dinero: FormateadorDeDinero,
+    conSeparador: Boolean = false,
 ) {
-    val plan = stringResource(R.string.resumen_columna_plan)
-    val realidad = stringResource(R.string.resumen_columna_real)
-
-    if (apilado) {
-        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-            Text(etiqueta, style = MaterialTheme.typography.titleSmall)
-            FilaDeValor(plan, planificado, color)
-            FilaDeValor(realidad, real, color)
+    Column {
+        FilaDeLista(
+            titulo = etiqueta,
+            detalle = stringResource(R.string.resumen_de_planeados, dinero.formatear(planificado)),
+            final = { Text(dinero.formatear(real), style = EstilosDeDinero.enLista, color = color) },
+            conSeparador = conSeparador,
+        )
+        if (!planificado.esCero) {
+            BarraDeProgreso(
+                progreso = real.centavos.toDouble() / planificado.centavos,
+                color = color,
+                modifier = Modifier.padding(start = Espacio.m, end = Espacio.m, bottom = Espacio.s),
+            )
         }
-        return
-    }
-
-    if (conCabecera) {
-        FilaDeTabla(
-            etiqueta = "",
-            izquierda = plan,
-            derecha = realidad,
-            estilo = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-    FilaDeTabla(etiqueta, planificado, real, EstilosDeDinero.enLista, color)
-}
-
-@Composable
-private fun FilaDeValor(
-    etiqueta: String,
-    valor: String,
-    color: Color,
-) {
-    Row(modifier = Modifier.fillMaxWidth().padding(start = 16.dp)) {
-        Text(
-            text = etiqueta,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-        )
-        Text(valor, style = EstilosDeDinero.enLista, color = color)
     }
 }
 
@@ -242,29 +209,32 @@ private fun FilaDeValor(
  * El ritmo, no el total.
  *
  * A dia 10 con el 70% del presupuesto gastado el total todavia cuadra, pero el
- * mes no llega. Las dos barras juntas lo ensenan sin tener que explicarlo.
+ * mes no llega. Las dos barras juntas lo enseñan sin tener que explicarlo.
  */
 @Composable
-private fun Ritmo(estado: ResumenUiState) {
-    val gasto = estado.progresoDelGasto ?: return
-
-    Column(modifier = Modifier.padding(top = 16.dp)) {
-        TituloDeSeccion(stringResource(R.string.resumen_ritmo))
-
-        Barra(stringResource(R.string.resumen_ritmo_mes), estado.progresoDelMes, MaterialTheme.colorScheme.primary)
-        Barra(
-            texto = stringResource(R.string.resumen_ritmo_gasto),
-            progreso = gasto,
-            color =
-                if (estado.gastaMasDeprisaQuePasaElMes) {
-                    MiPlataTheme.dinero.sobregiro
-                } else {
-                    MiPlataTheme.dinero.gasto
-                },
-        )
-
-        if (estado.gastaMasDeprisaQuePasaElMes) {
-            Aviso(stringResource(R.string.resumen_ritmo_aviso), MiPlataTheme.dinero.sobregiro)
+private fun Ritmo(
+    estado: ResumenUiState,
+    gasto: Double,
+) {
+    GrupoDeLista(
+        titulo = stringResource(R.string.resumen_ritmo),
+        pie = if (estado.gastaMasDeprisaQuePasaElMes) stringResource(R.string.resumen_ritmo_aviso) else null,
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(Espacio.s),
+            modifier = Modifier.padding(horizontal = Espacio.m, vertical = Espacio.s),
+        ) {
+            Barra(stringResource(R.string.resumen_ritmo_mes), estado.progresoDelMes, MaterialTheme.colorScheme.primary)
+            Barra(
+                texto = stringResource(R.string.resumen_ritmo_gasto),
+                progreso = gasto,
+                color =
+                    if (estado.gastaMasDeprisaQuePasaElMes) {
+                        MiPlataTheme.dinero.sobregiro
+                    } else {
+                        MiPlataTheme.dinero.gasto
+                    },
+            )
         }
     }
 }
@@ -279,97 +249,80 @@ private fun Barra(
     val descripcion = "$texto: ${stringResource(R.string.resumen_porcentaje, porcentaje)}"
 
     Column(
+        verticalArrangement = Arrangement.spacedBy(Espacio.xs),
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
                 // La barra y sus dos textos son UNA sola cosa que leer. Sin esto
                 // un lector de pantalla anuncia tres nodos sueltos y hay que
                 // reconstruir la frase mentalmente.
                 .clearAndSetSemantics { contentDescription = descripcion },
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
-            Text(texto, style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-            Text(
-                stringResource(R.string.resumen_porcentaje, porcentaje),
-                style = EstilosDeDinero.secundario,
-            )
+            Text(texto, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.resumen_porcentaje, porcentaje), style = EstilosDeDinero.secundario)
         }
-        LinearProgressIndicator(
-            // Pasarse del 100% es justo el caso interesante, pero una barra no
-            // puede dibujar mas que llena: se recorta aqui y el porcentaje de
-            // encima sigue diciendo la verdad.
-            progress = { progreso.coerceIn(0.0, 1.0).toFloat() },
-            color = color,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        BarraDeProgreso(progreso, color)
     }
 }
 
+/**
+ * Una barra fina de progreso.
+ *
+ * Pasarse del 100% es justo el caso interesante, pero una barra no puede
+ * dibujar mas que llena: se recorta aqui, y la cifra de al lado sigue diciendo
+ * la verdad.
+ */
 @Composable
-private fun FilaDeDesviacion(
-    desviacion: DesviacionLinea,
+private fun BarraDeProgreso(
+    progreso: Double,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    LinearProgressIndicator(
+        progress = { progreso.coerceIn(0.0, 1.0).toFloat() },
+        color = color,
+        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        drawStopIndicator = {},
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** Las lineas que se fueron del plan, de la peor a la menos mala. */
+@Composable
+private fun Desviaciones(
+    estado: ResumenUiState,
     dinero: FormateadorDeDinero,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text = desviacion.linea.nombre,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f),
-            )
-            // Con signo: aqui el signo ES la informacion. "+120" dice de un
-            // vistazo que te pasaste, y "-300" que el ingreso no llego.
-            Text(
-                text = dinero.formatearConSigno(desviacion.desviacion),
-                style = EstilosDeDinero.enLista,
-                color = MiPlataTheme.dinero.sobregiro,
+    if (estado.desviaciones.isEmpty()) {
+        GrupoDeLista(
+            titulo = stringResource(R.string.resumen_desviaciones),
+            pie = stringResource(R.string.resumen_sin_desviaciones),
+        ) {}
+        return
+    }
+    GrupoDeLista(titulo = stringResource(R.string.resumen_desviaciones)) {
+        estado.desviaciones.forEachIndexed { i, desviacion ->
+            FilaDeLista(
+                titulo = desviacion.linea.nombre.ifBlank { stringResource(R.string.resumen_sin_nombre) },
+                detalle =
+                    stringResource(
+                        R.string.resumen_desviacion_detalle,
+                        dinero.formatear(desviacion.real),
+                        dinero.formatear(desviacion.planificado),
+                    ),
+                // Con signo: aqui el signo ES la informacion. "+120" dice de un
+                // vistazo que te pasaste, y "-300" que el ingreso no llego.
+                final = {
+                    Text(
+                        text = dinero.formatearConSigno(desviacion.desviacion),
+                        style = EstilosDeDinero.enLista,
+                        color = MiPlataTheme.dinero.sobregiro,
+                    )
+                },
+                conSeparador = i > 0,
             )
         }
-        Text(
-            text =
-                stringResource(
-                    R.string.resumen_desviacion_detalle,
-                    dinero.formatear(desviacion.real),
-                    dinero.formatear(desviacion.planificado),
-                ),
-            style = EstilosDeDinero.secundario,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun FilaDeTabla(
-    etiqueta: String,
-    izquierda: String,
-    derecha: String,
-    estilo: TextStyle,
-    color: Color,
-) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = etiqueta,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(PESO_ETIQUETA),
-        )
-        // Con peso y no con un ancho en dp: las dos columnas de importes se
-        // reparten lo que sobra, asi que crecen con la fuente en vez de
-        // estrangular la cifra.
-        Text(izquierda, style = estilo, color = color, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
-        Text(derecha, style = estilo, color = color, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
-    }
-}
-
-@Composable
-private fun TituloDeSeccion(texto: String) {
-    Column {
-        HorizontalDivider()
-        Text(
-            text = texto,
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier.padding(vertical = 8.dp),
-        )
     }
 }
 
@@ -383,12 +336,11 @@ private fun Aviso(
         style = MaterialTheme.typography.bodySmall,
         color = color,
         textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = Espacio.xs),
     )
 }
 
 private const val CIEN = 100.0
-private const val PESO_ETIQUETA = 0.9f
 
 @Preview(showBackground = true)
 @Composable

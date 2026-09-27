@@ -153,9 +153,12 @@ class FlujoDelResumenTest {
         )
         abrirPantalla()
 
-        compose.onNodeWithText("Plan y realidad").assertIsDisplayed()
-        compose.onAllNodesWithText("$2,000.00")[0].assertIsDisplayed()
-        compose.onAllNodesWithText("$450.00")[0].assertIsDisplayed()
+        // Lo planeado se lee junto a cada concepto, antes de anotar nada.
+        verDesplazando("Plan y realidad")
+        verDesplazando("de $2,000.00 planeados")
+        verDesplazando("de $450.00 planeados")
+        // Y la cifra grande dice contra que se compara: 2000 - 450 planeados.
+        verDesplazando("de $1,550.00 planeados")
     }
 
     // El circuito completo: un gasto anotado mueve las cifras del resumen.
@@ -212,7 +215,7 @@ class FlujoDelResumenTest {
         anotarGasto(520, lineaId = "f")
         abrirPantalla()
 
-        verDesplazando("Donde te has desviado")
+        verDesplazando("Dónde te has desviado")
         // La ventana de Robolectric es pequena y la fila cae por debajo del
         // borde; como la lista es perezosa, ni siquiera se compone hasta que se
         // llega a ella. Se desplaza hasta alli. Lo que se comprueba es que la
