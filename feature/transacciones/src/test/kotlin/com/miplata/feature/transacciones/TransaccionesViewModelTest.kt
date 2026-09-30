@@ -1,5 +1,6 @@
 package com.miplata.feature.transacciones
 
+import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
@@ -86,7 +87,9 @@ class TransaccionesViewModelTest {
     private fun viewModel(
         mes: Mes = MARZO,
         hoy: Int = 15,
+        deLaCuenta: CuentaId? = null,
     ) = TransaccionesViewModel(
+        estadoGuardado = SavedStateHandle(deLaCuenta?.let { mapOf(ARGUMENTO_CUENTA to it.valor) }.orEmpty()),
         transacciones = transacciones,
         ids = GeneradorDeIdsSecuencial(),
         calendario =
@@ -633,6 +636,38 @@ class TransaccionesViewModelTest {
 
                 vm.alEvento(EventoDeMovimientos.MesSiguiente)
                 esperarHasta { it.mes == MARZO }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `desde una cuenta solo se ven sus movimientos, y la transferencia que le llega cuenta como entrada`() =
+        runTest {
+            val sobre = CuentaId("sobre")
+            cuentas.guardar(cuenta(BANCO))
+            cuentas.guardar(cuenta(sobre))
+            transacciones.guardar(movimiento("gasto-del-banco", dia = 5, monto = 30))
+            transacciones.guardar(
+                movimiento("reparto", dia = 2, monto = 63, tipo = TipoDeTransaccion.TRANSFERENCIA, destino = sobre),
+            )
+            transacciones.guardar(movimiento("gasto-del-sobre", dia = 8, monto = 20).copy(cuentaOrigenId = sobre))
+            val vm = viewModel(deLaCuenta = sobre)
+
+            vm.uiState.test {
+                val estado = esperarHasta { it.dias.isNotEmpty() }
+
+                estado.deLaCuenta shouldBe sobre.valor
+                estado.dias
+                    .flatMap { it.movimientos }
+                    .map { it.id.valor }
+                    .toSet() shouldBe
+                    setOf("reparto", "gasto-del-sobre")
+                estado.ingresos shouldBe Money.deUnidades(63)
+                estado.gastos shouldBe Money.deUnidades(20)
+
+                // Lo que se anote desde aqui sale de esta cuenta.
+                vm.alEvento(EventoDeMovimientos.AnotarMovimiento)
+                esperarHasta { it.editor != null }.editor!!.cuentaOrigenId shouldBe sobre
                 cancelAndIgnoreRemainingEvents()
             }
         }

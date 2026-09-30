@@ -62,10 +62,11 @@ import com.miplata.core.domain.usecase.CuentaConSaldo
 fun PantallaCuentas(
     modifier: Modifier = Modifier,
     alAbrirAjustes: () -> Unit = {},
+    alVerMovimientos: (CuentaId) -> Unit = {},
     viewModel: CuentasViewModel = hiltViewModel(),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
-    PantallaCuentas(estado, viewModel::alEvento, modifier, alAbrirAjustes)
+    PantallaCuentas(estado, viewModel::alEvento, modifier, alAbrirAjustes, alVerMovimientos)
 }
 
 /**
@@ -80,6 +81,7 @@ internal fun PantallaCuentas(
     alEvento: (EventoDeCuentas) -> Unit,
     modifier: Modifier = Modifier,
     alAbrirAjustes: () -> Unit = {},
+    alVerMovimientos: (CuentaId) -> Unit = {},
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
@@ -116,7 +118,12 @@ internal fun PantallaCuentas(
         }
     }
 
-    estado.editor?.let { Editor(it, alEvento) }
+    estado.editor?.let { editor ->
+        Editor(editor, alEvento) { id ->
+            alEvento(EventoDeCuentas.CerrarEditor)
+            alVerMovimientos(id)
+        }
+    }
 }
 
 @Composable

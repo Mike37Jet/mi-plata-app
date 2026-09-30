@@ -13,15 +13,24 @@ import kotlinx.serialization.Serializable
  * cosas fallan en ejecucion y en el telefono del usuario.
  */
 @Serializable
-data object RutaTransacciones
+data class RutaTransacciones(
+    /**
+     * Si se entra desde una cuenta, solo sus movimientos: lo que entro y salio
+     * de ella, transferencias incluidas. Nulo, todos.
+     */
+    val cuentaId: String? = null,
+)
 
 /**
  * El feature declara como se entra en el; `:app` solo lo ensambla.
  *
- * @param alAbrirAjustes a donde se va lo decide `:app` (docs/04).
+ * Es una pantalla interna, no una pestaña: anotar es opcional desde el
+ * presupuesto por cuentas (ADR 0007), y se llega desde el Resumen.
+ *
+ * @param alVolver lo decide `:app`, que conoce la pila (docs/04).
  */
-fun NavGraphBuilder.pantallaTransacciones(alAbrirAjustes: () -> Unit = {}) {
+fun NavGraphBuilder.pantallaTransacciones(alVolver: () -> Unit) {
     composable<RutaTransacciones> {
-        PantallaTransacciones(alAbrirAjustes = alAbrirAjustes)
+        PantallaTransacciones(alVolver = alVolver)
     }
 }

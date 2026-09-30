@@ -12,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.SavedStateHandle
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIdsSecuencial
@@ -79,6 +80,7 @@ class FlujoDeAnotarTest {
     private fun abrirPantalla() {
         val viewModel =
             TransaccionesViewModel(
+                estadoGuardado = SavedStateHandle(),
                 transacciones = transacciones,
                 ids = GeneradorDeIdsSecuencial(),
                 calendario =

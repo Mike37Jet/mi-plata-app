@@ -114,6 +114,8 @@ data class TransaccionesUiState(
     /** Las lineas del plan de este mes, para enganchar el gasto con lo previsto. */
     val lineasDelPlan: List<LineaDePlan> = emptyList(),
     val editor: EditorDeMovimiento? = null,
+    /** El nombre de la cuenta si se estan viendo solo los suyos. */
+    val deLaCuenta: String? = null,
 ) {
     val estaVacio: Boolean get() = dias.isEmpty()
 
@@ -121,9 +123,10 @@ data class TransaccionesUiState(
      * Sin cuentas no se puede anotar nada: toda transaccion sale de alguna.
      *
      * La pantalla lo dice y manda a Cuentas, en vez de ofrecer un boton que
-     * abre un formulario que no se puede guardar.
+     * abre un formulario que no se puede guardar. Mientras carga no se sabe,
+     * y decirlo hacia parpadear el aviso al entrar.
      */
-    val faltanCuentas: Boolean get() = cuentas.isEmpty()
+    val faltanCuentas: Boolean get() = !cargando && cuentas.isEmpty()
 }
 
 sealed interface EventoDeMovimientos {

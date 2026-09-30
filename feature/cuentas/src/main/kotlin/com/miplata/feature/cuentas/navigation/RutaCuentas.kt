@@ -2,6 +2,7 @@ package com.miplata.feature.cuentas.navigation
 
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import com.miplata.core.domain.model.CuentaId
 import com.miplata.feature.cuentas.PantallaCuentas
 import kotlinx.serialization.Serializable
 
@@ -21,8 +22,11 @@ data object RutaCuentas
  * @param alAbrirAjustes a donde se va lo decide `:app`: este feature no puede
  *   depender de otro (docs/04).
  */
-fun NavGraphBuilder.pantallaCuentas(alAbrirAjustes: () -> Unit = {}) {
+fun NavGraphBuilder.pantallaCuentas(
+    alAbrirAjustes: () -> Unit = {},
+    alVerMovimientos: (CuentaId) -> Unit = {},
+) {
     composable<RutaCuentas> {
-        PantallaCuentas(alAbrirAjustes = alAbrirAjustes)
+        PantallaCuentas(alAbrirAjustes = alAbrirAjustes, alVerMovimientos = alVerMovimientos)
     }
 }
