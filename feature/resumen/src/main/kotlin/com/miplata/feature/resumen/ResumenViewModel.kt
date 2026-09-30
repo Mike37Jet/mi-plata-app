@@ -17,6 +17,7 @@ import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
+import com.miplata.core.domain.usecase.esHoraDeCerrar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -130,6 +131,8 @@ class ResumenViewModel
             val cierre = datos.cierres.firstOrNull { it.mes == periodo.mes }
             return copy(
                 cerrado = cierre != null,
+                ofrecerCierre = cierre == null && esHoraDeCerrar(periodo, calendario.hoy()),
+                hayMesesCerrados = datos.cierres.isNotEmpty(),
                 porCuenta =
                     porCuentas.cuentas.map { deCuenta ->
                         val guardado = cierre?.saldoDe(deCuenta.cuenta.id)

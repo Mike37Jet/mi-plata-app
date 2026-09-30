@@ -29,6 +29,11 @@
     <string name="resumen_cerrar_detalle">Copia los saldos del banco y compáralos con tu plan.</string>
     <string name="resumen_mes_cerrado">%1$s cerrado</string>
     <string name="resumen_ver_cierre">Ver cómo quedó cada cuenta</string>
+    <string name="resumen_movimientos">Movimientos</string>
+    <string name="resumen_movimientos_detalle">Anota un gasto o revisa lo que pasó, si quieres el detalle.</string>
+    <string name="resumen_meses_cerrados">Meses cerrados</string>
+    <string name="meses_cerrados_titulo">Meses cerrados</string>
+    <string name="meses_cerrados_intocable">Bajó una cuenta intocable</string>
     <string name="resumen_por_cuenta">Por cuenta</string>
     <string name="resumen_deberia_terminar">debería terminar con %1$s</string>
     <string name="resumen_termino_esperado">esperabas %1$s</string>

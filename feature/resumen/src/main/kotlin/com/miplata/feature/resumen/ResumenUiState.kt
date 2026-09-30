@@ -48,6 +48,13 @@ data class ResumenUiState(
     val porCuenta: List<CuentaDelResumen> = emptyList(),
     /** Si el mes esta cerrado, o nulo si no hay metodo con el que cerrarlo. */
     val cerrado: Boolean? = null,
+    /**
+     * Si se ofrece cerrar este mes: sin cerrar y en sus ultimos dias, o ya
+     * pasado (`esHoraDeCerrar`). Antes, el boton solo estorbaria.
+     */
+    val ofrecerCierre: Boolean = false,
+    /** Si hay algun mes cerrado que ver en el historial. */
+    val hayMesesCerrados: Boolean = false,
 ) {
     /**
      * Se esta gastando mas deprisa de lo que pasa el mes.

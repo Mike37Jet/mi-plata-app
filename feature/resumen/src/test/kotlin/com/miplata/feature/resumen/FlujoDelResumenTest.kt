@@ -183,7 +183,7 @@ class FlujoDelResumenTest {
         // Ingresos 2000, gastos 120: quedan 1880.
         compose.onNodeWithText("Te queda").assertIsDisplayed()
         compose.onAllNodesWithText("$1,880.00")[0].assertIsDisplayed()
-        compose.onAllNodesWithText("$120.00")[0].assertIsDisplayed()
+        verDesplazando("$120.00")
     }
 
     // La distincion que justifica la pantalla: el mes puede estar en rojo porque
