@@ -45,6 +45,7 @@ import com.miplata.core.domain.usecase.HayQueDarLaBienvenidaUseCase
 import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
 import com.miplata.core.domain.usecase.ReabrirMesUseCase
 import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
+import com.miplata.core.domain.usecase.ResumirCierresUseCase
 import com.miplata.core.domain.usecase.SembrarCategoriasPorDefectoUseCase
 import dagger.Module
 import dagger.Provides
@@ -243,6 +244,9 @@ object ModuloDelPresupuestoPorCuentas {
         transacciones: TransaccionRepository,
         cierres: CierreRepository,
     ): ReabrirMesUseCase = ReabrirMesUseCase(transacciones, cierres)
+
+    @Provides
+    fun proveerResumirCierres(): ResumirCierresUseCase = ResumirCierresUseCase()
 
     @Provides
     fun proveerGuardarCuenta(cuentas: CuentaRepository): GuardarCuentaUseCase = GuardarCuentaUseCase(cuentas)

@@ -3,6 +3,7 @@ package com.miplata.core.domain.usecase
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.GeneradorDeIds
 import com.miplata.core.domain.model.CierreDeMes
+import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Money
@@ -14,7 +15,9 @@ import com.miplata.core.domain.model.sumar
 import com.miplata.core.domain.repository.CierreRepository
 import com.miplata.core.domain.repository.TransaccionRepository
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 /**
  * Lo que hay que escribir para cerrar un mes: el registro del cierre y los
@@ -267,5 +270,63 @@ class ReabrirMesUseCase(
             todas.filter { it.ajusteDeCierre == cerrado }.forEach { transacciones.eliminar(it.id) }
             cierres.eliminar(cerrado)
         }
+    }
+}
+
+/** Cuantos dias antes del final se ofrece cerrar el mes. */
+private const val DIAS_PARA_CERRAR = 3
+
+/**
+ * Si ya toca ofrecer el cierre de [periodo]: en sus ultimos tres dias, o
+ * cuando ya termino.
+ *
+ * Antes no: el banco todavia no dice como termina el mes, y un boton de cerrar
+ * todo el mes a la vista no hace mas que estorbar. Tres dias y no solo el
+ * ultimo porque el sueldo, o las ganas de mirar el banco, llegan a veces un poco
+ * antes; y si ese dia no se abre la app, el mes pasado sigue ofreciendolo.
+ */
+fun esHoraDeCerrar(
+    periodo: PeriodoMensual,
+    hoy: LocalDate,
+): Boolean = hoy >= periodo.fin.minus(DIAS_PARA_CERRAR - 1, DateTimeUnit.DAY)
+
+/**
+ * Un mes cerrado, en una linea: para la lista de meses cerrados.
+ *
+ * @property diferencia lo real menos lo esperado, sumando todas las cuentas.
+ *   Positivo: sobro. Negativo: se gasto de mas.
+ * @property intocableBajo alguna cuenta intocable termino con menos de lo que
+ *   empezo.
+ */
+data class MesCerrado(
+    val mes: Mes,
+    val diferencia: Money,
+    val intocableBajo: Boolean,
+)
+
+/** Los meses cerrados, del mas reciente al mas antiguo, con su resultado. */
+class ResumirCierresUseCase {
+    operator fun invoke(
+        cierres: List<CierreDeMes>,
+        cuentas: List<Cuenta>,
+        transacciones: List<Transaccion>,
+        primerDiaDelMes: Int,
+    ): List<MesCerrado> {
+        val intocables = cuentas.filter { it.esIntocable }
+        return cierres
+            .sortedByDescending { it.mes }
+            .map { cierre ->
+                val inicio = PeriodoMensual(cierre.mes, primerDiaDelMes).inicio
+                val alEmpezar = saldosAl(inicio.minus(1, DateTimeUnit.DAY), intocables, transacciones)
+                MesCerrado(
+                    mes = cierre.mes,
+                    diferencia = cierre.saldos.map { it.diferencia }.sumar(),
+                    intocableBajo =
+                        intocables.any { cuenta ->
+                            val saldo = cierre.saldoDe(cuenta.id) ?: return@any false
+                            saldo.real < alEmpezar.getValue(cuenta.id)
+                        },
+                )
+            }
     }
 }

@@ -533,4 +533,58 @@ class PresupuestoPorCuentasTest {
                 cuentas.obtener(NORMAL.id)!!.esPrincipal shouldBe true
             }
     }
+
+    @Nested
+    @DisplayName("los meses cerrados")
+    inner class LosMesesCerrados {
+        @Test
+        fun `el cierre se ofrece en los ultimos tres dias y despues`() {
+            esHoraDeCerrar(PERIODO, LocalDate(2026, 3, 28)) shouldBe false
+            esHoraDeCerrar(PERIODO, LocalDate(2026, 3, 29)) shouldBe true
+            esHoraDeCerrar(PERIODO, LocalDate(2026, 3, 31)) shouldBe true
+            esHoraDeCerrar(PERIODO, LocalDate(2026, 5, 2)) shouldBe true
+        }
+
+        @Test
+        fun `con el mes desplazado cuenta el fin del periodo, no el del calendario`() {
+            val delVeinticinco = PeriodoMensual(MARZO, primerDia = 25)
+
+            esHoraDeCerrar(delVeinticinco, LocalDate(2026, 3, 31)) shouldBe false
+            esHoraDeCerrar(delVeinticinco, LocalDate(2026, 4, 22)) shouldBe true
+        }
+
+        @Test
+        fun `resume cada mes con su diferencia total, del mas reciente al mas antiguo`() {
+            val febrero =
+                CierreDeMes(MARZO.anterior(), listOf(SaldoDeCierre(DIVERSION.id, dinero("10"), dinero("12.50"))))
+            val marzo =
+                CierreDeMes(
+                    MARZO,
+                    listOf(
+                        SaldoDeCierre(DIVERSION.id, dinero("63.30"), dinero("20")),
+                        SaldoDeCierre(AHORROS.id, dinero("7"), dinero("10")),
+                    ),
+                )
+
+            val meses = ResumirCierresUseCase()(listOf(febrero, marzo), CUENTAS, emptyList(), primerDiaDelMes = 1)
+
+            meses.map { it.mes } shouldContainExactly listOf(MARZO, MARZO.anterior())
+            meses[0].diferencia shouldBe dinero("-40.30")
+            meses[1].diferencia shouldBe dinero("2.50")
+        }
+
+        @Test
+        fun `avisa del mes en que una intocable termino con menos de lo que empezo`() {
+            // Libertad tenia 100 al empezar marzo y termino con 80.
+            val antes = listOf(movimiento("100", TipoDeTransaccion.INGRESO, LIBERTAD, LocalDate(2026, 2, 10)))
+            val marzo = CierreDeMes(MARZO, listOf(SaldoDeCierre(LIBERTAD.id, dinero("163.30"), dinero("80"))))
+
+            ResumirCierresUseCase()(listOf(marzo), CUENTAS, antes, primerDiaDelMes = 1).single().intocableBajo shouldBe
+                true
+
+            val subio = marzo.copy(saldos = listOf(SaldoDeCierre(LIBERTAD.id, dinero("163.30"), dinero("150"))))
+            ResumirCierresUseCase()(listOf(subio), CUENTAS, antes, primerDiaDelMes = 1).single().intocableBajo shouldBe
+                false
+        }
+    }
 }
