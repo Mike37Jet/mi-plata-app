@@ -1,5 +1,6 @@
 package com.miplata.feature.transacciones
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.miplata.core.domain.Calendario
@@ -15,6 +16,7 @@ import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PeriodoMensual
 import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
+import com.miplata.core.domain.model.sumar
 import com.miplata.core.domain.repository.AjustesRepository
 import com.miplata.core.domain.repository.CategoriaRepository
 import com.miplata.core.domain.repository.CuentaRepository
@@ -67,7 +69,10 @@ private data class Catalogos(
  * inmediatamente en el Resumen y en los saldos de Cuentas, porque las tres
  * pantallas leen los mismos movimientos.
  *
- * Sobre el `@Suppress`: son ocho dependencias, y detekt avisa con razon para
+ * Se abre con todos los movimientos o, desde una cuenta, solo con los suyos
+ * (`RutaTransacciones.cuentaId`).
+ *
+ * Sobre el `@Suppress`: son nueve dependencias, y detekt avisa con razon para
  * una funcion normal. Aqui es un constructor que rellena Hilt, y cada una es
  * una pieza distinta que la pantalla necesita de verdad; agruparlas en un
  * objeto "de dependencias" solo moveria la lista de sitio.
@@ -77,6 +82,7 @@ private data class Catalogos(
 class TransaccionesViewModel
     @Inject
     constructor(
+        estadoGuardado: SavedStateHandle,
         private val transacciones: TransaccionRepository,
         private val ids: GeneradorDeIds,
         private val calendario: Calendario,
@@ -87,6 +93,9 @@ class TransaccionesViewModel
         private val agruparPorDia: AgruparMovimientosPorDiaUseCase,
     ) : ViewModel() {
         private val mesSeleccionado = MutableStateFlow(calendario.mesActual())
+
+        /** La cuenta cuyos movimientos se ven, o nulo para todos. */
+        private val soloCuenta: CuentaId? = estadoGuardado.get<String>(ARGUMENTO_CUENTA)?.let(::CuentaId)
 
         /**
          * El editor vive fuera del flujo de datos.
@@ -138,18 +147,20 @@ class TransaccionesViewModel
                 ajustes.observar(),
                 editor,
             ) { mes, delMes, catalogo, configuracion, abierto ->
+                val movimientos = delMes.movimientos.filter { soloCuenta == null || toca(it, soloCuenta) }
                 TransaccionesUiState(
                     mes = mes,
                     moneda = configuracion.moneda,
                     cargando = false,
                     hoy = calendario.hoy(),
-                    dias = diasDe(delMes.movimientos, catalogo, delMes.todasLasLineas),
-                    ingresos = totalDe(delMes.movimientos, TipoDeTransaccion.INGRESO),
-                    gastos = totalDe(delMes.movimientos, TipoDeTransaccion.GASTO),
+                    dias = diasDe(movimientos, catalogo, delMes.todasLasLineas),
+                    ingresos = entradas(movimientos),
+                    gastos = salidas(movimientos),
                     cuentas = catalogo.cuentas,
                     categorias = catalogo.categorias,
                     lineasDelPlan = delMes.lineasDelPlan,
                     editor = abierto,
+                    deLaCuenta = soloCuenta?.let { id -> catalogo.todasLasCuentas.firstOrNull { it.id == id }?.nombre },
                 )
             }.stateIn(
                 scope = viewModelScope,
@@ -217,10 +228,12 @@ class TransaccionesViewModel
                 // dia de ese mes: anotar algo con la fecha de hoy mientras miras
                 // marzo lo haria desaparecer de la lista nada mas guardarlo.
                 fecha = if (periodo.contiene(hoy)) hoy else periodo.inicio,
+                // Desde una cuenta, lo que se anote sale de ella.
                 cuentaOrigenId =
-                    uiState.value.cuentas
-                        .firstOrNull()
-                        ?.id,
+                    soloCuenta?.takeIf { id -> uiState.value.cuentas.any { it.id == id } }
+                        ?: uiState.value.cuentas
+                            .firstOrNull()
+                            ?.id,
             )
         }
 
@@ -340,7 +353,39 @@ class TransaccionesViewModel
                 .filter { it.tipo == tipo }
                 .fold(Money.ZERO) { suma, transaccion -> suma + transaccion.monto }
 
+        private fun toca(
+            movimiento: Transaccion,
+            cuenta: CuentaId,
+        ): Boolean = movimiento.cuentaOrigenId == cuenta || movimiento.cuentaDestinoId == cuenta
+
+        /**
+         * Lo que entro. Con todas las cuentas, los ingresos: una transferencia no
+         * es dinero nuevo. En una cuenta sola si cuenta lo que le llega de otra,
+         * porque a un sobre casi todo le entra asi.
+         */
+        private fun entradas(movimientos: List<Transaccion>): Money {
+            val cuenta = soloCuenta ?: return totalDe(movimientos, TipoDeTransaccion.INGRESO)
+            return movimientos
+                .filter {
+                    (it.tipo == TipoDeTransaccion.INGRESO && it.cuentaOrigenId == cuenta) ||
+                        (it.esTransferencia && it.cuentaDestinoId == cuenta)
+                }.map { it.monto }
+                .sumar()
+        }
+
+        /** Lo que salio, con la misma regla que [entradas]. */
+        private fun salidas(movimientos: List<Transaccion>): Money {
+            val cuenta = soloCuenta ?: return totalDe(movimientos, TipoDeTransaccion.GASTO)
+            return movimientos
+                .filter { it.tipo != TipoDeTransaccion.INGRESO && it.cuentaOrigenId == cuenta }
+                .map { it.monto }
+                .sumar()
+        }
+
         private companion object {
             const val CINCO_SEGUNDOS = 5_000L
         }
     }
+
+/** Como se llama la cuenta en la ruta (`RutaTransacciones.cuentaId`). */
+internal const val ARGUMENTO_CUENTA = "cuentaId"

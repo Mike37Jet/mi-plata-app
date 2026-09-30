@@ -38,9 +38,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
+import com.miplata.core.designsystem.componentes.FilaDeLista
 import com.miplata.core.designsystem.formato.recordarAnalizadorDeDinero
 import com.miplata.core.designsystem.theme.EstilosDeDinero
 import com.miplata.core.designsystem.theme.MiPlataTheme
+import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.TipoDeCuenta
 
@@ -49,6 +51,7 @@ import com.miplata.core.domain.model.TipoDeCuenta
 internal fun Editor(
     editor: EditorDeCuenta,
     alEvento: (EventoDeCuentas) -> Unit,
+    alVerMovimientos: (CuentaId) -> Unit = {},
 ) {
     val analizador = recordarAnalizadorDeDinero()
     var confirmandoBorrado by rememberSaveable { mutableStateOf(false) }
@@ -85,6 +88,15 @@ internal fun Editor(
                         .padding(bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
+                // Lo que paso en la cuenta, a un toque. Solo en las que ya
+                // existen: una cuenta nueva no tiene movimientos.
+                editor.id?.let { id ->
+                    FilaDeLista(
+                        titulo = stringResource(R.string.cuentas_ver_movimientos),
+                        alPulsar = { alVerMovimientos(id) },
+                    )
+                }
+
                 OutlinedTextField(
                     value = nombreTecleado,
                     onValueChange = { texto ->

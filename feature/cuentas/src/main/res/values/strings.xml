@@ -17,6 +17,7 @@
     <string name="cuentas_anadir">Añadir cuenta</string>
     <string name="cuentas_nueva">Cuenta nueva</string>
     <string name="cuentas_editar">Editar cuenta</string>
+    <string name="cuentas_ver_movimientos">Movimientos de esta cuenta</string>
     <string name="cuentas_nombre">Nombre</string>
     <string name="cuentas_nombre_ejemplo">Cuenta del banco</string>
     <string name="cuentas_tipo">Tipo</string>
