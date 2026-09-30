@@ -130,5 +130,13 @@ En concreto:
   - La desviación por línea sigue funcionando para quien anote.
   - El resumen gana una vista por cuenta.
   - Los tipos de línea actuales no desaparecen.
+- **La navegación lo refleja.** Si anotar es opcional, Movimientos no puede
+  ocupar una de las pestañas. La barra queda en Resumen, Plan y Cuentas.
+  Movimientos se abre desde el Resumen, o desde la hoja de una cuenta con solo
+  los suyos. El Resumen reúne lo que ya pasó, y cada fila sale solo cuando
+  tiene algo que ofrecer:
+  - "Cerrar el mes", en los últimos tres días o si el mes ya pasó;
+  - "Movimientos";
+  - "Meses cerrados", el historial con el resultado de cada uno.
 - **Queda para después:** leer las notificaciones del banco para que anotar
   cueste un toque (la alternativa aplazada arriba).

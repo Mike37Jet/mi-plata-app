@@ -24,8 +24,15 @@ data object RutaResumen
 fun NavGraphBuilder.pantallaResumen(
     alAbrirAjustes: () -> Unit = {},
     alAbrirCierre: (Mes) -> Unit = {},
+    alAbrirMovimientos: () -> Unit = {},
+    alAbrirMesesCerrados: () -> Unit = {},
 ) {
     composable<RutaResumen> {
-        PantallaResumen(alAbrirAjustes = alAbrirAjustes, alAbrirCierre = alAbrirCierre)
+        PantallaResumen(
+            alAbrirAjustes = alAbrirAjustes,
+            alAbrirCierre = alAbrirCierre,
+            alAbrirMovimientos = alAbrirMovimientos,
+            alAbrirMesesCerrados = alAbrirMesesCerrados,
+        )
     }
 }

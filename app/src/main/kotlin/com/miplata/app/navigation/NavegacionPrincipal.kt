@@ -56,9 +56,12 @@ import com.miplata.feature.bienvenida.navigation.pantallaBienvenida
 import com.miplata.feature.cuentas.navigation.pantallaCuentas
 import com.miplata.feature.plan.navigation.pantallaPlan
 import com.miplata.feature.resumen.navigation.RutaCierre
+import com.miplata.feature.resumen.navigation.RutaMesesCerrados
 import com.miplata.feature.resumen.navigation.RutaResumen
 import com.miplata.feature.resumen.navigation.pantallaCierre
+import com.miplata.feature.resumen.navigation.pantallaMesesCerrados
 import com.miplata.feature.resumen.navigation.pantallaResumen
+import com.miplata.feature.transacciones.navigation.RutaTransacciones
 import com.miplata.feature.transacciones.navigation.pantallaTransacciones
 import dev.chrisbanes.haze.HazeState
 
@@ -80,7 +83,7 @@ fun NavegacionPrincipal(
     val destinoActual = entradaActual?.destination
 
     // La pestaña en la que se esta, o de la que se vino. Las pantallas internas
-    // -ajustes, copia, restaurar- no son de ninguna pestaña; mientras se esta en
+    // -ajustes, copia, restaurar, movimientos, cierre- no son de ninguna pestaña; mientras se esta en
     // ellas, la barra sigue marcando la pestaña desde la que se entro.
     val pestanaActual = DestinoPrincipal.entries.firstOrNull { destinoActual.estaEn(it) }
     var pestanaDeOrigen by rememberSaveable { mutableStateOf(DestinoPrincipal.RESUMEN) }
@@ -140,10 +143,15 @@ fun NavegacionPrincipal(
                 pantallaResumen(
                     alAbrirAjustes = abrirAjustes,
                     alAbrirCierre = { mes -> navController.navigate(RutaCierre(mes)) },
+                    alAbrirMovimientos = { navController.navigate(RutaTransacciones()) },
+                    alAbrirMesesCerrados = { navController.navigate(RutaMesesCerrados) },
                 )
                 pantallaPlan(alAbrirAjustes = abrirAjustes)
-                pantallaTransacciones(alAbrirAjustes = abrirAjustes)
-                pantallaCuentas(alAbrirAjustes = abrirAjustes)
+                pantallaTransacciones(alVolver = navController::popBackStack)
+                pantallaCuentas(
+                    alAbrirAjustes = abrirAjustes,
+                    alVerMovimientos = { id -> navController.navigate(RutaTransacciones(id.valor)) },
+                )
                 pantallaAjustes(
                     alVolver = navController::popBackStack,
                     alAbrirCopia = { navController.navigate(RutaCopia) },
@@ -154,6 +162,10 @@ fun NavegacionPrincipal(
                 )
                 pantallaRestaurar(alVolver = navController::popBackStack)
                 pantallaCierre(alVolver = navController::popBackStack)
+                pantallaMesesCerrados(
+                    alVolver = navController::popBackStack,
+                    alAbrirMes = { mes -> navController.navigate(RutaCierre(mes)) },
+                )
             }
         }
 

@@ -30,7 +30,6 @@ import com.miplata.core.designsystem.componentes.GrupoDeLista
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
 import com.miplata.core.designsystem.componentes.SelectorDeMes
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
-import com.miplata.core.designsystem.formato.nombreDelMes
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
 import com.miplata.core.designsystem.theme.Espacio
 import com.miplata.core.designsystem.theme.EstilosDeDinero
@@ -48,10 +47,20 @@ fun PantallaResumen(
     modifier: Modifier = Modifier,
     alAbrirAjustes: () -> Unit = {},
     alAbrirCierre: (Mes) -> Unit = {},
+    alAbrirMovimientos: () -> Unit = {},
+    alAbrirMesesCerrados: () -> Unit = {},
     viewModel: ResumenViewModel = hiltViewModel(),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
-    PantallaResumen(estado, viewModel::alEvento, modifier, alAbrirAjustes, alAbrirCierre)
+    PantallaResumen(
+        estado = estado,
+        alEvento = viewModel::alEvento,
+        modifier = modifier,
+        alAbrirAjustes = alAbrirAjustes,
+        alAbrirCierre = alAbrirCierre,
+        alAbrirMovimientos = alAbrirMovimientos,
+        alAbrirMesesCerrados = alAbrirMesesCerrados,
+    )
 }
 
 /**
@@ -68,6 +77,8 @@ internal fun PantallaResumen(
     modifier: Modifier = Modifier,
     alAbrirAjustes: () -> Unit = {},
     alAbrirCierre: (Mes) -> Unit = {},
+    alAbrirMovimientos: () -> Unit = {},
+    alAbrirMesesCerrados: () -> Unit = {},
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
@@ -76,7 +87,13 @@ internal fun PantallaResumen(
         modifier = modifier,
         acciones = { BotonDeAjustes(alAbrirAjustes) },
     ) { relleno ->
-        ContenidoDelResumen(estado, dinero, alEvento, relleno) { alAbrirCierre(estado.mes) }
+        ContenidoDelResumen(
+            estado = estado,
+            dinero = dinero,
+            alEvento = alEvento,
+            relleno = relleno,
+            accesos = Accesos(alAbrirCierre = { alAbrirCierre(estado.mes) }, alAbrirMovimientos, alAbrirMesesCerrados),
+        )
     }
 }
 
@@ -86,7 +103,7 @@ private fun ContenidoDelResumen(
     dinero: FormateadorDeDinero,
     alEvento: (EventoDelResumen) -> Unit,
     relleno: PaddingValues,
-    alAbrirCierre: () -> Unit,
+    accesos: Accesos,
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -103,7 +120,7 @@ private fun ContenidoDelResumen(
             item { Aviso(stringResource(R.string.resumen_sin_plan)) }
         }
 
-        estado.cerrado?.let { cerrado -> item { AccesoAlCierre(estado.mes, cerrado, alAbrirCierre) } }
+        item { BloqueDeAccesos(estado, accesos) }
 
         if (estado.hayPlan && estado.porCuenta.isNotEmpty()) {
             item { PorCuenta(estado, dinero) }
@@ -152,64 +169,6 @@ private fun Cabecera(
                 text = stringResource(R.string.resumen_de_planeados, dinero.formatear(estado.disponiblePlanificado)),
                 style = EstilosDeDinero.secundario,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-/**
- * "Cerrar marzo" o, si ya se cerro, como quedo. Es la puerta al cierre de mes
- * (docs/adr/0007): se puede cerrar cualquier dia, pero tiene sentido al final.
- */
-@Composable
-private fun AccesoAlCierre(
-    mes: Mes,
-    cerrado: Boolean,
-    alAbrir: () -> Unit,
-) {
-    GrupoDeLista {
-        FilaDeLista(
-            titulo =
-                stringResource(
-                    if (cerrado) R.string.resumen_mes_cerrado else R.string.resumen_cerrar_mes,
-                    nombreDelMes(mes),
-                ),
-            detalle = stringResource(if (cerrado) R.string.resumen_ver_cierre else R.string.resumen_cerrar_detalle),
-            alPulsar = alAbrir,
-        )
-    }
-}
-
-/**
- * Cada cuenta del metodo: con cuanto va y con cuanto deberia terminar.
- *
- * Es la pregunta que se hacia con la hoja de calculo al final del mes, sin
- * esperar al final: a mitad de mes ya se ve que sobre va justo.
- */
-@Composable
-private fun PorCuenta(
-    estado: ResumenUiState,
-    dinero: FormateadorDeDinero,
-) {
-    val detalle = if (estado.cerrado == true) R.string.resumen_termino_esperado else R.string.resumen_deberia_terminar
-    GrupoDeLista(titulo = stringResource(R.string.resumen_por_cuenta)) {
-        estado.porCuenta.forEachIndexed { i, cuenta ->
-            FilaDeLista(
-                titulo = cuenta.nombre,
-                detalle = stringResource(detalle, dinero.formatear(cuenta.esperado)),
-                final = {
-                    Text(
-                        text = dinero.formatear(cuenta.actual),
-                        style = EstilosDeDinero.enLista,
-                        color =
-                            if (cuenta.actual.esNegativo) {
-                                MiPlataTheme.dinero.sobregiro
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            },
-                    )
-                },
-                conSeparador = i > 0,
             )
         }
     }

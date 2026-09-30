@@ -3,13 +3,17 @@ package com.miplata.feature.resumen
 import app.cash.turbine.test
 import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
 import com.miplata.core.domain.model.Mes
+import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PlanId
 import com.miplata.core.domain.model.PlanMensual
+import com.miplata.core.domain.model.RolDeCuenta
+import com.miplata.core.domain.model.TipoDeCuenta
 import com.miplata.core.domain.model.TipoDeLinea
 import com.miplata.core.domain.model.TipoDeTransaccion
 import com.miplata.core.domain.model.Transaccion
@@ -321,6 +325,30 @@ class ResumenViewModelTest {
 
                 vm.alEvento(EventoDelResumen.MesSiguiente)
                 esperarHasta { it.mes == MARZO }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `el cierre se ofrece solo en los ultimos dias del mes`() =
+        runTest {
+            cuentas.guardar(
+                Cuenta(
+                    CuentaId("normal"),
+                    "Normal",
+                    TipoDeCuenta.BANCARIA,
+                    Money.ZERO,
+                    Moneda("USD"),
+                    rol = RolDeCuenta.Principal,
+                ),
+            )
+
+            viewModel(hoy = 15).uiState.test {
+                esperarHasta { it.cerrado != null }.ofrecerCierre shouldBe false
+                cancelAndIgnoreRemainingEvents()
+            }
+            viewModel(hoy = 29).uiState.test {
+                esperarHasta { it.cerrado != null }.ofrecerCierre shouldBe true
                 cancelAndIgnoreRemainingEvents()
             }
         }
