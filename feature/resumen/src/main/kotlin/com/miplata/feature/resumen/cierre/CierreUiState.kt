@@ -24,8 +24,13 @@ data class FilaDeCierre(
     /** Positivo: sobro. Negativo: se gasto de mas. */
     val diferencia: Money? get() = real?.minus(esperado)
 
-    /** Solo un sobre que termino por debajo de lo esperado puede haber cubierto a la principal. */
-    val puedeCubrir: Boolean get() = !cuenta.esPrincipal && diferencia?.esNegativo == true
+    /**
+     * Solo un sobre que termino por debajo de lo esperado puede haber cubierto a
+     * la principal, y nunca uno intocable: ese dinero no se usa para cubrir
+     * (docs/adr/0007). Si bajo, se avisa aparte.
+     */
+    val puedeCubrir: Boolean
+        get() = !cuenta.esPrincipal && !cuenta.esIntocable && diferencia?.esNegativo == true
 
     /** Una cuenta que solo deberia subir termino el mes con menos de lo que empezo. */
     val intocableBajo: Boolean get() = cuenta.esIntocable && real != null && real < empiezaCon
