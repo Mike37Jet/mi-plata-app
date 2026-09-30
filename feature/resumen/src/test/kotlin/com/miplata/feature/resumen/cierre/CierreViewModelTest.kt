@@ -177,6 +177,8 @@ class CierreViewModelTest {
             )
 
         fila.intocableBajo shouldBe true
+        // Bajo, pero una intocable no se ofrece como cobertura.
+        fila.puedeCubrir shouldBe false
         fila.copy(real = Money.deUnidades(150)).intocableBajo shouldBe false
     }
 
