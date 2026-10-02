@@ -45,6 +45,8 @@ data class ResumenMensual(
     val gastosPlanificados: Money,
     val gastosReales: Money,
     val desviacionPorLinea: List<DesviacionLinea>,
+    /** Lo gastado que no estaba en el plan. */
+    val fueraDelPlan: FueraDelPlan = FueraDelPlan(),
 ) {
     /** Ingresos menos salidas, segun el plan. Negativo: el plan no cuadra sobre el papel. */
     val disponiblePlanificado: Money get() = ingresosPlanificados - gastosPlanificados
@@ -71,4 +73,24 @@ data class ResumenMensual(
             desviacionPorLinea
                 .filter { it.esDesfavorable }
                 .sortedByDescending { it.desviacion.valorAbsoluto() }
+}
+
+/**
+ * Lo que salio sin estar en el plan: donde se escapa la plata.
+ *
+ * Son dos cosas distintas y se dicen por separado, porque se arreglan distinto:
+ * un imprevisto anotado ya sabes en que fue; un "Sin detalle" no lo sabes, y lo
+ * que toca es anotar mas, o mirar el banco.
+ *
+ * @property imprevistos gastos anotados sin linea del plan.
+ * @property sinDetalle gastos que puso el cierre: lo que salio y no se anoto
+ *   (docs/adr/0007).
+ */
+data class FueraDelPlan(
+    val imprevistos: Money = Money.ZERO,
+    val sinDetalle: Money = Money.ZERO,
+) {
+    val total: Money get() = imprevistos + sinDetalle
+
+    val hayAlgo: Boolean get() = total.esPositivo
 }

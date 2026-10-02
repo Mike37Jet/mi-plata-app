@@ -458,4 +458,46 @@ class CalcularResumenMensualUseCaseTest {
             resumen.desviacionPorLinea.single().desviacion shouldBe Money.ZERO
         }
     }
+
+    @Nested
+    @DisplayName("fuera del plan")
+    inner class FueraDelPlan {
+        private val comida = linea("comida", TipoDeLinea.GASTO_VARIABLE, 100)
+
+        @Test
+        fun `separa los imprevistos anotados de lo que dejo el cierre sin detalle`() {
+            val movimientos =
+                listOf(
+                    // Planeado aunque se pase: no esta fuera del plan.
+                    movimiento(TipoDeTransaccion.GASTO, 130, linea = "comida"),
+                    movimiento(TipoDeTransaccion.GASTO, 18),
+                    movimiento(TipoDeTransaccion.GASTO, 24, fecha = fecha(20)),
+                    movimiento(TipoDeTransaccion.GASTO, 43, fecha = fecha(31)).copy(ajusteDeCierre = Mes.de(2026, 3)),
+                    // Un ingreso sin linea, o uno del cierre, no es gasto fuera del plan.
+                    movimiento(TipoDeTransaccion.INGRESO, 50),
+                    movimiento(TipoDeTransaccion.INGRESO, 7, fecha = fecha(31)).copy(ajusteDeCierre = Mes.de(2026, 3)),
+                    // Las transferencias tampoco.
+                    movimiento(TipoDeTransaccion.TRANSFERENCIA, 63, destino = OTRA_CUENTA),
+                )
+
+            val fuera = calcular(MARZO, plan(comida), movimientos).fueraDelPlan
+
+            fuera.imprevistos shouldBe Money.deUnidades(42)
+            fuera.sinDetalle shouldBe Money.deUnidades(43)
+            fuera.total shouldBe Money.deUnidades(85)
+            fuera.hayAlgo shouldBe true
+        }
+
+        @Test
+        fun `con todo enganchado al plan no hay nada fuera`() {
+            val fuera =
+                calcular(
+                    MARZO,
+                    plan(comida),
+                    listOf(movimiento(TipoDeTransaccion.GASTO, 60, linea = "comida")),
+                ).fueraDelPlan
+
+            fuera.hayAlgo shouldBe false
+        }
+    }
 }
