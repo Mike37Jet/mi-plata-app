@@ -19,6 +19,8 @@ internal class Accesos(
     val alAbrirCierre: () -> Unit,
     val alAbrirMovimientos: () -> Unit,
     val alAbrirMesesCerrados: () -> Unit,
+    val alAbrirFueraDelPlan: () -> Unit,
+    val alAbrirPlan: () -> Unit,
 )
 
 /**
@@ -111,6 +113,52 @@ internal fun PorCuenta(
                             },
                     )
                 },
+                conSeparador = i > 0,
+            )
+        }
+    }
+}
+
+/**
+ * Lo que salio sin estar en el plan, que es donde se escapa la plata.
+ *
+ * Solo aparece si hay algo: un grupo en cero no dice nada. Cada fila, solo si
+ * tiene importe. Las dos llevan a los mismos movimientos, los de fuera del
+ * plan, para ver en que se fue.
+ */
+@Composable
+internal fun FueraDelPlanUi(
+    estado: ResumenUiState,
+    dinero: FormateadorDeDinero,
+    alAbrir: () -> Unit,
+) {
+    val fuera = estado.fueraDelPlan
+    GrupoDeLista(
+        titulo = stringResource(R.string.resumen_fuera_del_plan),
+        alLadoDelTitulo = {
+            Text(
+                text = dinero.formatear(fuera.total),
+                style = EstilosDeDinero.secundario,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+    ) {
+        val filas =
+            listOfNotNull(
+                (R.string.resumen_imprevistos to fuera.imprevistos).takeIf { fuera.imprevistos.esPositivo },
+                (R.string.resumen_sin_detalle to fuera.sinDetalle).takeIf { fuera.sinDetalle.esPositivo },
+            )
+        filas.forEachIndexed { i, (titulo, monto) ->
+            FilaDeLista(
+                titulo = stringResource(titulo),
+                final = {
+                    Text(
+                        text = dinero.formatear(monto),
+                        style = EstilosDeDinero.enLista,
+                        color = MiPlataTheme.dinero.gasto,
+                    )
+                },
+                alPulsar = alAbrir,
                 conSeparador = i > 0,
             )
         }

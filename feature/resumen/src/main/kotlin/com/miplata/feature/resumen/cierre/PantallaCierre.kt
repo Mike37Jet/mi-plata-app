@@ -72,7 +72,7 @@ internal fun PantallaCierre(
     var confirmandoReapertura by rememberSaveable { mutableStateOf(false) }
 
     PantallaConTituloGrande(
-        titulo = stringResource(R.string.cierre_titulo, nombreDelMes(estado.mes)),
+        titulo = stringResource(R.string.cierre_titulo),
         modifier = modifier,
         alVolver = alVolver,
     ) { relleno ->
@@ -108,7 +108,7 @@ private fun ContenidoDelCierre(
             estado.cargando -> Unit
             estado.sinMetodo -> item { Explicacion(stringResource(R.string.cierre_sin_metodo)) }
             estado.cerrado -> {
-                item { Explicacion(stringResource(R.string.cierre_cerrado)) }
+                item { Explicacion(stringResource(R.string.cierre_cerrado, nombreDelMes(estado.mes))) }
                 items(estado.filas, key = { it.cuenta.id.valor }) { CuentaCerrada(it, dinero) }
                 item {
                     Centrado {
@@ -119,7 +119,7 @@ private fun ContenidoDelCierre(
                 }
             }
             else -> {
-                item { Explicacion(stringResource(R.string.cierre_instrucciones)) }
+                item { Explicacion(stringResource(R.string.cierre_instrucciones, nombreDelMes(estado.mes))) }
                 items(estado.filas, key = { it.cuenta.id.valor }) { fila ->
                     CuentaPorCerrar(fila, estado.principal?.nombre.orEmpty(), dinero, alEvento)
                 }

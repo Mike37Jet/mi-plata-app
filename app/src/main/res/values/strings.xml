@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Mi Plata</string>
-    <string name="destino_resumen">Resumen</string>
+    <string name="destino_resumen">Este mes</string>
     <string name="destino_plan">Plan</string>
     <string name="destino_cuentas">Cuentas</string>
 </resources>

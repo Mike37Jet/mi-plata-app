@@ -33,17 +33,15 @@
     <string name="plan_eliminada">«%1$s» eliminada</string>
     <string name="plan_eliminada_sin_nombre">Línea eliminada</string>
     <string name="plan_deshacer">Deshacer</string>
-
-    <string name="plan_sin_repartir">Sin repartir</string>
-    <string name="plan_empiezas_con">Empieza con</string>
-    <string name="plan_recibe">Recibe del reparto</string>
-    <string name="plan_reparte">Reparto a los sobres</string>
-    <string name="plan_termina_con">Debería terminar con</string>
-    <string name="plan_hoy_tiene">Hoy tiene %1$s</string>
-    <string name="plan_queda_corta">Quedaría en %1$s. Cúbrela con dinero de un sobre que no sea intocable.</string>
-    <string name="plan_intocable_con_gastos">Es intocable: lo que planees sacar de aquí se señalará al cerrar el mes.</string>
-    <string name="plan_registrar_reparto">Ya transferí el reparto · %1$s</string>
-    <string name="plan_registrar_reparto_detalle">Anota hoy las transferencias de la principal a cada sobre.</string>
+    <string name="plan_sin_repartir">Te sobra sin asignar</string>
+    <string name="plan_sin_asignar_explicacion">Lo que queda de tu sueldo después de pasar su parte a cada cuenta y pagar los gastos de la cuenta del sueldo.</string>
+    <string name="plan_le_queda">te quedan %1$s</string>
+    <string name="plan_pie_principal">Tenía %1$s. Le entra tu sueldo, pasa %2$s a tus otras cuentas y paga estos gastos.</string>
+    <string name="plan_pie_sobre">Tenía %1$s y recibe %2$s de tu sueldo.</string>
+    <string name="plan_pie_aparte">Tenía %1$s.</string>
+    <string name="plan_sin_gastos_en_la_cuenta">Sin gastos planeados</string>
+    <string name="plan_queda_corta">Así se quedaría corta por %1$s. Pásale algo de otra cuenta que no sea intocable, o planea gastar menos.</string>
+    <string name="plan_intocable_con_gastos">Es intocable: en esta cuenta no debería salir nada.</string>
     <string name="plan_cuenta">Sale de</string>
     <string name="plan_ninguna_cuenta">Ninguna</string>
 

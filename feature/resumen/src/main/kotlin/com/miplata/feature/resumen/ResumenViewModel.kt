@@ -6,6 +6,7 @@ import com.miplata.core.domain.Calendario
 import com.miplata.core.domain.model.Ajustes
 import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.Cuenta
+import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.PeriodoMensual
 import com.miplata.core.domain.model.PlanMensual
 import com.miplata.core.domain.model.ResumenMensual
@@ -15,17 +16,27 @@ import com.miplata.core.domain.repository.CierreRepository
 import com.miplata.core.domain.repository.CuentaRepository
 import com.miplata.core.domain.repository.PlanRepository
 import com.miplata.core.domain.repository.TransaccionRepository
+import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
 import com.miplata.core.domain.usecase.esHoraDeCerrar
+import com.miplata.core.domain.usecase.repartoPendiente
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+import kotlinx.datetime.daysUntil
 import javax.inject.Inject
 
 private data class DatosDeCuentas(
@@ -46,14 +57,16 @@ private data class DatosDeCuentas(
 class ResumenViewModel
     @Inject
     constructor(
-        planes: PlanRepository,
+        private val planesRepository: PlanRepository,
         transacciones: TransaccionRepository,
-        ajustes: AjustesRepository,
+        private val ajustes: AjustesRepository,
         cuentas: CuentaRepository,
         cierres: CierreRepository,
         private val calendario: Calendario,
         private val calcular: CalcularResumenMensualUseCase,
         private val calcularPorCuentas: CalcularPlanPorCuentasUseCase,
+        private val abrirPlan: AbrirPlanDelMesUseCase,
+        private val registrarReparto: RegistrarRepartoUseCase,
     ) : ViewModel() {
         /** Lo que hace falta para ver el mes por cuentas: todo el historial, no solo el mes. */
         private val datosDeCuentas =
@@ -69,7 +82,7 @@ class ResumenViewModel
                 configuracion.periodoDe(mes) to configuracion
             }.flatMapLatest { (periodo, configuracion) ->
                 combine(
-                    planes.observarDe(periodo.mes),
+                    planDe(periodo.mes, planesRepository),
                     transacciones.observarDelPeriodo(periodo),
                     datosDeCuentas,
                 ) { plan, movimientos, deCuentas ->
@@ -82,11 +95,39 @@ class ResumenViewModel
             )
 
         fun alEvento(evento: EventoDelResumen) {
-            mesSeleccionado.value =
-                when (evento) {
-                    EventoDelResumen.MesAnterior -> mesSeleccionado.value.anterior()
-                    EventoDelResumen.MesSiguiente -> mesSeleccionado.value.siguiente()
-                }
+            when (evento) {
+                EventoDelResumen.MesAnterior -> mesSeleccionado.value = mesSeleccionado.value.anterior()
+                EventoDelResumen.MesSiguiente -> mesSeleccionado.value = mesSeleccionado.value.siguiente()
+                EventoDelResumen.YaRepartí -> yaReparti()
+            }
+        }
+
+        /**
+         * El plan del mes o, si nunca se guardo, el que tendria copiado del
+         * anterior (ADR 0003). Sin esto, un mes nuevo diria "no has planeado"
+         * aunque el Plan ya ensene el de siempre.
+         */
+        private fun planDe(
+            mes: Mes,
+            planes: PlanRepository,
+        ): Flow<PlanMensual?> =
+            flow {
+                val abierto = abrirPlan(mes)
+                emitAll(planes.observarDe(mes).map { it ?: abierto.plan.takeIf { plan -> plan.lineas.isNotEmpty() } })
+            }
+
+        private fun yaReparti() {
+            val mes = uiState.value.mes
+            viewModelScope.launch {
+                val configuracion = ajustes.obtener()
+                val periodo = configuracion.periodoDe(mes)
+                val datos = datosDeCuentas.first()
+                val plan = planDe(mes, planesRepository).first()
+                val porCuentas =
+                    calcularPorCuentas(periodo, datos.cuentas, plan, datos.movimientos, calendario.hoy())
+                        ?: return@launch
+                registrarReparto(periodo, porCuentas)
+            }
         }
 
         private fun estadoDe(
@@ -111,8 +152,12 @@ class ResumenViewModel
                 enSobregiro = resumen.enSobregiro,
                 sobregiroPorIngresosQueNoLlegaron = resumen.sobregiroPorIngresosQueNoLlegaron,
                 progresoDelMes = periodo.progreso(calendario.hoy()),
+                dia = calendario.hoy().takeIf { periodo.contiene(it) }?.let { periodo.inicio.daysUntil(it) + 1 },
+                diasDelMes = periodo.duracionEnDias,
+                esPasado = calendario.hoy() > periodo.fin,
                 progresoDelGasto = progresoDelGasto(resumen),
                 desviaciones = resumen.desviacionesDesfavorables,
+                fueraDelPlan = resumen.fueraDelPlan,
             )
         }
 
@@ -129,9 +174,22 @@ class ResumenViewModel
             val porCuentas =
                 calcularPorCuentas(periodo, datos.cuentas, plan, datos.movimientos, calendario.hoy()) ?: return this
             val cierre = datos.cierres.firstOrNull { it.mes == periodo.mes }
+            val ofrecer = cierre == null && esHoraDeCerrar(periodo, calendario.hoy())
+            val pendiente = if (cierre == null) repartoPendiente(periodo, porCuentas, datos.movimientos) else emptyMap()
+            val nombres = datos.cuentas.associate { it.id to it.nombre }
             return copy(
+                conMetodo = true,
+                paso =
+                    when {
+                        cierre != null -> PasoDelMes.CERRADO
+                        !hayPlan -> PasoDelMes.PLANEAR
+                        ofrecer -> PasoDelMes.COMPARAR
+                        pendiente.isNotEmpty() -> PasoDelMes.REPARTIR
+                        else -> PasoDelMes.NINGUNO
+                    },
+                partesPendientes = pendiente.map { (id, monto) -> PartePendiente(nombres[id].orEmpty(), monto) },
                 cerrado = cierre != null,
-                ofrecerCierre = cierre == null && esHoraDeCerrar(periodo, calendario.hoy()),
+                ofrecerCierre = ofrecer,
                 hayMesesCerrados = datos.cierres.isNotEmpty(),
                 porCuenta =
                     porCuentas.cuentas.map { deCuenta ->
@@ -140,6 +198,8 @@ class ResumenViewModel
                             nombre = deCuenta.cuenta.nombre,
                             esperado = guardado?.esperado ?: deCuenta.terminaCon,
                             actual = guardado?.real ?: deCuenta.saldoActual,
+                            intocable = deCuenta.cuenta.esIntocable,
+                            tipo = deCuenta.cuenta.tipo,
                         )
                     },
             )

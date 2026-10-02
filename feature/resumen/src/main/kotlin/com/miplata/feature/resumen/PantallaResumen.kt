@@ -47,8 +47,10 @@ fun PantallaResumen(
     modifier: Modifier = Modifier,
     alAbrirAjustes: () -> Unit = {},
     alAbrirCierre: (Mes) -> Unit = {},
-    alAbrirMovimientos: () -> Unit = {},
+    alAbrirMovimientos: (Mes) -> Unit = {},
     alAbrirMesesCerrados: () -> Unit = {},
+    alAbrirFueraDelPlan: (Mes) -> Unit = {},
+    alAbrirPlan: () -> Unit = {},
     viewModel: ResumenViewModel = hiltViewModel(),
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,6 +62,8 @@ fun PantallaResumen(
         alAbrirCierre = alAbrirCierre,
         alAbrirMovimientos = alAbrirMovimientos,
         alAbrirMesesCerrados = alAbrirMesesCerrados,
+        alAbrirFueraDelPlan = alAbrirFueraDelPlan,
+        alAbrirPlan = alAbrirPlan,
     )
 }
 
@@ -77,23 +81,44 @@ internal fun PantallaResumen(
     modifier: Modifier = Modifier,
     alAbrirAjustes: () -> Unit = {},
     alAbrirCierre: (Mes) -> Unit = {},
-    alAbrirMovimientos: () -> Unit = {},
+    alAbrirMovimientos: (Mes) -> Unit = {},
     alAbrirMesesCerrados: () -> Unit = {},
+    alAbrirFueraDelPlan: (Mes) -> Unit = {},
+    alAbrirPlan: () -> Unit = {},
 ) {
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
+    val accesos =
+        Accesos(
+            alAbrirCierre = { alAbrirCierre(estado.mes) },
+            alAbrirMovimientos = { alAbrirMovimientos(estado.mes) },
+            alAbrirMesesCerrados = alAbrirMesesCerrados,
+            alAbrirFueraDelPlan = { alAbrirFueraDelPlan(estado.mes) },
+            alAbrirPlan = alAbrirPlan,
+        )
+
     PantallaConTituloGrande(
-        titulo = stringResource(R.string.resumen_titulo),
+        // "Este mes" solo cuando lo es. Otro mes no repite su nombre, que ya esta
+        // en el selector: dice si es lo que paso o lo que viene.
+        titulo =
+            stringResource(
+                when {
+                    !estado.conMetodo && !estado.cargando -> R.string.resumen_titulo
+                    estado.cargando || estado.esElMesActual -> R.string.mes_titulo
+                    estado.esPasado -> R.string.mes_titulo_pasado
+                    else -> R.string.mes_titulo_futuro
+                },
+            ),
         modifier = modifier,
         acciones = { BotonDeAjustes(alAbrirAjustes) },
     ) { relleno ->
-        ContenidoDelResumen(
-            estado = estado,
-            dinero = dinero,
-            alEvento = alEvento,
-            relleno = relleno,
-            accesos = Accesos(alAbrirCierre = { alAbrirCierre(estado.mes) }, alAbrirMovimientos, alAbrirMesesCerrados),
-        )
+        // Mientras carga no se sabe que vista toca, y ensenar la equivocada un
+        // instante -con un "Te queda 0,00"- asusta mas que una pantalla quieta.
+        when {
+            estado.cargando -> Unit
+            estado.conMetodo -> ContenidoDelMes(estado, dinero, alEvento, relleno, accesos)
+            else -> ContenidoDelResumen(estado, dinero, alEvento, relleno, accesos)
+        }
     }
 }
 
@@ -128,6 +153,9 @@ private fun ContenidoDelResumen(
 
         if (estado.hayPlan) {
             item { PlanYRealidad(estado, dinero) }
+            if (estado.fueraDelPlan.hayAlgo) {
+                item { FueraDelPlanUi(estado, dinero, accesos.alAbrirFueraDelPlan) }
+            }
             if (estado.progresoDelGasto != null) item { Ritmo(estado, estado.progresoDelGasto) }
             item { Desviaciones(estado, dinero) }
         }

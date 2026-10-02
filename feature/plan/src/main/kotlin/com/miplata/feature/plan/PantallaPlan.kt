@@ -162,9 +162,6 @@ private fun ContenidoDelPlan(
 
         val porCuentas = estado.porCuentas
         if (porCuentas != null) {
-            if (estado.repartoPendiente.esPositivo) {
-                item(key = "reparto") { BotonDelReparto(estado.repartoPendiente, dinero, alEvento) }
-            }
             items(porCuentas.cuentas, key = { it.cuenta.id.valor }) { deCuenta ->
                 GrupoDeCuenta(deCuenta, dinero, alEvento)
             }
@@ -207,6 +204,16 @@ private fun Cabecera(
             color =
                 if (estado.enSobregiro) MiPlataTheme.dinero.sobregiro else MiPlataTheme.dinero.ingreso,
         )
+        // Con cuentas, la cifra no se entiende sola: se dice de donde sale.
+        if (estado.porCuentas != null) {
+            Text(
+                text = stringResource(R.string.plan_sin_asignar_explicacion),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = Espacio.l),
+            )
+        }
     }
 }
 

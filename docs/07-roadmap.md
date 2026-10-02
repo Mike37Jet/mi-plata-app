@@ -129,6 +129,7 @@ pantalla, y carísimo cuando ya hay diez hechas con tamaños fijos.
 | 8.5 | ✅ **Arrastre**: el mes siguiente arranca del saldo real de cada cuenta y el plan muestra con cuánto vienes | `feat/presupuesto-por-cuentas` |
 | 8.6 | ✅ **Bienvenida del método**: crear la principal y los sobres desde los primeros pasos | `feat/presupuesto-por-cuentas` |
 | 8.7 | ✅ **Navegación del método**: tres pestañas (Resumen, Plan, Cuentas). Movimientos pasa a verse desde el Resumen o desde cada cuenta, el cierre se ofrece en los últimos tres días del mes y los meses cerrados tienen su historial | `feat/presupuesto-por-cuentas` |
+| 8.8 | ✅ **Este mes**: la pantalla principal dice qué toca hacer (planear, pasar su parte a cada cuenta, comparar con el banco) y cuánto le queda a cada cuenta. El Plan pierde las filas contables, las palabras pasan a ser las del usuario, "Fuera del plan" junta imprevistos y lo no anotado, y los marcadores son iconos, nunca emojis | `feat/este-mes` |
 
 Toda la etapa fue en una sola rama y un solo PR: cada PR espera a CI, y seis
 PRs pequeños eran seis esperas. Sale como la versión 1.1.0 (versionCode 2), que

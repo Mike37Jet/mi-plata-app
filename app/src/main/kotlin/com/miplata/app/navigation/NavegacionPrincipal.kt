@@ -143,8 +143,12 @@ fun NavegacionPrincipal(
                 pantallaResumen(
                     alAbrirAjustes = abrirAjustes,
                     alAbrirCierre = { mes -> navController.navigate(RutaCierre(mes)) },
-                    alAbrirMovimientos = { navController.navigate(RutaTransacciones()) },
+                    alAbrirMovimientos = { mes -> navController.navigate(RutaTransacciones(mes = mes.toString())) },
                     alAbrirMesesCerrados = { navController.navigate(RutaMesesCerrados) },
+                    alAbrirPlan = { navController.irA(DestinoPrincipal.PLAN) },
+                    alAbrirFueraDelPlan = { mes ->
+                        navController.navigate(RutaTransacciones(fueraDelPlan = true, mes = mes.toString()))
+                    },
                 )
                 pantallaPlan(alAbrirAjustes = abrirAjustes)
                 pantallaTransacciones(alVolver = navController::popBackStack)

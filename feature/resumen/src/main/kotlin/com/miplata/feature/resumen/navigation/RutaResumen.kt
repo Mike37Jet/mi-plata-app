@@ -19,13 +19,18 @@ data object RutaResumen
 /**
  * El feature declara como se entra en el; `:app` solo lo ensambla.
  *
- * @param alAbrirAjustes a donde se va lo decide `:app` (docs/04).
+ * Una salida por cada pantalla a la que se llega desde aqui; a donde va cada
+ * una lo decide `:app` (docs/04). Agruparlas en una clase solo para acortar la
+ * lista moveria el problema de sitio.
  */
+@Suppress("LongParameterList")
 fun NavGraphBuilder.pantallaResumen(
     alAbrirAjustes: () -> Unit = {},
     alAbrirCierre: (Mes) -> Unit = {},
-    alAbrirMovimientos: () -> Unit = {},
+    alAbrirMovimientos: (Mes) -> Unit = {},
     alAbrirMesesCerrados: () -> Unit = {},
+    alAbrirFueraDelPlan: (Mes) -> Unit = {},
+    alAbrirPlan: () -> Unit = {},
 ) {
     composable<RutaResumen> {
         PantallaResumen(
@@ -33,6 +38,8 @@ fun NavGraphBuilder.pantallaResumen(
             alAbrirCierre = alAbrirCierre,
             alAbrirMovimientos = alAbrirMovimientos,
             alAbrirMesesCerrados = alAbrirMesesCerrados,
+            alAbrirFueraDelPlan = alAbrirFueraDelPlan,
+            alAbrirPlan = alAbrirPlan,
         )
     }
 }
