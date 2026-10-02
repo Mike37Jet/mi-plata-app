@@ -32,24 +32,24 @@
     <string name="cuentas_eliminar_aviso">Sus movimientos dejarán de verse en esta cuenta. Si solo quieres dejar de usarla, archívala.</string>
     <string name="cuentas_etiqueta_fuera_del_total">Fuera del total</string>
 
-    <string name="cuentas_rol">En tu presupuesto</string>
-    <string name="cuentas_rol_aparte">Aparte</string>
-    <string name="cuentas_rol_principal">Principal</string>
-    <string name="cuentas_rol_sobre">Sobre</string>
-    <string name="cuentas_rol_aparte_detalle">No entra en el reparto. Para la cartera, una tarjeta o una cuenta en otra moneda.</string>
-    <string name="cuentas_rol_principal_detalle">Recibe tus ingresos y reparte a los sobres. Solo hay una: si eliges esta, la anterior queda aparte.</string>
-    <string name="cuentas_rol_sobre_detalle">Recibe cada mes su parte del ingreso desde la principal.</string>
-    <string name="cuentas_reparto">Recibe cada mes</string>
+    <string name="cuentas_rol">¿Qué hace esta cuenta?</string>
+    <string name="cuentas_rol_aparte">Va por su cuenta</string>
+    <string name="cuentas_rol_principal">Recibe el sueldo</string>
+    <string name="cuentas_rol_sobre">Recibe una parte</string>
+    <string name="cuentas_rol_aparte_detalle">No entra en el plan de cuentas. Para la cartera, una tarjeta o una cuenta en otra moneda.</string>
+    <string name="cuentas_rol_principal_detalle">Aquí llega tu sueldo y desde aquí pasas su parte a las demás. Solo puede haber una.</string>
+    <string name="cuentas_rol_sobre_detalle">Cada mes recibe una parte de tu sueldo.</string>
+    <string name="cuentas_reparto">¿Cuánto recibe cada mes?</string>
     <string name="cuentas_reparto_porcentaje">Porcentaje</string>
     <string name="cuentas_reparto_monto">Monto fijo</string>
     <string name="cuentas_reparto_porcentaje_campo">Porcentaje del ingreso</string>
     <string name="cuentas_reparto_monto_campo">Monto cada mes</string>
     <string name="cuentas_reparto_porcentaje_invalido">De 1 a 100.</string>
     <string name="cuentas_intocable">Intocable</string>
-    <string name="cuentas_intocable_detalle">Solo debería subir, como tu libertad financiera. Si baja, te avisaremos, y nunca se propone para cubrir a otra.</string>
-    <string name="cuentas_etiqueta_principal">Principal</string>
-    <string name="cuentas_etiqueta_sobre_porcentaje">Sobre · %1$d%%</string>
-    <string name="cuentas_etiqueta_sobre_monto">Sobre · %1$s</string>
+    <string name="cuentas_intocable_detalle">Solo debería subir, como tu libertad financiera. Si baja, te avisamos, y nunca se usa para cubrir a otra.</string>
+    <string name="cuentas_etiqueta_principal">Recibe el sueldo</string>
+    <string name="cuentas_etiqueta_sobre_porcentaje">Recibe %1$d%%</string>
+    <string name="cuentas_etiqueta_sobre_monto">Recibe %1$s</string>
     <string name="cuentas_etiqueta_intocable">Intocable</string>
 
     <string name="cuentas_tipo_efectivo">Efectivo</string>

@@ -7,14 +7,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.ShowChart
-import androidx.compose.material.icons.outlined.AccountBalance
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.CreditCard
 import androidx.compose.material.icons.outlined.ExpandLess
 import androidx.compose.material.icons.outlined.ExpandMore
-import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Savings
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -44,6 +38,7 @@ import com.miplata.core.designsystem.componentes.FilaDeLista
 import com.miplata.core.designsystem.componentes.GrupoDeLista
 import com.miplata.core.designsystem.componentes.IconoEnCirculo
 import com.miplata.core.designsystem.componentes.PantallaConTituloGrande
+import com.miplata.core.designsystem.componentes.icono
 import com.miplata.core.designsystem.formato.FormateadorDeDinero
 import com.miplata.core.designsystem.formato.recordarFormateadorDeDinero
 import com.miplata.core.designsystem.theme.Espacio
@@ -227,7 +222,7 @@ private fun FilaDeCuenta(
     FilaDeLista(
         titulo = cuenta.nombre,
         detalle = etiquetaDe(cuenta, dinero),
-        inicio = { IconoEnCirculo(cuenta.tipo.icono(), MaterialTheme.colorScheme.primary) },
+        inicio = { IconoEnCirculo(cuenta.icono(), MaterialTheme.colorScheme.primary) },
         final = {
             Text(
                 text = dinero.formatear(conSaldo.saldo),
@@ -242,15 +237,6 @@ private fun FilaDeCuenta(
         conSeparador = conSeparador,
     )
 }
-
-private fun TipoDeCuenta.icono(): ImageVector =
-    when (this) {
-        TipoDeCuenta.EFECTIVO -> Icons.Outlined.Payments
-        TipoDeCuenta.BANCARIA -> Icons.Outlined.AccountBalance
-        TipoDeCuenta.TARJETA_CREDITO -> Icons.Outlined.CreditCard
-        TipoDeCuenta.AHORRO -> Icons.Outlined.Savings
-        TipoDeCuenta.INVERSION -> Icons.AutoMirrored.Outlined.ShowChart
-    }
 
 /**
  * El tipo de cuenta y, si las hay, las salvedades.
