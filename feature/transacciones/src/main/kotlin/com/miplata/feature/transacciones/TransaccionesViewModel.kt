@@ -12,6 +12,7 @@ import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
+import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PeriodoMensual
 import com.miplata.core.domain.model.TipoDeTransaccion
@@ -92,10 +93,14 @@ class TransaccionesViewModel
         ajustes: AjustesRepository,
         private val agruparPorDia: AgruparMovimientosPorDiaUseCase,
     ) : ViewModel() {
-        private val mesSeleccionado = MutableStateFlow(calendario.mesActual())
+        private val mesSeleccionado =
+            MutableStateFlow(estadoGuardado.get<String>(ARGUMENTO_MES)?.let(Mes::de) ?: calendario.mesActual())
 
         /** La cuenta cuyos movimientos se ven, o nulo para todos. */
         private val soloCuenta: CuentaId? = estadoGuardado.get<String>(ARGUMENTO_CUENTA)?.let(::CuentaId)
+
+        /** Si solo se ven los gastos sin linea del plan (`RutaTransacciones.fueraDelPlan`). */
+        private val soloFueraDelPlan: Boolean = estadoGuardado.get<Boolean>(ARGUMENTO_FUERA_DEL_PLAN) == true
 
         /**
          * El editor vive fuera del flujo de datos.
@@ -147,20 +152,24 @@ class TransaccionesViewModel
                 ajustes.observar(),
                 editor,
             ) { mes, delMes, catalogo, configuracion, abierto ->
-                val movimientos = delMes.movimientos.filter { soloCuenta == null || toca(it, soloCuenta) }
+                val movimientos =
+                    delMes.movimientos
+                        .filter { soloCuenta == null || toca(it, soloCuenta) }
+                        .filter { !soloFueraDelPlan || estaFueraDelPlan(it) }
                 TransaccionesUiState(
                     mes = mes,
                     moneda = configuracion.moneda,
                     cargando = false,
                     hoy = calendario.hoy(),
                     dias = diasDe(movimientos, catalogo, delMes.todasLasLineas),
-                    ingresos = entradas(movimientos),
-                    gastos = salidas(movimientos),
+                    ingresos = entradas(movimientos, soloCuenta),
+                    gastos = salidas(movimientos, soloCuenta),
                     cuentas = catalogo.cuentas,
                     categorias = catalogo.categorias,
                     lineasDelPlan = delMes.lineasDelPlan,
                     editor = abierto,
                     deLaCuenta = soloCuenta?.let { id -> catalogo.todasLasCuentas.firstOrNull { it.id == id }?.nombre },
+                    soloFueraDelPlan = soloFueraDelPlan,
                 )
             }.stateIn(
                 scope = viewModelScope,
@@ -345,47 +354,55 @@ class TransaccionesViewModel
                 },
         )
 
-        private fun totalDe(
-            movimientos: List<Transaccion>,
-            tipo: TipoDeTransaccion,
-        ): Money =
-            movimientos
-                .filter { it.tipo == tipo }
-                .fold(Money.ZERO) { suma, transaccion -> suma + transaccion.monto }
-
-        private fun toca(
-            movimiento: Transaccion,
-            cuenta: CuentaId,
-        ): Boolean = movimiento.cuentaOrigenId == cuenta || movimiento.cuentaDestinoId == cuenta
-
-        /**
-         * Lo que entro. Con todas las cuentas, los ingresos: una transferencia no
-         * es dinero nuevo. En una cuenta sola si cuenta lo que le llega de otra,
-         * porque a un sobre casi todo le entra asi.
-         */
-        private fun entradas(movimientos: List<Transaccion>): Money {
-            val cuenta = soloCuenta ?: return totalDe(movimientos, TipoDeTransaccion.INGRESO)
-            return movimientos
-                .filter {
-                    (it.tipo == TipoDeTransaccion.INGRESO && it.cuentaOrigenId == cuenta) ||
-                        (it.esTransferencia && it.cuentaDestinoId == cuenta)
-                }.map { it.monto }
-                .sumar()
-        }
-
-        /** Lo que salio, con la misma regla que [entradas]. */
-        private fun salidas(movimientos: List<Transaccion>): Money {
-            val cuenta = soloCuenta ?: return totalDe(movimientos, TipoDeTransaccion.GASTO)
-            return movimientos
-                .filter { it.tipo != TipoDeTransaccion.INGRESO && it.cuentaOrigenId == cuenta }
-                .map { it.monto }
-                .sumar()
-        }
-
         private companion object {
             const val CINCO_SEGUNDOS = 5_000L
         }
     }
 
+/** La misma regla que el resumen: un gasto sin linea del plan (`FueraDelPlan`). */
+private fun estaFueraDelPlan(movimiento: Transaccion): Boolean =
+    movimiento.tipo == TipoDeTransaccion.GASTO && movimiento.lineaDePlanId == null
+
+private fun toca(
+    movimiento: Transaccion,
+    cuenta: CuentaId,
+): Boolean = movimiento.cuentaOrigenId == cuenta || movimiento.cuentaDestinoId == cuenta
+
+/**
+ * Lo que entro. Con todas las cuentas, los ingresos: una transferencia no es
+ * dinero nuevo. En una cuenta sola si cuenta lo que le llega de otra, porque a
+ * un sobre casi todo le entra asi.
+ */
+private fun entradas(
+    movimientos: List<Transaccion>,
+    cuenta: CuentaId?,
+): Money {
+    if (cuenta == null) return movimientos.filter { it.tipo == TipoDeTransaccion.INGRESO }.map { it.monto }.sumar()
+    return movimientos
+        .filter {
+            (it.tipo == TipoDeTransaccion.INGRESO && it.cuentaOrigenId == cuenta) ||
+                (it.esTransferencia && it.cuentaDestinoId == cuenta)
+        }.map { it.monto }
+        .sumar()
+}
+
+/** Lo que salio, con la misma regla que [entradas]. */
+private fun salidas(
+    movimientos: List<Transaccion>,
+    cuenta: CuentaId?,
+): Money {
+    if (cuenta == null) return movimientos.filter { it.tipo == TipoDeTransaccion.GASTO }.map { it.monto }.sumar()
+    return movimientos
+        .filter { it.tipo != TipoDeTransaccion.INGRESO && it.cuentaOrigenId == cuenta }
+        .map { it.monto }
+        .sumar()
+}
+
 /** Como se llama la cuenta en la ruta (`RutaTransacciones.cuentaId`). */
 internal const val ARGUMENTO_CUENTA = "cuentaId"
+
+/** `RutaTransacciones.mes`. */
+internal const val ARGUMENTO_MES = "mes"
+
+/** `RutaTransacciones.fueraDelPlan`. */
+internal const val ARGUMENTO_FUERA_DEL_PLAN = "fueraDelPlan"

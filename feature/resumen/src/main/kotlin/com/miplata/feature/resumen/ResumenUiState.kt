@@ -1,9 +1,11 @@
 package com.miplata.feature.resumen
 
 import com.miplata.core.domain.model.DesviacionLinea
+import com.miplata.core.domain.model.FueraDelPlan
 import com.miplata.core.domain.model.Mes
 import com.miplata.core.domain.model.Moneda
 import com.miplata.core.domain.model.Money
+import com.miplata.core.domain.model.TipoDeCuenta
 
 /**
  * Todo lo que la pantalla del resumen necesita para dibujarse.
@@ -55,7 +57,21 @@ data class ResumenUiState(
     val ofrecerCierre: Boolean = false,
     /** Si hay algun mes cerrado que ver en el historial. */
     val hayMesesCerrados: Boolean = false,
+    /** Lo gastado sin estar en el plan: imprevistos y "Sin detalle". */
+    val fueraDelPlan: FueraDelPlan = FueraDelPlan(),
+    /** Si hay cuenta del sueldo: la pantalla se ordena por cuentas y por pasos. */
+    val conMetodo: Boolean = false,
+    val paso: PasoDelMes = PasoDelMes.NINGUNO,
+    /** Lo que falta pasar a cada cuenta, para el paso [PasoDelMes.REPARTIR]. */
+    val partesPendientes: List<PartePendiente> = emptyList(),
+    /** Que dia del mes es hoy, o nulo si se mira otro mes. */
+    val dia: Int? = null,
+    val diasDelMes: Int = 0,
+    /** Si el mes ya termino. */
+    val esPasado: Boolean = false,
 ) {
+    val esElMesActual: Boolean get() = dia != null
+
     /**
      * Se esta gastando mas deprisa de lo que pasa el mes.
      *
@@ -76,10 +92,44 @@ data class CuentaDelResumen(
     val nombre: String,
     val esperado: Money,
     val actual: Money,
+    val intocable: Boolean = false,
+    val tipo: TipoDeCuenta = TipoDeCuenta.BANCARIA,
+)
+
+/**
+ * Lo que toca hacer ahora en el mes, segun el metodo (docs/adr/0007).
+ *
+ * Uno solo a la vez y en el orden en que pasan las cosas: quien abre la app
+ * tiene que ver que hacer, no buscarlo entre bloques.
+ */
+enum class PasoDelMes {
+    /** El mes no tiene plan: hay que armarlo. */
+    PLANEAR,
+
+    /** Falta pasar a las cuentas su parte del sueldo. */
+    REPARTIR,
+
+    /** Fin de mes: comparar con el banco. */
+    COMPARAR,
+
+    /** El mes ya se comparo con el banco. */
+    CERRADO,
+
+    /** Nada que hacer: vivir el mes. */
+    NINGUNO,
+}
+
+/** Lo que falta pasar a una cuenta este mes. */
+data class PartePendiente(
+    val cuenta: String,
+    val monto: Money,
 )
 
 sealed interface EventoDelResumen {
     data object MesAnterior : EventoDelResumen
 
     data object MesSiguiente : EventoDelResumen
+
+    /** "Ya lo hice": anota las transferencias de la parte de cada cuenta. */
+    data object YaRepartí : EventoDelResumen
 }

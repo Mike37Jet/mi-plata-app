@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import com.miplata.core.designsystem.theme.MiPlataTheme
 import com.miplata.core.domain.Calendario
+import com.miplata.core.domain.GeneradorDeIdsSecuencial
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.LineaId
@@ -27,8 +28,11 @@ import com.miplata.core.domain.repository.FakeCierreRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
+import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
+import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -54,6 +58,14 @@ import org.robolectric.RobolectricTestRunner
  * Movimientos, asi que lo que se comprueba aqui es que un gasto anotado **llega
  * de verdad** al resumen y mueve las cifras.
  */
+
+private fun calendarioDe(
+    mes: Mes,
+    dia: Int,
+) = object : Calendario {
+    override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, dia)
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class FlujoDelResumenTest {
@@ -76,17 +88,21 @@ class FlujoDelResumenTest {
     private fun abrirPantalla(hoy: Int = DIA) {
         val viewModel =
             ResumenViewModel(
-                planes = planes,
+                planesRepository = planes,
                 transacciones = transacciones,
                 ajustes = ajustes,
                 cuentas = cuentas,
                 cierres = cierres,
-                calendario =
-                    object : Calendario {
-                        override fun hoy() = LocalDate(marzo.anio, marzo.numeroDeMes, hoy)
-                    },
+                calendario = calendarioDe(marzo, hoy),
                 calcular = CalcularResumenMensualUseCase(),
                 calcularPorCuentas = CalcularPlanPorCuentasUseCase(),
+                abrirPlan = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(GeneradorDeIdsSecuencial())),
+                registrarReparto =
+                    RegistrarRepartoUseCase(
+                        transacciones,
+                        GeneradorDeIdsSecuencial(),
+                        calendarioDe(marzo, hoy),
+                    ),
             )
 
         compose.setContent {

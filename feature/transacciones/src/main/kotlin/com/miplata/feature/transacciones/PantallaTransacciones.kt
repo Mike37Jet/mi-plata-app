@@ -67,7 +67,10 @@ internal fun PantallaTransacciones(
     val dinero = recordarFormateadorDeDinero(estado.moneda)
 
     PantallaConTituloGrande(
-        titulo = estado.deLaCuenta ?: stringResource(R.string.transacciones_titulo),
+        titulo =
+            estado.deLaCuenta ?: stringResource(
+                if (estado.soloFueraDelPlan) R.string.transacciones_fuera_del_plan else R.string.transacciones_titulo,
+            ),
         modifier = modifier,
         alVolver = alVolver,
         botonFlotante = {

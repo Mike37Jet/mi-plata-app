@@ -1,6 +1,7 @@
 package com.miplata.core.domain.usecase
 
 import com.miplata.core.domain.model.DesviacionLinea
+import com.miplata.core.domain.model.FueraDelPlan
 import com.miplata.core.domain.model.LineaDePlan
 import com.miplata.core.domain.model.Money
 import com.miplata.core.domain.model.PeriodoMensual
@@ -56,6 +57,21 @@ class CalcularResumenMensualUseCase {
             ingresosReales = totalReal(delPeriodo, TipoDeTransaccion.INGRESO),
             gastosReales = totalReal(delPeriodo, TipoDeTransaccion.GASTO),
             desviacionPorLinea = desviaciones(lineasActivas, delPeriodo),
+            fueraDelPlan = fueraDelPlan(delPeriodo),
+        )
+    }
+
+    /**
+     * Los gastos sin linea del plan, separados en imprevistos anotados y en lo
+     * que dejo el cierre sin detalle. Un gasto enganchado a una linea esta
+     * planeado aunque se pase: eso lo dice la desviacion de su linea.
+     */
+    private fun fueraDelPlan(transacciones: List<Transaccion>): FueraDelPlan {
+        val sinLinea = transacciones.filter { it.tipo == TipoDeTransaccion.GASTO && it.lineaDePlanId == null }
+        val (sinDetalle, imprevistos) = sinLinea.partition { it.esSinDetalle }
+        return FueraDelPlan(
+            imprevistos = imprevistos.map { it.monto }.sumar(),
+            sinDetalle = sinDetalle.map { it.monto }.sumar(),
         )
     }
 

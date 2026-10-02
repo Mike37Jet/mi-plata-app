@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -22,9 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import com.miplata.core.designsystem.accesibilidad.conLetraGrande
 import com.miplata.core.designsystem.theme.Espacio
 
@@ -40,6 +43,8 @@ import com.miplata.core.designsystem.theme.Espacio
  * @param titulo encima del grupo, en pequeño: dice que hay dentro.
  * @param pie debajo, para una aclaracion que no merece fila propia.
  * @param alLadoDelTitulo a la derecha del titulo: un total del grupo, por ejemplo.
+ * @param iconoDelTitulo delante del titulo, del mismo color: un candado en una
+ *   cuenta intocable, por ejemplo. Lo describe el propio titulo.
  */
 @Composable
 fun GrupoDeLista(
@@ -47,6 +52,7 @@ fun GrupoDeLista(
     titulo: String? = null,
     pie: String? = null,
     alLadoDelTitulo: (@Composable () -> Unit)? = null,
+    iconoDelTitulo: ImageVector? = null,
     contenido: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Espacio.xs)) {
@@ -55,6 +61,14 @@ fun GrupoDeLista(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Espacio.m),
             ) {
+                iconoDelTitulo?.let {
+                    Icon(
+                        it,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = Espacio.xs).size(ICONO_DEL_TITULO),
+                    )
+                }
                 Text(
                     text = titulo,
                     style = MaterialTheme.typography.titleSmall,
@@ -221,3 +235,5 @@ fun FilaDeOpcion(
         }
     }
 }
+
+private val ICONO_DEL_TITULO = 18.dp

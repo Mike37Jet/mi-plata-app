@@ -2,7 +2,9 @@ package com.miplata.feature.resumen
 
 import app.cash.turbine.test
 import com.miplata.core.domain.Calendario
+import com.miplata.core.domain.GeneradorDeIdsSecuencial
 import com.miplata.core.domain.model.Ajustes
+import com.miplata.core.domain.model.CierreDeMes
 import com.miplata.core.domain.model.Cuenta
 import com.miplata.core.domain.model.CuentaId
 import com.miplata.core.domain.model.LineaDePlan
@@ -23,8 +25,11 @@ import com.miplata.core.domain.repository.FakeCierreRepository
 import com.miplata.core.domain.repository.FakeCuentaRepository
 import com.miplata.core.domain.repository.FakePlanRepository
 import com.miplata.core.domain.repository.FakeTransaccionRepository
+import com.miplata.core.domain.usecase.AbrirPlanDelMesUseCase
 import com.miplata.core.domain.usecase.CalcularPlanPorCuentasUseCase
 import com.miplata.core.domain.usecase.CalcularResumenMensualUseCase
+import com.miplata.core.domain.usecase.MaterializarPlanDelMesUseCase
+import com.miplata.core.domain.usecase.RegistrarRepartoUseCase
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -70,6 +75,13 @@ private fun movimiento(
     lineaDePlanId = lineaId?.let(::LineaId),
 )
 
+private fun calendarioDe(
+    mes: Mes,
+    dia: Int,
+) = object : Calendario {
+    override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, dia)
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ResumenViewModelTest {
     private val planes = FakePlanRepository()
@@ -83,17 +95,16 @@ class ResumenViewModelTest {
         mes: Mes = MARZO,
         hoy: Int = 1,
     ) = ResumenViewModel(
-        planes = planes,
+        planesRepository = planes,
         transacciones = transacciones,
         ajustes = ajustes,
         cuentas = cuentas,
         cierres = cierres,
-        calendario =
-            object : Calendario {
-                override fun hoy() = LocalDate(mes.anio, mes.numeroDeMes, hoy)
-            },
+        calendario = calendarioDe(mes, hoy),
         calcular = CalcularResumenMensualUseCase(),
         calcularPorCuentas = CalcularPlanPorCuentasUseCase(),
+        abrirPlan = AbrirPlanDelMesUseCase(planes, MaterializarPlanDelMesUseCase(GeneradorDeIdsSecuencial())),
+        registrarReparto = RegistrarRepartoUseCase(transacciones, GeneradorDeIdsSecuencial(), calendarioDe(mes, hoy)),
     )
 
     @Before
@@ -325,6 +336,82 @@ class ResumenViewModelTest {
 
                 vm.alEvento(EventoDelResumen.MesSiguiente)
                 esperarHasta { it.mes == MARZO }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    private suspend fun conCuentaDelSueldoYUnSobre() {
+        cuentas.guardar(
+            Cuenta(
+                CuentaId("normal"),
+                "Normal",
+                TipoDeCuenta.BANCARIA,
+                Money.ZERO,
+                Moneda("USD"),
+                rol = RolDeCuenta.Principal,
+            ),
+        )
+        cuentas.guardar(
+            Cuenta(
+                CuentaId("diversion"),
+                "Diversion",
+                TipoDeCuenta.AHORRO,
+                Money.ZERO,
+                Moneda("USD"),
+                rol = RolDeCuenta.Sobre(),
+            ),
+        )
+    }
+
+    @Test
+    fun `sin plan el paso es armarlo`() =
+        runTest {
+            conCuentaDelSueldoYUnSobre()
+
+            viewModel(hoy = 2).uiState.test {
+                esperarHasta { it.conMetodo }.paso shouldBe PasoDelMes.PLANEAR
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `con plan y sin transferir el paso es repartir, y ya lo hice lo anota`() =
+        runTest {
+            conCuentaDelSueldoYUnSobre()
+            planes.guardar(PlanMensual(PlanId("p"), MARZO, listOf(linea("i", "Sueldo", TipoDeLinea.INGRESO, 633))))
+            val vm = viewModel(hoy = 2)
+
+            vm.uiState.test {
+                val estado = esperarHasta { it.paso == PasoDelMes.REPARTIR }
+                estado.partesPendientes shouldBe listOf(PartePendiente("Diversion", Money.deCentavos(6_330)))
+
+                vm.alEvento(EventoDelResumen.YaRepartí)
+
+                esperarHasta { it.paso == PasoDelMes.NINGUNO }
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `al final del mes el paso es comparar con el banco`() =
+        runTest {
+            conCuentaDelSueldoYUnSobre()
+            planes.guardar(PlanMensual(PlanId("p"), MARZO, listOf(linea("i", "Sueldo", TipoDeLinea.INGRESO, 633))))
+
+            viewModel(hoy = 30).uiState.test {
+                esperarHasta { it.conMetodo }.paso shouldBe PasoDelMes.COMPARAR
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `un mes comparado lo dice`() =
+        runTest {
+            conCuentaDelSueldoYUnSobre()
+            cierres.guardar(CierreDeMes(MARZO, emptyList()))
+
+            viewModel(hoy = 30).uiState.test {
+                esperarHasta { it.conMetodo }.paso shouldBe PasoDelMes.CERRADO
                 cancelAndIgnoreRemainingEvents()
             }
         }
