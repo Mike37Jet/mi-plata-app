@@ -19,6 +19,10 @@ data class RutaTransacciones(
      * de ella, transferencias incluidas. Nulo, todos.
      */
     val cuentaId: String? = null,
+    /** Solo los gastos fuera del plan: imprevistos y "Sin detalle". */
+    val fueraDelPlan: Boolean = false,
+    /** El mes en que se abre, en ISO (`2026-09`): el que se miraba al entrar. Nulo, el actual. */
+    val mes: String? = null,
 )
 
 /**

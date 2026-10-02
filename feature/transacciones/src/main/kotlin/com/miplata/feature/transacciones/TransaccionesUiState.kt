@@ -116,6 +116,8 @@ data class TransaccionesUiState(
     val editor: EditorDeMovimiento? = null,
     /** El nombre de la cuenta si se estan viendo solo los suyos. */
     val deLaCuenta: String? = null,
+    /** Si se ven solo los gastos fuera del plan. */
+    val soloFueraDelPlan: Boolean = false,
 ) {
     val estaVacio: Boolean get() = dias.isEmpty()
 
